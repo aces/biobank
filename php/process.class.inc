@@ -124,11 +124,11 @@ abstract class Process implements \JsonSerializable
     /**
      * Gets the ID of the specimen's processing examiner
      *
-     * @return int
+     * @return ?int
      */
-    public function getExaminerId() : int
+    public function getExaminerId() : ?int
     {
-        return $this->examinerId;
+        return $this->examinerId ?? null;
     }
 
     /**
