@@ -29,7 +29,7 @@ namespace LORIS\biobank;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Log implements \JsonSerializable, \LORIS\Data\DataInstance
+class Log implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyEntities\SiteHaver
 {
     /**
      * Persistent Instance variables.
@@ -37,7 +37,7 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
      * These properties describe a shipment entity.
      *
      * @var string    $barcode
-     * @var string    $centerId
+     * @var \CenterID $centerId
      * @var string    $status
      * @var string    $user
      * @var string    $temperature
@@ -46,7 +46,7 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
      * @var string    $comments
      */
     public $barcode;
-    public $centerId;
+    public \CenterID $centerId;
     public $status;
     public $user;
     public $temperature;
@@ -60,7 +60,7 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     function __construct(array $data)
     {
         $this->barcode = $data['barcode'] ?? null;
-        $this->centerId = $data['centerId'] ?? null;
+        $this->centerId = new \CenterID(strval($data['centerId']) ?? null;
         $this->status = $data['status'] ?? null;
         $this->user = $data['user'] ?? null;
         $this->temperature = $data['temperature'] ?? null;
@@ -92,19 +92,19 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
-     * @param string $centerId
+     * @param \CenterID $centerId
      *
      * @return void
      */
-    private function setCenterId(string $centerId) : void
+    private function setCenterId(\CenterID $centerId) : void
     {
         $this->centerId = $centerId;
     }
 
     /**
-     * @return ?string
+     * @return \CenterID
      */
-    public function getCenterId() : ?string
+    public function getCenterID() : \CenterID
     {
         return $this->centerId;
     }
@@ -225,7 +225,7 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     {
         return array(
                 'barcode'     => $this->barcode,
-                'centerId'    => $this->centerId,
+                'centerId'    => $this->centerId->__toString(),
                 'status'      => $this->status,
                 'user'        => $this->user,
                 'temperature' => $this->temperature,
