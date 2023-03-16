@@ -29,7 +29,7 @@ namespace LORIS\biobank;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Pool implements \JsonSerializable, \LORIS\Data\DataInstance
+class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyEntities\SiteHaver
 {
     /**
      * Persistent Instance variables.
@@ -44,7 +44,7 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance
      * @var int       $candidateId
      * @var int       $sessionId
      * @var int       $typeId
-     * @var int       $centerId
+     * @var \CenterID $centerId
      * @var \DateTime $date
      * @var \DateTime $time
      */
@@ -56,7 +56,7 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance
     private $candidateId;
     private $sessionId;
     private $typeId;
-    private $centerId;
+    private \CenterID $centerId;
     private $date;
     private $time;
 
@@ -256,23 +256,21 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Sets the Center ID of the pool
      *
-     * @param int $centerId Center ID of the pool
+     * @param \CenterID $centerId Center ID of the pool
      *
      * @return void
      */
-    public function setCenterId(int $centerId) : void
+    public function setCenterId(\CenterID $centerId) : void
     {
-        if ($centerId > 0) {
-            $this->centerId = $centerId;
-        }
+        $this->centerId = $centerId;
     }
 
     /**
      * Gets the Center ID of the pool
      *
-     * @return int
+     * @return \CenterID
      */
-    public function getCenterId() : int
+    public function getCenterID() : \CenterID
     {
         return $this->centerId;
     }
@@ -355,7 +353,7 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance
             $this->setTypeId((int) $data['typeId']);
         }
         if (isset($data['centerId'])) {
-            $this->setCenterId((int) $data['centerId']);
+            $this->setCenterId(new \CenterID(strval($data['centerId'])));
         }
         if (isset($data['date'])) {
             $this->setDate(new \DateTime($data['date']));
@@ -396,7 +394,7 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance
             'candidateId' => $this->candidateId,
             'sessionId'   => $this->sessionId,
             'typeId'      => $this->typeId,
-            'centerId'    => $this->centerId,
+            'centerId'    => $this->centerId->__toString(),
             'date'        => $this->date->format('d-m-Y'),
             'time'        => $this->time->format('H:i'),
         ];
