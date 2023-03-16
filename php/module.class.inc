@@ -28,6 +28,51 @@ use \Psr\Http\Message\ResponseInterface;
  */
 class Module extends \Module
 {
+    /**
+     * {@inheritDoc}
+     *
+     * @param \User $user The user whose access is being checked.
+     *
+     * @return bool whether access is granted
+     */
+    public function hasAccess(\User $user) : bool
+    {
+        return parent::hasAccess($user) &&
+            $user->hasAnyPermission(
+                [
+                    'biobank_specimen_view',
+                    'biobank_specimen_create',
+                    'biobank_specimen_update',
+                    'biobank_specimen_alter',
+                    'biobank_container_view',
+                    'biobank_container_create',
+                    'biobank_container_update',
+                    'biobank_pool_view',
+                    'biobank_pool_create',
+                ]
+            );
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return string The menu category for this module
+     */
+    public function getMenuCategory() : string
+    {
+        return "Biospecimens";
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return string The human readable name for this module
+     */
+    public function getLongName() : string
+    {
+        return "Biobank";
+    }
+
     /**                                                                         
      * The default handler for a module routes to a page of the first component of
      * the URL's name, or the same name as the module if serving the root of the

@@ -57,6 +57,20 @@ class PoolEndpoint implements RequestHandlerInterface
     }
 
     /**
+     * This function can be overridden in a module's page to load the necessary
+     * resources to check the permissions of a user.
+     *
+     * @param User                   $user    The user to load the resources for
+     * @param ServerRequestInterface $request The PSR15 Request being handled
+     *
+     * @return void
+     */
+    public function loadResources(
+        \User $user, ServerRequestInterface $request
+    ) : void {
+    }
+
+    /**
      * This function passes the request to the handler. This is necessary since
      * the Endpoint bypass the Module class.
      *
@@ -83,7 +97,7 @@ class PoolEndpoint implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        $db       = \Database::singleton();
+        $db       = \NDB_Factory::singleton()->database();
         $user     = $request->getAttribute('user');
         $poolCont = new PoolController($db, $user);
 

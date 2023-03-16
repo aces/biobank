@@ -284,7 +284,7 @@ class SpecimenTab extends Component {
           actions={actions}
           getFormattedCell={this.formatSpecimenColumns}
           getMappedCell={this.mapSpecimenColumns}
-          loading={this.props.loading}
+          progress={this.props.loading}
         />
         <Search
           title='Go To Specimen'
