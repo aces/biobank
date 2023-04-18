@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {Link} from 'react-router-dom';
 
 import FilterableDataTable from 'FilterableDataTable';
-import {useShipment} from './Shipment';
+import {UseShipment} from './Shipment';
 // import Container from './Container';
 import TriggerableModal from 'TriggerableModal';
 
@@ -13,6 +13,15 @@ import {get} from './helpers.js';
 // - Make sure all containers change center when shipment is received
 // - Make sure to block all
 
+/**
+ * Returns a JSX component for the shipment tab of the module
+ *
+ * @param {object} data - the data to display
+ * @param {callback} setData - a callback to set data
+ * @param {object} options - values for select options?
+ *
+ * @return {ReactDOM}
+ */
 function ShipmentTab({
   data,
   setData,
@@ -42,7 +51,19 @@ function ShipmentTab({
     });
   };
 
+  const mapShipmentColumns = (column, value) => {
+    switch (column) {
+      case 'Origin Center':
+        return options.centers[value];
+      case 'Destination Center':
+        return options.centers[value];
+      default:
+        return value;
+    }
+  };
+
   const formatShipmentColumns = (column, value, row) => {
+    value = mapShipmentColumns(column, value);
     switch (column) {
       case 'Barcode':
         return (
@@ -83,8 +104,8 @@ function ShipmentTab({
       shipment.barcode,
       shipment.type,
       shipment.status,
-      options.centers[shipment.originCenterId],
-      options.centers[shipment.destinationCenterId],
+      shipment.originCenterId,
+      shipment.destinationCenterId,
     ];
   });
 
@@ -133,11 +154,21 @@ function ShipmentTab({
       data={shipmentData}
       fields={fields}
       forms={forms}
+      getMappedCell={mapShipmentColumns}
       getFormattedCell={formatShipmentColumns}
     />
   );
 }
 
+/**
+ * Returns some dom elements with information about a shipment
+ *
+ * @param {Shipment} shipment - the shipment
+ * @param {object} containers - containers
+ * @param {object} centers - centers
+ *
+ * @return {ReactDOM[]}
+ */
 function ShipmentInformation({
   shipment,
   containers = {},
@@ -218,6 +249,18 @@ function ShipmentInformation({
   );
 }
 
+/**
+ * Modal form to create a shipment
+ *
+ * @param {object} data - the default data
+ * @param {object} centers - the centers
+ * @param {object} types - the types of shipments
+ * @param {object} users - a list of selectable users
+ * @param {callback} updateShipments - an update callback
+ * @param {callback} setData - an update callback
+ *
+ * @return {ReactDOM}
+ */
 function CreateShipment({
   data,
   centers,
@@ -227,7 +270,7 @@ function CreateShipment({
   setData,
 }) {
   const logIndex = 0;
-  const handler = new useShipment();
+  const handler = new UseShipment();
   const shipment = handler.getShipment();
   const errors = handler.getErrors();
   const onSubmit = async () => {
@@ -257,9 +300,9 @@ function CreateShipment({
     >
       <StaticElement
         label='Note'
-        text="Any container or specimen added to this form will be dissassociated
-        from its parent. Any children of the containers listed will also be added
-        to the shipment."
+        text='Any container or specimen added to this form will be
+        dissassociated from its parent. Any children of the containers listed
+        will also be added to the shipment.'
       />
       <TextboxElement
         name='barcode'
@@ -305,20 +348,33 @@ function CreateShipment({
   );
 }
 
+/**
+ * React Component for a received shipment
+ *
+ * @param {Shipment} shipment - the shipment
+ * @param {object} users - the users for the dropdown
+ * @param {callback} updateShipments - an update callback
+ * @param {callback} setData - a callback for setting data
+ *
+ * @return {ReceiveShipment}
+ */
 function ReceiveShipment({
   shipment,
   users,
   updateShipments,
   setData,
 }) {
-  const handler = new useShipment(shipment);
+  const handler = new UseShipment(shipment);
   const logIndex = handler.getShipment().logs.length-1;
   const onSuccess = ({shipments, containers}) => {
     updateShipments(shipments);
     setData('containers', containers);
   };
+
   const onOpen = () => {
-    handler.addLog({status: 'received', centerId: shipment.destinationCenterId});
+    handler.addLog(
+      {status: 'received', centerId: shipment.destinationCenterId}
+    );
   };
 
   // TODO: At the top of this form, it wouldn't hurt to have a ShipmentSummary
@@ -342,6 +398,16 @@ function ReceiveShipment({
   );
 }
 
+/**
+ * Return a form for the shipment log
+ *
+ * @param {object} log - the log
+ * @param {callback} setLog - a callback for when the log is set
+ * @param {object} errors - a list of errors
+ * @param {object} users - a list of selectable users
+ *
+ * @return {ReactDOM[]}
+ */
 function ShipmentLogForm({
   log,
   setLog,

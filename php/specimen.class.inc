@@ -41,6 +41,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
      * @var int         $typeId
      * @var string      $quantity
      * @var int         $unitId
+     * @var int         $containerCenterId
      * @var int         $fTCycle
      * @var array       $parentSpecimenIds
      * @var int         $candidateId
@@ -56,8 +57,8 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     private $typeId;
     private $quantity;
     private $unitId;
-    private $containerCenterId;
     private $fTCycle;
+    private $containerCenterId;
     private $parentSpecimenIds;
     private $candidateId;
     private $candidateAge;
@@ -67,11 +68,15 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     private $preparation;
     private $analysis;
 
+    private $loris;
     /**
      * Initiliazes a new instance of the Specimen Class
+     *
+     * @param \LORIS\LorisInstance $loris The LORIS instance with the specimen
      */
-    function __construct()
+    function __construct(\LORIS\LorisInstance $loris)
     {
+        $this->loris = $loris;
     }
 
     /**
@@ -91,7 +96,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Gets the specimen's ID
      *
-     * @return int
+     * @return ?int
      */
     public function getId() : ?int
     {
@@ -115,7 +120,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Gets the ID of the specimen's container
      *
-     * @return int
+     * @return ?int
      */
     public function getContainerId() : ?int
     {
@@ -209,7 +214,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Gets the specimen's current Freeze-Thaw cycle
      *
-     * @return int
+     * @return ?int
      */
     public function getFTCycle() : ?int
     {
@@ -231,7 +236,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Gets the parent specimen's ID
      *
-     * @return array
+     * @return ?array
      */
     public function getParentSpecimenIds() : ?array
     {
@@ -287,7 +292,8 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
-     * Sets the ID of the candidate's session/timepoint in which the specimen was collected
+     * Sets the ID of the candidate's session/timepoint in which the specimen
+     * was collected.
      *
      * @param int $sessionId the ID of the specimen's session of collection
      *
@@ -328,7 +334,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Gets the ID of the specimen's pool group.
      *
-     * @return int
+     * @return ?int
      */
     public function getPoolId() : ?int
     {
@@ -414,15 +420,20 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Return Center ID of affiliated specimen container.
      *
-     * @return int
+     * @return ?int
      */
     public function getCenterId()
     {
-//        $db           = \Database::singleton();
-//        $containerDAO = new ContainerDAO($db);
-//        $containerId  = $this->getContainerId();
-//        $container    = $containerDAO->getInstanceFromId($containerId);
-//        return $container->getCenterId();
+        // NOTE: with the introduction of setContainerCenterId, this has been
+        // temporarily disabled to fix performance issues. A more permanent
+        // fix should be issued that considers container and specimen object
+        // design
+
+        // $db           = \Database::singleton();
+        // $containerDAO = new ContainerDAO($db);
+        // $containerId  = $this->getContainerId();
+        // $container    = $containerDAO->getInstanceFromId($containerId);
+        // return $container->getCenterId();
 
         return $this->containerCenterId;
     }
@@ -436,30 +447,57 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
      */
     public function fromArray(array $data) : Specimen
     {
-        isset($data['id'])                && $this->setId((int) $data['id']);
-        isset($data['containerId'])       && $this->setContainerId((int) $data['containerId']);
-        isset($data['typeId'])            && $this->setTypeId((int) $data['typeId']);
-        isset($data['quantity'])          && $this->setQuantity((string) $data['quantity']);
-        isset($data['unitId'])            && $this->setUnitId((int) $data['unitId']);
-        isset($data['containerCenterId']) && $this->setContainerCenterId((int) $data['containerCenterId']);
-        isset($data['fTCycle'])           && $this->setFTCycle((int) $data['fTCycle']);
-        isset($data['parentSpecimenIds']) && $this->setParentSpecimenIds($data['parentSpecimenIds']);
-        isset($data['candidateId'])       && $this->setCandidateId((int) $data['candidateId']);
-        isset($data['candidateAge'])      && $this->setCandidateAge((int) $data['candidateAge']);
-        isset($data['sessionId'])         && $this->setSessionId((int) $data['sessionId']);
-        isset($data['poolId'])            && $this->setPoolId((int) $data['poolId']);
+        if (isset($data['id'])) {
+            $this->setId((int) $data['id']);
+        }
+        if (isset($data['containerId'])) {
+            $this->setContainerId((int) $data['containerId']);
+        }
+        if (isset($data['typeId'])) {
+            $this->setTypeId((int) $data['typeId']);
+        }
+        if (isset($data['quantity'])) {
+            $this->setQuantity((string) $data['quantity']);
+        }
+        if (isset($data['unitId'])) {
+            $this->setUnitId((int) $data['unitId']);
+        }
+        if (isset($data['containerCenterId'])) {
+            $this->setContainerCenterId((int) $data['containerCenterId']);
+        }
+        if (isset($data['fTCycle'])) {
+            $this->setFTCycle((int) $data['fTCycle']);
+        }
+        if (isset($data['parentSpecimenIds'])) {
+            $this->setParentSpecimenIds($data['parentSpecimenIds']);
+        }
+        if (isset($data['candidateId'])) {
+            $this->setCandidateId((int) $data['candidateId']);
+        }
+        if (isset($data['candidateAge'])) {
+            $this->setCandidateAge((int) $data['candidateAge']);
+        }
+        if (isset($data['sessionId'])) {
+            $this->setSessionId((int) $data['sessionId']);
+        }
+        if (isset($data['poolId'])) {
+            $this->setPoolId((int) $data['poolId']);
+        }
 
         if (isset($data['collection'])) {
             $collection = (new Collection())->fromArray($data['collection']);
+            assert($collection instanceof Collection);
             $this->setCollection($collection);
         }
 
         if (isset($data['preparation'])) {
             $preparation = (new Preparation())->fromArray($data['preparation']);
+            assert($preparation instanceof Preparation);
             $this->setPreparation($preparation);
         }
         if (isset($data['analysis'])) {
             $analysis = (new Analysis())->fromArray($data['analysis']);
+            assert($analysis instanceof Analysis);
             $this->setAnalysis($analysis);
         }
 
@@ -484,21 +522,21 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
      */
     public function jsonSerialize() : array
     {
-        $array = array(
-                'id'                => $this->id,
-                'containerId'       => $this->containerId,
-                'typeId'            => $this->typeId,
-                'quantity'          => $this->quantity,
-                'unitId'            => $this->unitId,
-                'containerCenterId' => $this->containerCenterId,
-                'fTCycle'           => $this->fTCycle,
-                'parentSpecimenIds' => $this->parentSpecimenIds,
-                'candidateId'       => $this->candidateId,
-                'candidateAge'      => $this->candidateAge,
-                'sessionId'         => $this->sessionId,
-                'poolId'            => $this->poolId,
-                'collection'        => $this->collection->jsonSerialize(),
-               );
+        $array = [
+            'id'                => $this->id,
+            'containerId'       => $this->containerId,
+            'typeId'            => $this->typeId,
+            'quantity'          => $this->quantity,
+            'unitId'            => $this->unitId,
+            'containerCenterId' => $this->containerCenterId,
+            'fTCycle'           => $this->fTCycle,
+            'parentSpecimenIds' => $this->parentSpecimenIds,
+            'candidateId'       => $this->candidateId,
+            'candidateAge'      => $this->candidateAge,
+            'sessionId'         => $this->sessionId,
+            'poolId'            => $this->poolId,
+            'collection'        => $this->collection->jsonSerialize(),
+        ];
         if ($this->preparation) {
             $array['preparation'] = $this->preparation->jsonSerialize();
         }

@@ -56,52 +56,34 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
 
     /**
      * Initiliazes a new instance of the Log Class
+     *
+     * @param array $data The data to initialize the log with
      */
     function __construct(array $data)
     {
-        $this->barcode = $data['barcode'] ?? null;
-        $this->centerId = $data['centerId'] ?? null;
-        $this->status = $data['status'] ?? null;
-        $this->user = $data['user'] ?? null;
+        $this->barcode     = $data['barcode'] ?? null;
+        $this->centerId    = $data['centerId'] ?? null;
+        $this->status      = $data['status'] ?? null;
+        $this->user        = $data['user'] ?? null;
         $this->temperature = $data['temperature'] ?? null;
-        $this->date = $data['date'] ?? null;
-        $this->time = $data['time'] ?? null;
-        $this->comments = $data['comments'] ?? null;
-    }
-
-    /**
-     * Sets the shipment's ID
-     *
-     * @param int $barcode the shipment's ID
-     *
-     * @return void
-     */
-    private function setBarcode(int $barcode) : void
-    {
-        $this->barcode = $barcode;
+        $this->date        = $data['date'] ?? null;
+        $this->time        = $data['time'] ?? null;
+        $this->comments    = $data['comments'] ?? null;
     }
 
     /**
      * Gets the shipment's ID
      *
-     * @return ?int
+     * @return ?string
      */
-    public function getBarcode() : ?int
+    public function getBarcode() : ?string
     {
         return $this->barcode;
     }
 
     /**
-     * @param string $centerId
+     * Get the center for this log
      *
-     * @return void
-     */
-    private function setCenterId(string $centerId) : void
-    {
-        $this->centerId = $centerId;
-    }
-
-    /**
      * @return ?string
      */
     public function getCenterId() : ?string
@@ -110,16 +92,8 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
-     * @param string $status
+     * Get the status of this shipment log
      *
-     * @return void
-     */
-    private function setStatus(string $status) : void
-    {
-        $this->status = $status;
-    }
-
-    /**
      * @return ?string
      */
     public function getStatus() : ?string
@@ -128,16 +102,8 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
-     * @param string $user
+     * Get the user(?)
      *
-     * @return void
-     */
-    private function setUser(string $user) : void
-    {
-        $this->user = $user;
-    }
-
-    /**
      * @return ?string
      */
     public function getUser() : ?string
@@ -146,16 +112,8 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
-     * @param string $temperature
+     * Get the temperature during this shipment log
      *
-     * @return void
-     */
-    private function setTemperature(string $temperature) : void
-    {
-        $this->temperature = $temperature;
-    }
-
-    /**
      * @return ?string
      */
     public function getTemperature() : ?string
@@ -164,17 +122,9 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
-     * @param \DateTime $date
+     * Get the date (without time) for this log
      *
-     * @return void
-     */
-    private function setDate(\DateTime $date) : void
-    {
-        $this->date = $date;
-    }
-
-    /**
-     * @return ?DateTime
+     * @return ?\DateTime
      */
     public function getDate() : ?\DateTime
     {
@@ -182,14 +132,8 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
-     * @param \DateTime $time
-     */
-    private function setTime(\DateTime $time) : void
-    {
-        $this->time = $time;
-    }
-
-    /**
+     * Get the time of this log
+     *
      * @return ?\DateTime
      */
     public function getTime() : ?\DateTime
@@ -198,6 +142,8 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
+     * Get the comments for this log
+     *
      * @return ?string
      */
     public function getComments() : ?string
@@ -205,16 +151,16 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
         return $this->comments;
     }
 
-    /**                                                                         
-     * A wrapper function for the jsonSerialize method of the Log Instance 
-     * Class. This converts the Log Instance into an array.                
-     *                                                                          
-     * @return array Log Array.                                                
-     */                                                                         
-    public function toArray() : array                    
-    {                                                                           
-        return $this->jsonSerialize();                                          
-    }  
+    /**
+     * A wrapper function for the jsonSerialize method of the Log Instance
+     * Class. This converts the Log Instance into an array.
+     *
+     * @return array Log Array.
+     */
+    public function toArray() : array
+    {
+        return $this->jsonSerialize();
+    }
 
     /**
      * Returns an array representing the state of the Log
@@ -223,16 +169,16 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
      */
     public function jsonSerialize() : array
     {
-        return array(
-                'barcode'     => $this->barcode,
-                'centerId'    => $this->centerId,
-                'status'      => $this->status,
-                'user'        => $this->user,
-                'temperature' => $this->temperature,
-                'date'        => $this->date,
-                'time'        => $this->time,
-                'comments'    => $this->comments,
-               );
+        return [
+            'barcode'     => $this->barcode,
+            'centerId'    => $this->centerId,
+            'status'      => $this->status,
+            'user'        => $this->user,
+            'temperature' => $this->temperature,
+            'date'        => $this->date,
+            'time'        => $this->time,
+            'comments'    => $this->comments,
+        ];
     }
 
     /**

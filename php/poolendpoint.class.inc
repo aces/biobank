@@ -28,7 +28,7 @@ use \Psr\Http\Message\ResponseInterface;
  * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
  * @link       http://www.github.com/aces/Loris/
  */
-class PoolEndpoint implements RequestHandlerInterface
+class PoolEndpoint extends \NDB_Page implements RequestHandlerInterface
 {
     /**
      * Returns true if user has access to this endpoint.
@@ -49,11 +49,25 @@ class PoolEndpoint implements RequestHandlerInterface
      */
     protected function allowedMethods() : array
     {
-        return array(
-                'GET',
-                'POST',
-                'OPTIONS',
-               );
+        return [
+            'GET',
+            'POST',
+            'OPTIONS',
+        ];
+    }
+
+    /**
+     * This function can be overridden in a module's page to load the necessary
+     * resources to check the permissions of a user.
+     *
+     * @param User                   $user    The user to load the resources for
+     * @param ServerRequestInterface $request The PSR15 Request being handled
+     *
+     * @return void
+     */
+    public function loadResources(
+        \User $user, ServerRequestInterface $request
+    ) : void {
     }
 
     /**
@@ -83,36 +97,40 @@ class PoolEndpoint implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        $db       = \Database::singleton();
+        $db       = $this->loris->getDatabaseConnection();
         $user     = $request->getAttribute('user');
-        $poolCont = new PoolController($db, $user);
+        $poolCont = new PoolController($this->loris, $user);
 
         try {
             $db->beginTransaction();
-            switch($request->getMethod()) {
+            switch ($request->getMethod()) {
             case 'GET':
                 $pools = $poolCont->getInstances();
-                return new \LORIS\Http\Response\OK($pools);
+                return new \LORIS\Http\Response\JSON\OK($pools);
             case 'POST':
-                $pool = json_decode($request->getBody()->getContents(), true);
+                $pool  = json_decode($request->getBody()->getContents(), true);
                 $pools = $poolCont->createInstance($pool);
-                return new \LORIS\Http\Response\OK([$pools]);
+                return new \LORIS\Http\Response\JSON\OK([$pools]);
             case 'OPTIONS':
                 return (new \LORIS\Http\Response())
                     ->withHeader('Allow', $this->allowedMethods());
             }
-        } catch (\BadRequest $e) {
+        } catch (BadRequest $e) {
             $db->rollBack();
-            return new \LORIS\Http\Response\BadRequest($e->getMessage());
-        } catch (\Forbidden $e) {
+            return new \LORIS\Http\Response\JSON\BadRequest($e->getMessage());
+        } catch (Forbidden $e) {
             $db->rollBack();
-            return new \LORIS\Http\Response\Forbidden($e->getMessage());
+            return new \LORIS\Http\Response\JSON\Forbidden($e->getMessage());
         } catch (\TypeError $e) {
             $db->rollback();
-            return new \LORIS\Http\Response\InternalServerError($e->getMessage());
+            return new \LORIS\Http\Response\JSON\InternalServerError(
+                $e->getMessage()
+            );
         } catch (\DatabaseException $e) {
             $db->rollBack();
-            return new \LORIS\Http\Response\InternalServerError($e->getMessage());
+            return new \LORIS\Http\Response\JSON\InternalServerError(
+                $e->getMessage()
+            );
         } finally {
             if ($db->inTransaction()) {
                 $db->commit();

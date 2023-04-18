@@ -41,7 +41,7 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
     /**
      * Initializes a new instance of the ShipmentDAO Class
      *
-     * @param Database $db Instance of the LORIS Database class
+     * @param \Database $db Instance of the LORIS Database class
      */
     function __construct(\Database $db)
     {
@@ -52,9 +52,11 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
      * This method is used when the DAO class needs to create a new Shipment
      * instance.
      *
+     * @param array $shipmentArray Data to initialize the shipment with
+     *
      * @return Shipment
      */
-    private function getInstance($shipmentArray) : Shipment
+    private function _getInstance($shipmentArray) : Shipment
     {
         return new Shipment($shipmentArray);
     }
@@ -70,7 +72,11 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
      */
     public function getInstanceFromBarcode(string $barcode) : Shipment
     {
-        return $this->selectInstances([['column'=>'s.Barcode', 'value'=>$barcode]])[$barcode];
+        return $this->selectInstances(
+            [
+                ['column'=>'s.Barcode', 'value'=>$barcode],
+            ],
+        )[$barcode];
     }
 
     /**
@@ -78,12 +84,15 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
      * attribute values passed by $conditions and will return an array
      * of shipment objects.
      *
-     * @param array $conditions Conditions to be met by the query
+     * @param ?array $conditions Conditions to be met by the query
+     * @param string $operator   The operator to use to link the conditions
      *
      * @return array $shipments List of Shipment Objects that match the query
      */
-    public function selectInstances(?array $conditions = [], $operator = 'AND') : array
-    {
+    public function selectInstances(
+        ?array $conditions = [],
+        $operator = 'AND'
+    ) : array {
         $query = "SELECT s.ShipmentID as id,
                          s.Barcode as barcode,
                          st.Label as type,
@@ -100,30 +109,39 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
                     ON (bcsr.ContainerID=bc.ContainerID)";
         if (!empty($conditions)) {
             $whereClause = [];
-            foreach($conditions as $condition) {
-                $whereClause[] = $condition['column'].'='.'"'.$condition['value'].'"';
+            foreach ($conditions as $condition) {
+                $whereClause[] = $condition['column']
+                    . '='
+                    . '"'
+                    . $condition['value']
+                    . '"';
             }
             $query .= ' WHERE '.implode(" $operator ", $whereClause);
         }
         $query .= " GROUP BY s.ShipmentID";
 
-        $shipments = [];
+        $shipments    = [];
         $shipmentRows = $this->db->pselectWithIndexKey($query, [], 'barcode');
-        $logs = $this->getLogs();
+        $logs         = $this->getLogs();
         foreach ($shipmentRows as $barcode => $shipmentRow) {
             $shipmentRow['containerIds'] = $shipmentRow['containerIds'] ?
               explode(',', $shipmentRow['containerIds']) : [];
-            $shipmentRow['logs'] = $logs[$barcode];
-            $shipment = new Shipment($shipmentRow);
+            $shipmentRow['logs']         = $logs[$barcode];
+            $shipment            = new Shipment($shipmentRow);
             $shipments[$barcode] = $shipment;
         }
 
         return $shipments;
     }
 
+    /**
+     * Get a list of all shipment logs
+     *
+     * @return array
+     */
     public function getLogs() : array
     {
-        $query = "SELECT s.Barcode as barcode,
+        $query   = "SELECT s.Barcode as barcode,
                          sl.CenterID as centerId,
                          u.Real_name as user,
                          ss.Label as status,
@@ -154,19 +172,29 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
      * Instantiates an ArrayIterator class that is composed of all the Shipment
      * Objects.
      *
-     * @return traversable Iterator of Shipment Objects
+     * @return \Traversable Iterator of Shipment Objects
      */
     protected function getAllInstances() : \Traversable
     {
         return new \ArrayIterator($this->selectInstances());
     }
 
+    /**
+     * Get a list of all existing shipment statuses.
+     *
+     * @return string[]
+     */
     public function getStatuses() : array
     {
         $query = "SELECT Label as label, Label FROM shipment_status";
         return $this->db->pselectColWithIndexKey($query, [], 'label');
     }
 
+    /**
+     * Get a list of all existing shipment types.
+     *
+     * @return string[]
+     */
     public function getTypes() : array
     {
         $query = "SELECT Label as label, Label FROM shipment_type";
@@ -187,7 +215,7 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
     {
         //TODO: This should probably have a try catch block of sorts.
         // Converts Shipment Object into SQL format and inserts into database.
-        $shipmentSQL = $this->getSQLFromInstance($shipment);
+        $shipmentSQL = $this->_getSQLFromInstance($shipment);
         $this->db->insertOnDuplicateUpdate(
             'shipment',
             $shipmentSQL
@@ -195,8 +223,8 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
 
         $shipmentId = $shipment->id ?? $this->db->getLastInsertID();
 
-        foreach($shipment->logs as $log) {
-            $logSQL = $this->getLogSQLFromInstance($log, $shipmentId);
+        foreach ($shipment->logs as $log) {
+            $logSQL = $this->_getLogSQLFromInstance($log, $shipmentId);
             $this->db->insertOnDuplicateUpdate(
                 'shipment_log',
                 $logSQL
@@ -213,45 +241,60 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
         $updatedContainers = [];
         // TODO: Change to if "First".
         if (!$shipment->getId()) {
-            foreach($shipment->containerIds as $containerId) {
+            foreach ($shipment->containerIds as $containerId) {
                 $container = $containerDAO->getInstanceFromId((int) $containerId);
                 $container->setParentContainerId(null);
-                $updatedContainers = array_merge($updatedContainers, $containerDAO->updateInstance($container));
+                $updatedContainers = array_merge(
+                    $updatedContainers,
+                    $containerDAO->updateInstance($container)
+                );
             }
         }
         // TODO: This will later need to be replaced by a more robust system
         // that relies on the log type, such as active, locked, final, etc.
 
-        $containerIds = $this->getAllContainerIds($shipment);
-        foreach($containerIds as $containerId) {
+        $containerIds = $this->_getAllContainerIds($shipment);
+        foreach ($containerIds as $containerId) {
             // TODO: Change to if "Final"
             if ($shipment->getId()) {
-              // places all containers at destination center
-              $container = $containerDAO->getInstanceFromId((int) $containerId);
-              $container->setCenterId((int) $shipment->destinationCenterId);
-              $updatedContainers = array_merge($updatedContainers, $containerDAO->updateInstance($container));
+                // places all containers at destination center
+                $container = $containerDAO->getInstanceFromId((int) $containerId);
+                $container->setCenterId((int) $shipment->destinationCenterId);
+                $updatedContainers = array_merge(
+                    $updatedContainers,
+                    $containerDAO->updateInstance($container)
+                );
             }
             // TODO: Change to if "First"
             if (!$shipment->getId()) {
-              $this->db->insertOnDuplicateUpdate(
-                  'biobank_container_shipment_rel',
-                  ['ShipmentID' => $shipmentId, 'ContainerID' => $containerId]
-              );
-              $updatedContainers[] = $containerDAO->getInstanceFromId((int) $containerId);
+                $this->db->insertOnDuplicateUpdate(
+                    'biobank_container_shipment_rel',
+                    ['ShipmentID' => $shipmentId, 'ContainerID' => $containerId]
+                );
+                $updatedContainers[] = $containerDAO->getInstanceFromId(
+                    (int) $containerId
+                );
             }
         }
 
         return [
-          'shipments'  => [$this->getInstanceFromBarcode($shipment->barcode)],
-          'containers' => $updatedContainers,
+            'shipments'  => [$this->getInstanceFromBarcode($shipment->barcode)],
+            'containers' => $updatedContainers,
         ];
     }
 
-    private function getAllContainerIds(Shipment $shipment) : array
+    /**
+     * Get a list of all containers contained in a a shipment.
+     *
+     * @param Shipment $shipment The shipment
+     *
+     * @return array
+     */
+    private function _getAllContainerIds(Shipment $shipment) : array
     {
-        $containerDAO = new ContainerDAO($this->db);
+        $containerDAO      = new ContainerDAO($this->db);
         $childContainerIds = [];
-        foreach($shipment->containerIds as $containerId) {
+        foreach ($shipment->containerIds as $containerId) {
             $container = $containerDAO->getInstanceFromId((int) $containerId);
             $containerDAO->updateInstance($container)[0];
 
@@ -267,13 +310,6 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
         return array_unique($allContainerIds);
     }
 
-    private function removeContainersFromParents($shipment) : void
-    {
-      foreach($shipment->getContainerIds() as $containerId) {
-
-      }
-    }
-
     /**
      * This function takes a Shipment Instance and prepares the data to be
      * inserted into the database by converting it to a data array. This one to
@@ -284,39 +320,50 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
      *
      * @return array $data Array containing the data to be inserted
      */
-    private function getSQLFromInstance(Shipment $shipment) : array
+    private function _getSQLFromInstance(Shipment $shipment) : array
     {
         $typeId = $this->db->pselectOne(
-            'SELECT ShipmentTypeID from shipment_type WHERE Label=:l', ['l' => $shipment->type]
+            'SELECT ShipmentTypeID from shipment_type WHERE Label=:l',
+            ['l' => $shipment->type]
         );
         return [
-                'ShipmentID'          => $shipment->id,
-                'Barcode'             => $shipment->barcode,
-                'ShipmentTypeID'      => $typeId,
-                'DestinationCenterID' => $shipment->destinationCenterId,
-               ];
+            'ShipmentID'          => $shipment->id,
+            'Barcode'             => $shipment->barcode,
+            'ShipmentTypeID'      => $typeId,
+            'DestinationCenterID' => $shipment->destinationCenterId,
+        ];
     }
 
-    private function getLogSQLFromInstance(Log $log, string $shipmentId) : array
+    /**
+     * Get the shipment logs from the SQL database for an instance
+     *
+     * @param Log    $log        The shipment log to retrieve
+     * @param string $shipmentId The shipment id with the log
+     *
+     * @return array
+     */
+    private function _getLogSQLFromInstance(Log $log, string $shipmentId) : array
     {
         // TODO: These queries feel clumsy. There is likely a better way to get
         // the ID.
         $statusId = $this->db->pselectOne(
-            'SELECT StatusID from shipment_status WHERE Label=:l', ['l' => $log->status]
+            'SELECT StatusID from shipment_status WHERE Label=:l',
+            ['l' => $log->status]
         );
-        $userId = $this->db->pselectOne(
-            'SELECT ID FROM users WHERE Real_name=:u', ['u' => $log->user]
+        $userId   = $this->db->pselectOne(
+            'SELECT ID FROM users WHERE Real_name=:u',
+            ['u' => $log->user]
         );
 
         return [
-                'ShipmentID'  => $shipmentId,
-                'CenterID'    => $log->centerId,
-                'StatusID'    => $statusId,
-                'UserID'      => $userId,
-                'Temperature' => $log->temperature,
-                'Date'        => (new \DateTime($log->date))->format('Y-m-d H:i'),
-                'Time'        => (new \DateTime($log->time))->format('Y-m-d H:i'),
-                'Comments'    => $log->comments,
-               ];
+            'ShipmentID'  => $shipmentId,
+            'CenterID'    => $log->centerId,
+            'StatusID'    => $statusId,
+            'UserID'      => $userId,
+            'Temperature' => $log->temperature,
+            'Date'        => (new \DateTime($log->date))->format('Y-m-d H:i'),
+            'Time'        => (new \DateTime($log->time))->format('Y-m-d H:i'),
+            'Comments'    => $log->comments,
+        ];
     }
 }

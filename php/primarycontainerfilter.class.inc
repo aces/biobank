@@ -36,30 +36,42 @@ class PrimaryContainerFilter implements \LORIS\Data\Filter
      */
     private $primary;
 
+    private $loris;
+
     /**
      * Class constructor.
      *
-     * @param int $primary A value of '0' or '1' which indicates if the
-     *                     container is primary.
+     * @param \LORIS\LorisInstance $loris   The LORIS instance
+     * @param int                  $primary A value of '0' or '1' which
+     *                                      indicates if the container is
+     *                                      primary.
      */
-    function __construct(int $primary)
+    function __construct(\LORIS\LorisInstance $loris, int $primary)
     {
+        $this->loris   = $loris;
         $this->primary = $primary;
     }
 
     /**
      * Implements the \LORIS\Data\Filter interface
      *
-     * @param User      $user      The user that the data is being filtered for.
-     * @param Container $container The container being filtered.
+     * @param \User                    $user      The user that the data is
+     *                                            being filtered for.
+     * @param \Loris\Data\DataInstance $container The container being filtered.
      *
      * @return bool true if the container is of type primary.
      */
     public function filter(\User $user, \Loris\Data\DataInstance $container) : bool
     {
-        $db           = \Database::singleton();
-        $containerDAO = new ContainerDAO($db);
-        $containerTypes = $containerDAO->getContainerTypes();
-        return $containerTypes[$container->getTypeId()]['primary'] === $this->primary;
+        $containerDAO   = new ContainerDAO($this->loris->getDatabaseConnection());
+        $containerTypes = $containerDAO->getTypes();
+
+        assert($container instanceof Container);
+        $typeId = $container->getTypeId();
+        if ($typeId === null) {
+            return false;
+        }
+        $types = $containerTypes[$typeId];
+        return $types['primary'] === $this->primary;
     }
 }

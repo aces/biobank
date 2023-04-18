@@ -32,25 +32,28 @@ class SpecimenController
     /**
      * Private instances of the Database, User and ContainerDAO classes
      *
+     * @var \LORIS\LorisInstance $loris
      * @var \Database   $db
      * @var \User       $user
      * @var SpecimenDAO $dao
      */
+    private $loris;
     private $db;
     private $user;
-    private $dao;
+    private SpecimenDAO $dao;
 
     /**
      * Specimen Controller Class constructor
      *
-     * @param Database $db   Database Instance.
-     * @param User     $user User Instance.
+     * @param \LORIS\LorisInstance $loris Loris instance
+     * @param \User                $user  User Instance.
      */
-    function __construct(\Database $db, \User $user)
+    function __construct(\LORIS\LorisInstance $loris, \User $user)
     {
-        $this->db   = $db;
-        $this->user = $user;
-        $this->dao  = $this->getDataProvisioner();
+        $this->loris = $loris;
+        $this->db    = $loris->getDatabaseConnection();
+        $this->user  = $user;
+        $this->dao   = $this->_getDataProvisioner();
     }
 
     /**
@@ -60,8 +63,8 @@ class SpecimenController
      */
     public function getInstances() : array
     {
-        $this->validatePermission('view');
-        $specimens  = array();
+        $this->_validatePermission('view');
+        $specimens  = [];
         $specimenIt = $this->dao->execute($this->user);
         foreach ($specimenIt as $id => $specimen) {
             $specimens[$id] = $specimen;
@@ -83,22 +86,24 @@ class SpecimenController
      */
     public function createInstances(array $list) : array
     {
-        $this->validatePermission('create');
+        $this->_validatePermission('create');
 
-        $containerList = array();
-        $specimenList  = array();
-        foreach ($list as $i => $specimen) {
+        $containerList = [];
+        $specimenList  = [];
+        foreach (array_values($list) as $specimen) {
             $containerList[] = $specimen['container'];
-            $specimenList[]  = $this->prepare($specimen);
+            $specimenList[]  = $this->_prepare($specimen);
         }
 
-        $contController = new ContainerController($this->db, $this->user);
+        $contController = new ContainerController($this->loris, $this->user);
         $containers     = $contController->createInstances($containerList);
         if ($containers[0]->getParentContainerId()) {
-            $containers[] = $contController->dao->getInstanceFromId($containers[0]->getParentContainerId());
+            $containers[] = $contController->dao->getInstanceFromId(
+                $containers[0]->getParentContainerId()
+            );
         }
 
-        $specimens = array();
+        $specimens = [];
         foreach ($specimenList as $i => $specimen) {
             $specimen->setContainerId($containers[$i]->getId());
             $specimens[] = $this->dao->saveInstance($specimen);
@@ -115,12 +120,12 @@ class SpecimenController
      *
      * @param array $specimenArray specimen array to be created
      *
-     * @return \Specimen updated Specimen
+     * @return Specimen updated Specimen
      */
     public function updateInstance(array $specimenArray) : Specimen
     {
-        $this->validatePermission('update');
-        $specimen = $this->prepare($specimenArray);
+        $this->_validatePermission('update');
+        $specimen = $this->_prepare($specimenArray);
         return $this->dao->saveInstance($specimen);
     }
 
@@ -131,10 +136,10 @@ class SpecimenController
      *
      * @return Specimen $specimen to be submitted
      */
-    private function prepare(array $specimenArray) : Specimen
+    private function _prepare(array $specimenArray) : Specimen
     {
-        $specimen = (new Specimen)->fromArray($specimenArray);
-        $this->validateInstance($specimen);
+        $specimen = (new Specimen($this->loris))->fromArray($specimenArray);
+        $this->_validateInstance($specimen);
 
         return $specimen;
     }
@@ -147,30 +152,30 @@ class SpecimenController
      */
     public function getOptions() : array
     {
-        $this->validatePermission('view');
-        return array(
-                'types'              => $this->dao->getTypes(),
-                'typeUnits'          => $this->dao->getTypeUnits(),
-                'typeContainerTypes' => $this->dao->getTypeContainerTypes(),
-                'protocols'          => $this->dao->getProtocols(),
-                'processes'          => $this->dao->getProcesses(),
-                'protocolAttributes' => $this->dao->getProtocolAttributes(),
-                'processAttributes'  => $this->dao->getProcessAttributes(),
-                'units'              => $this->dao->getUnits(),
-                'attributes'         => $this->dao->getAttributes(),
-                'attributeDatatypes' => $this->dao->getAttributeDatatypes(),
-               );
+        $this->_validatePermission('view');
+        return [
+            'types'              => $this->dao->getTypes(),
+            'typeUnits'          => $this->dao->getTypeUnits(),
+            'typeContainerTypes' => $this->dao->getTypeContainerTypes(),
+            'protocols'          => $this->dao->getProtocols(),
+            'processes'          => $this->dao->getProcesses(),
+            'protocolAttributes' => $this->dao->getProtocolAttributes(),
+            'processAttributes'  => $this->dao->getProcessAttributes(),
+            'units'              => $this->dao->getUnits(),
+            'attributes'         => $this->dao->getAttributes(),
+            'attributeDatatypes' => $this->dao->getAttributeDatatypes(),
+        ];
     }
 
     /**
      * Treats the Specimen DAO as a Provisioner that can be iteratated
      * through to provide the permissable Specimen Objects for the current User.
      *
-     * @return \LORIS\Data\Provisioner
+     * @return SpecimenDAO
      */
-    private function getDataProvisioner() : \LORIS\Data\Provisioner
+    private function _getDataProvisioner() : SpecimenDAO
     {
-        $dao = new SpecimenDAO($this->db);
+        $dao = new SpecimenDAO($this->loris);
 
         if ($this->user->hasPermission('access_all_profiles') === false) {
             $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
@@ -185,22 +190,22 @@ class SpecimenController
      *
      * @return void
      */
-    private function validatePermission(string $method) : void
+    private function _validatePermission(string $method) : void
     {
-        switch($method) {
+        switch ($method) {
         case 'view':
             if (!$this->user->hasPermission('biobank_specimen_view')) {
-                throw new \Forbidden('Specimen: View Permission Denied');
+                throw new Forbidden('Specimen: View Permission Denied');
             }
             break;
         case 'update':
             if (!$this->user->hasPermission('biobank_specimen_update')) {
-                throw new \Forbidden('Specimen: Update Permission Denied');
+                throw new Forbidden('Specimen: Update Permission Denied');
             }
             break;
         case 'create':
             if (!$this->user->hasPermission('biobank_specimen_create')) {
-                throw new \Forbidden('Specimen: Create Permission Denied');
+                throw new Forbidden('Specimen: Create Permission Denied');
             }
             break;
         }
@@ -213,18 +218,18 @@ class SpecimenController
      *
      * @return void
      */
-    private function validateInstance(Specimen $specimen) : void
+    private function _validateInstance(Specimen $specimen) : void
     {
-        $this->validateTypeId($specimen);
-        $this->validateQuantity($specimen);
-        $this->validateUnitId($specimen);
-        $this->validateFTCycle($specimen);
-        $this->validateParentSpecimenIds($specimen);
-        $this->validateCandidateId($specimen);
-        $this->validateSessionId($specimen);
-        $this->validateCollection($specimen);
-        $this->validatePreparation($specimen);
-        $this->validateAnalysis($specimen);
+        $this->_validateTypeId($specimen);
+        $this->_validateQuantity($specimen);
+        $this->_validateUnitId($specimen);
+        $this->_validateFTCycle($specimen);
+        $this->_validateParentSpecimenIds($specimen);
+        $this->_validateCandidateId($specimen);
+        $this->_validateSessionId($specimen);
+        $this->_validateCollection($specimen);
+        $this->_validatePreparation($specimen);
+        $this->_validateAnalysis($specimen);
     }
 
     /**
@@ -232,14 +237,15 @@ class SpecimenController
      *
      * @param Specimen $specimen Specimen to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateTypeId(Specimen $specimen) : void
+    private function _validateTypeId(Specimen $specimen) : void
     {
         if (is_null($specimen->getTypeId())) {
-            throw new \BadRequest("Specimen Type value must be set");
+            throw new BadRequest("Specimen Type value must be set");
         }
     }
 
@@ -248,22 +254,23 @@ class SpecimenController
      *
      * @param Specimen|Process $object Object to be validated.
      *
-     * @throws BadRequest if the provided object does not meet validation requirements.
+     * @throws BadRequest if the provided object does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateQuantity(object $object) : void
+    private function _validateQuantity(object $object) : void
     {
         $quantity = $object->getQuantity();
         if (is_null($quantity)) {
-            throw new \BadRequest('Specimen Quantity value must be set');
+            throw new BadRequest('Specimen Quantity value must be set');
         }
         if (!(is_numeric($quantity) && is_float(floatval($quantity)))) {
-            throw new \BadRequest('Specimen Quantity value must be a number');
+            throw new BadRequest('Specimen Quantity value must be a number');
         }
         //TODO: This is where a capacity check would go, i.e. $quantity > $capacity.
         if ($quantity < 0) {
-            throw new \BadRequest('Specimen Quantity cannot be less than 0');
+            throw new BadRequest('Specimen Quantity cannot be less than 0');
         }
     }
 
@@ -272,14 +279,15 @@ class SpecimenController
      *
      * @param Specimen|Process $object Object to be validated.
      *
-     * @throws BadRequest if the provided object does not meet validation requirements.
+     * @throws BadRequest if the provided object does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateUnitId(object $object) : void
+    private function _validateUnitId(object $object) : void
     {
         if (is_null($object->getUnitId())) {
-            throw new \BadRequest("Specimen Unit value must be set");
+            throw new BadRequest("Specimen Unit value must be set");
         }
     }
 
@@ -288,21 +296,23 @@ class SpecimenController
      *
      * @param Specimen $specimen Specimen to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateFTCycle(Specimen $specimen) : void
+    private function _validateFTCycle(Specimen $specimen) : void
     {
         $fTCycle = $specimen->getFTCycle();
         if (isset($fTCycle)) {
-            if (strval($fTCycle) !== strval(intval($fTCycle)) ||
-                intval($fTCycle) < 0) {
-                throw new \BadRequest("F/T Cycle must be 0 or more");
+            if (strval($fTCycle) !== strval(intval($fTCycle))
+                || intval($fTCycle) < 0
+            ) {
+                throw new BadRequest("F/T Cycle must be 0 or more");
             }
 
             if ($fTCycle > 100) {
-              throw \BadRequest("F/T Cycle value is too large");
+                throw new BadRequest("F/T Cycle value is too large");
             }
         }
     }
@@ -312,48 +322,69 @@ class SpecimenController
      *
      * @param Specimen $specimen Specimen to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+                          requirements.
      *
      * @return void
      */
-    private function validateParentSpecimenIds(Specimen $specimen) : void
+    private function _validateParentSpecimenIds(Specimen $specimen) : void
     {
         $parentSpecimenIds = $specimen->getParentSpecimenIds();
         if ($parentSpecimenIds) {
-            $baseParentSpecimen = $this->dao->getInstanceFromId((int) $parentSpecimenIds[0]);
+            $baseParentSpecimen = $this->dao->getInstanceFromId(
+                (int) $parentSpecimenIds[0]
+            );
         }
         $specimenTypes = $this->dao->getTypes();
 
         if (empty($parentSpecimeIds)) {
             return;
         }
+        if (empty($baseParentSpecimen)) {
+            return;
+        }
         foreach ($parentSpecimenIds as $parentSpecimenId) {
             $parentSpecimen = $this->dao->getInstanceFromId((int) $parentSpecimenId);
 
-            if ($baseParentSpecimen->getCandidateId() != $parentSpecimen->getCandidateId()) {
-                throw new \BadRequest('Parent Specimens must be from the same Candidate');
+            $pSpecimenCandId = $parentSpecimen->getCandidateId();
+
+            if ($baseParentSpecimen->getCandidateId() != $pSpecimenCandId) {
+                throw new BadRequest(
+                    'Parent Specimens must be from the same Candidate'
+                );
             }
 
-            if ($baseParentSpecimen->getSessionId() != $parentSpecimen->getSessionId()) {
-                throw new \BadRequest('Parent Specimens must be from the same Session');
+            if ($baseParentSpecimen->getSessionId()!= $parentSpecimen->getSessionId()
+            ) {
+                throw new BadRequest(
+                    'Parent Specimens must be from the same Session'
+                );
             }
 
             if ($baseParentSpecimen->getTypeId() != $parentSpecimen->getTypeId()) {
-                throw new \BadRequest('Parent Specimens must be of the same Type');
+                throw new BadRequest('Parent Specimens must be of the same Type');
             }
 
             if ($parentSpecimen->getTypeId() != $specimen->getTypeId()) {
                 if (empty($specimenTypes[$specimen->getTypeId()]['parentTypeIds'])) {
+                    $parentTypeId = $parentSpecimen->getTypeId();
+
                     $childType  = $specimenTypes[$specimen->getTypeId()]['label'];
-                    $parentType = $specimenTypes[$parentSpecimen->getTypeId()]['label'];
-                    throw new \BadRequest("A specimen of type '$childType' cannot be derived
-                                           from a parent of type '$parentType'");
+                    $parentType = $specimenTypes[$parentTypeId]['label'];
+                    throw new BadRequest(
+                        "A specimen of type '$childType' cannot be derived
+                                           from a parent of type '$parentType'"
+                    );
                 }
-                if (!in_array($parentSpecimen->getTypeId(),
-                             $specimenTypes[$specimen->getTypeId()]['parentTypeIds'])
+                if (!in_array(
+                    $parentSpecimen->getTypeId(),
+                    $specimenTypes[$specimen->getTypeId()]['parentTypeIds']
+                )
                 ) {
-                    throw new \BadRequest('Parent Specimens must be of a type that
-                                           is a parent to the current Specimen type');
+                    throw new BadRequest(
+                        'Parent Specimens must be of a type that
+                                           is a parent to the current Specimen type'
+                    );
                 }
             }
         }
@@ -364,14 +395,15 @@ class SpecimenController
      *
      * @param Specimen $specimen Specimen to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateCandidateId(Specimen $specimen) : void
+    private function _validateCandidateId(Specimen $specimen) : void
     {
         if (is_null($specimen->getCandidateId())) {
-            throw new \BadRequest("PSCID value must be set");
+            throw new BadRequest("PSCID value must be set");
         }
     }
 
@@ -380,14 +412,15 @@ class SpecimenController
      *
      * @param Specimen $specimen Specimen to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateSessionId(Specimen $specimen) : void
+    private function _validateSessionId(Specimen $specimen) : void
     {
         if (is_null($specimen->getSessionId())) {
-            throw new \BadRequest("Visit Label value must be set");
+            throw new BadRequest("Visit Label value must be set");
         }
     }
 
@@ -396,21 +429,22 @@ class SpecimenController
      *
      * @param Specimen $specimen Specimen to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateCollection(Specimen $specimen) : void
+    private function _validateCollection(Specimen $specimen) : void
     {
         $collection = $specimen->getCollection();
-        $this->validateProtocolId($collection);
-        $this->validateExaminerId($collection);
-        $this->validateQuantity($collection);
-        $this->validateUnitId($collection);
-        $this->validateCenterId($collection);
-        $this->validateDate($collection);
-        $this->validateTime($collection);
-        $this->validateData($collection);
+        $this->_validateProtocolId($collection);
+        $this->_validateExaminerId($collection);
+        $this->_validateQuantity($collection);
+        $this->_validateUnitId($collection);
+        $this->_validateCenterId($collection);
+        // $this->_validateDate($collection);
+        // $this->_validateTime($collection);
+        $this->_validateData($collection);
     }
 
     /**
@@ -418,20 +452,21 @@ class SpecimenController
      *
      * @param Specimen $specimen Specimen to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validatePreparation(Specimen $specimen) : void
+    private function _validatePreparation(Specimen $specimen) : void
     {
         $preparation = $specimen->getPreparation();
         if (isset($preparation)) {
-            $this->validateProtocolId($preparation);
-            $this->validateExaminerId($preparation);
-            $this->validateCenterId($preparation);
-            $this->validateDate($preparation);
-            $this->validateTime($preparation);
-            $this->validateData($preparation);
+            $this->_validateProtocolId($preparation);
+            $this->_validateExaminerId($preparation);
+            $this->_validateCenterId($preparation);
+            // $this->_validateDate($preparation);
+            // $this->_validateTime($preparation);
+            $this->_validateData($preparation);
         }
     }
 
@@ -440,21 +475,22 @@ class SpecimenController
      *
      * @param Specimen $specimen Specimen to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateAnalysis(Specimen $specimen) : void
+    private function _validateAnalysis(Specimen $specimen) : void
     {
         // Validate Analysis
         $analysis = $specimen->getAnalysis();
         if (isset($analysis)) {
-            $this->validateProtocolId($analysis);
-            $this->validateExaminerId($analysis);
-            $this->validateCenterId($analysis);
-            $this->validateDate($analysis);
-            $this->validateTime($analysis);
-            $this->validateData($analysis);
+            $this->_validateProtocolId($analysis);
+            $this->_validateExaminerId($analysis);
+            $this->_validateCenterId($analysis);
+            // $this->_validateDate($analysis);
+            // $this->_validateTime($analysis);
+            $this->_validateData($analysis);
         }
     }
 
@@ -463,14 +499,15 @@ class SpecimenController
      *
      * @param Process $process Process to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateProtocolId(Process $process) : void
+    private function _validateProtocolId(Process $process) : void
     {
         if (is_null($process->getProtocolId())) {
-            throw new \BadRequest('Specimen Processing Protocol must be set');
+            throw new BadRequest('Specimen Processing Protocol must be set');
         }
     }
 
@@ -479,14 +516,15 @@ class SpecimenController
      *
      * @param Process $process Process to be validated.
      *
-     * @throws BadRequest if the provided Specimen does not meet validation requirements.
+     * @throws BadRequest if the provided Specimen does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateExaminerId(Process $process) : void
+    private function _validateExaminerId(Process $process) : void
     {
         if (is_null($process->getProtocolId())) {
-            throw new \BadRequest('Specimen Processing Examiner must be set');
+            throw new BadRequest('Specimen Processing Examiner must be set');
         }
         // TODO: Potentially check that examinerId is within the set of possible
         // values. I.e. an ID of the examiner table.
@@ -497,58 +535,16 @@ class SpecimenController
      *
      * @param Process $process Process to be validated.
      *
-     * @throws BadRequest if the provided Process does not meet validation requirements.
+     * @throws BadRequest if the provided Process does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateCenterId(Process $process) : void
+    private function _validateCenterId(Process $process) : void
     {
         if (is_null($process->getCenterId())) {
-            throw new \BadRequest('Specimen Processing Center must be set');
+            throw new BadRequest('Specimen Processing Center must be set');
         }
-    }
-
-    // XXX: Now that the DateTime object is used to store date and time,
-    // I don't know if these checks are as important because the DateTime
-    // doesn't have a native format. As long as it can be converted to 
-    // datetime properly, then there isn't really need for validation here.
-    // TODO: 
-    /**
-     * Validates Specimen Process Date.
-     *
-     * @param Process $process Process to be validated.
-     *
-     * @throws BadRequest if the provided Process does not meet validation requirements.
-     *
-     * @return void
-     */
-    private function validateDate(Process $process) : void
-    {
-        // TODO: query date format from backend configuration.
-        //  $format = 'd-m-Y';
-        //  $date   = \DateTime::createFromFormat($format, $pool->getDate());
-        //  if ($date && $date->format($format) !== $pool->getDate()) {
-        //      throw new \BadRequest("Processing date must be of the format: $format");
-        //  }
-    }
-
-    /**
-     * Validates Specimen Process Time.
-     *
-     * @param Process $process Process to be validated.
-     *
-     * @throws BadRequest if the provided Process does not meet validation requirements.
-     *
-     * @return void
-     */
-    private function validateTime(Process $process) : void
-    {
-        // TODO: query time format from backend configuration.
-        // $format = 'H:i';
-        // $time   = \DateTime::createFromFormat($format, $pool->getTime());
-        // if ($time && $time->format($format) !== $pool->getTime()) {
-        //     throw new \BadRequest("Processing time must be of the format: $format");
-        // }
     }
 
     /**
@@ -556,66 +552,75 @@ class SpecimenController
      *
      * @param Process $process Process to be validated.
      *
-     * @throws BadRequest if the provided Process does not meet validation requirements.
+     * @throws BadRequest if the provided Process does not meet validation
+     *                    requirements.
      *
      * @return void
      */
-    private function validateData(Process $process) : void
+    private function _validateData(Process $process) : void
     {
         $protocolAttributes = $this->dao->getProtocolAttributes();
         $attributeDatatypes = $this->dao->getAttributeDatatypes();
-        $protocolId = $process->getProtocolId();
-        $attributes = $protocolAttributes[$protocolId] ?? [];
+        $protocolId         = $process->getProtocolId();
+        $attributes         = $protocolAttributes[$protocolId] ?? [];
         $data = $process->getData() ?? [];
 
         foreach ($attributes as $id => $attribute) {
             if ($attribute['required'] == true && !isset($data[$id])) {
-                throw new \BadRequest(
-                    "The attribute ".$attribute['label']." is required. Protocol ".$protocolId
+                throw new BadRequest(
+                    "The attribute "
+                    . $attribute['label']
+                    . " is required. Protocol "
+                    . $protocolId
                 );
             }
         }
 
         foreach ($data as $attributeId => $value) {
             $attribute = $attributes[$attributeId];
-             
 
             if (!isset($attribute)) {
                 $wrongAttribute = $this->dao->getAttributes()[$attributeId];
-                throw new \BadRequest(
-                    "The attribute '".$wrongAttribute['label']."' does not belong to this protocol"
+                throw new BadRequest(
+                    "The attribute '"
+                    . $wrongAttribute['label']
+                    . "' does not belong to this protocol"
                 );
             }
 
             $datatype = $attributeDatatypes[$attribute['datatypeId']]['datatype'];
             if ($datatype === 'boolean' && !is_bool($value)) {
-                throw new \BadRequest(
-                    "The attribute '".$attribute['label']."' must be a boolean"
+                throw new BadRequest(
+                    "The attribute '"
+                    . $attribute['label']
+                    . "' must be a boolean"
                 );
-            } 
+            }
 
             if ($datatype === 'number' && !is_numeric($value)) {
-                throw new \BadRequest(
-                    "The attribute '".$attribute['label']."' must be a number"
+                throw new BadRequest(
+                    "The attribute '"
+                    . $attribute['label']
+                    . "' must be a number"
                 );
-            } 
+            }
 
             // TODO: This validation may not be necessary, but it may be good to
             // leave this if statement here just as a reminder that it exists.
             if ($datatype === 'text') {
-            } 
+            }
 
             // TODO: This can likely be validated through the DateTime Object.
             if ($datatype === 'date') {
-            } 
+            }
 
             // TODO: This can likely be validated through the DateTime Object.
             if ($datatype === 'time') {
-            } 
+            }
 
             // TODO: Set this validate when files start to get uploaded.
             if ($datatype === 'file') {
-            } 
+            }
         }
     }
 }

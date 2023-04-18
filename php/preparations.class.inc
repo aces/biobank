@@ -30,6 +30,7 @@ use \Psr\Http\Message\ResponseInterface;
  */
 class Preparations implements RequestHandlerInterface
 {
+    private \LORIS\LorisInstance $loris;
     /**
      * Returns true if user has access to this endpoint.
      *
@@ -49,28 +50,28 @@ class Preparations implements RequestHandlerInterface
      */
     protected function allowedMethods() : array
     {
-        return array(
-                'DELETE',
-               );
+        return [
+            'DELETE',
+        ];
     }
 
-    /**                                                                            
-     * This function passes the request to the handler. This is necessary since 
-     * the Endpoint bypass the Module class.                                       
-     *                                                                             
-     * XXX: This function should be extracted to a parent class.                   
-     *                                                                             
-     * @param ServerRequestInterface  $request The PSR7 request.                   
-     * @param RequestHandlerInterface $handler The request handler.                
-     *                                                                             
-     * @return ResponseInterface The outgoing PSR7 response.                       
-     */                                                                            
-    public function process(                                                       
-        ServerRequestInterface $request,                                           
-        RequestHandlerInterface $handler                                           
-    ) : ResponseInterface {                                                        
-        return $handler->handle($request);                                         
-    } 
+    /**
+     * This function passes the request to the handler. This is necessary since
+     * the Endpoint bypass the Module class.
+     *
+     * XXX: This function should be extracted to a parent class.
+     *
+     * @param ServerRequestInterface  $request The PSR7 request.
+     * @param RequestHandlerInterface $handler The request handler.
+     *
+     * @return ResponseInterface The outgoing PSR7 response.
+     */
+    public function process(
+        ServerRequestInterface $request,
+        RequestHandlerInterface $handler
+    ) : ResponseInterface {
+        return $handler->handle($request);
+    }
 
     /**
      * Handles endpoint requests.
@@ -81,30 +82,34 @@ class Preparations implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        $db       = \Database::singleton();
-        $user     = $request->getAttribute('user');
+        $this->loris = $request->getAttribute("loris");
+        $db          = $this->loris->getDatabaseConnection();
 
         try {
             $db->beginTransaction();
-            switch($request->getMethod()) {
-                case 'DELETE':
-                    return $this->_handleDELETE($request);
-                case 'OPTIONS':
-                    return (new \LORIS\Http\Response())
-                        ->withHeader('Allow', $this->allowedMethods());
-                }
-        } catch (\BadRequest $e) {
+            switch ($request->getMethod()) {
+            case 'DELETE':
+                return $this->_handleDELETE($request);
+            case 'OPTIONS':
+                return (new \LORIS\Http\Response())
+                    ->withHeader('Allow', $this->allowedMethods());
+            }
+        } catch (BadRequest $e) {
             $db->rollBack();
-            return new \LORIS\Http\Response\BadRequest($e->getMessage());
-        } catch (\Forbidden $e) {
+            return new \LORIS\Http\Response\JSON\BadRequest($e->getMessage());
+        } catch (Forbidden $e) {
             $db->rollBack();
-            return new \LORIS\Http\Response\Forbidden($e->getMessage());
+            return new \LORIS\Http\Response\JSON\Forbidden($e->getMessage());
         } catch (\TypeError $e) {
             $db->rollback();
-            return new \LORIS\Http\Response\InternalServerError($e->getMessage());
+            return new \LORIS\Http\Response\JSON\InternalServerError(
+                $e->getMessage()
+            );
         } catch (\DatabaseException $e) {
             $db->rollBack();
-            return new \LORIS\Http\Response\InternalServerError($e->getMessage());
+            return new \LORIS\Http\Response\JSON\InternalServerError(
+                $e->getMessage()
+            );
         } finally {
             if ($db->inTransaction()) {
                 $db->commit();
@@ -119,15 +124,18 @@ class Preparations implements RequestHandlerInterface
      *
      * @return ResponseInterface The outgoing PSR7 response
      */
-    private function _handleDELETE(ServerRequestInterface $request) : ResponseInterface
-    {
-        $db = \Database::singleton();
-        $endpoint = $request->getURI()->getPath();
+    private function _handleDELETE(
+        ServerRequestInterface $request
+    ) : ResponseInterface {
+        $this->loris = $request->getAttribute("loris");
+
+        $db        = $this->loris->getDatabaseConnection();
+        $endpoint  = $request->getURI()->getPath();
         $pathparts = explode('/', $endpoint);
         $db->delete(
             'biobank_specimen_preparation',
             ['SpecimenID' => $pathparts[2]]
         );
-        return new \LORIS\Http\Response\OK($pathparts);
+        return new \LORIS\Http\Response\JSON\OK($pathparts);
     }
 }
