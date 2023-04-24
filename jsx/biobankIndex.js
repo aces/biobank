@@ -302,7 +302,7 @@ class BiobankIndex extends React.Component {
         const containerParentId = current.container.parentContainerId;
         container.parentContainerId = current.container.parentContainerId;
         const parentContainer = data.containers[containerParentId];
-        const dims = options.containers.dimensions;
+        const dims = options.container.dimensions;
         const dimensions = dims[parentContainer.dimensionId];
         const capacity = dimensions.x * dimensions.y * dimensions.z;
         coord = this.increaseCoordinate(

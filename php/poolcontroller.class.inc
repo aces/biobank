@@ -85,7 +85,7 @@ class PoolController
         $this->_validatePermission('create');
         $pool = (new Pool())->fromArray($poolArray);
         $this->validateInstance($pool);
-        return json_encode($this->dao->saveInstance($pool));
+        return $this->dao->saveInstance($pool);
     }
 
     /**
