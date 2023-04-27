@@ -65,6 +65,9 @@ class SpecimenController
     {
         $this->_validatePermission('view');
         $specimens  = [];
+        if ($this->user->hasPermission('access_all_profiles') === false) {
+            $this->dao = $this->dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
+        }
         $specimenIt = $this->dao->execute($this->user);
         foreach ($specimenIt as $id => $specimen) {
             $specimens[$id] = $specimen;
@@ -177,9 +180,11 @@ class SpecimenController
     {
         $dao = new SpecimenDAO($this->loris);
 
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
+        // XXX: This has been temporarily commented out until CenterIDs have
+        // been properly implemented within specimens.
+        // if ($this->user->hasPermission('access_all_profiles') === false) {
+        //     $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
+        // }
         return $dao;
     }
 

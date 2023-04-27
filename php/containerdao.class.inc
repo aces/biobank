@@ -461,11 +461,11 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             );
             $updatedContainers = array_merge($updatedChildren, $updatedContainers);
         }
-        if ($container->getCenterId() !== $oldContainer->getCenterId()) {
+        if ($container->getCenterId()->__toString() !== $oldContainer->getCenterId()->__toString()) {
             $updatedChildren   = $this->_cascadeToChildren(
                 $container,
                 'CenterID',
-                $container->getCenterId()
+                $container->getCenterId()->__toString()
             );
             $updatedContainers = array_merge($updatedChildren, $updatedContainers);
         }
@@ -635,7 +635,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
              'ContainerTypeID'   => $container->getTypeId(),
              'Temperature'       => $container->getTemperature(),
              'ContainerStatusID' => $container->getStatusId(),
-             'CenterID'          => $container->getCenterId(),
+             'CenterID'          => $container->getCenterId()->__toString(),
              'LotNumber'         => $container->getLotNumber(),
              'ExpirationDate'    => $expirationDate,
              'Comments'          => $container->getComments(),
@@ -710,7 +710,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             $container->setShipmentBarcodes($shipmentBarcodes);
         }
         if (isset($data['CenterID'])) {
-            $container->setCenterId((int) $data['CenterID']);
+            $container->setCenterId(new \CenterID($data['CenterID']));
         }
         if (isset($data['ParentContainerID'])) {
             $container->setParentContainerId((int) $data['ParentContainerID']);

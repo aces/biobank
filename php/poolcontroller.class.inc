@@ -97,9 +97,11 @@ class PoolController
     private function _getDataProvisioner() : \LORIS\Data\Provisioner
     {
         $dao = new PoolDAO($this->loris);
-        if ($this->user->hasPermission('access_all_profiles') == false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
+        // XXX: This has been temporarily commented out until CenterIDs have    
+        // been properly implemented within pools.                          
+        // if ($this->user->hasPermission('access_all_profiles') === false) {   
+        //     $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());    
+        // }           
         return $dao;
     }
 

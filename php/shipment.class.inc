@@ -29,7 +29,9 @@ namespace LORIS\biobank;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
+class Shipment implements
+    \JsonSerializable,
+    \LORIS\Data\DataInstance
 {
     /**
      * Persistent Instance variables.
@@ -193,7 +195,7 @@ class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
      * @return int
      */
     // NOTE: this function was added for reasons relating to permissions. I do
-    // find this an ideal solution, given that the centerId and the
+    // not find this an ideal solution, given that the centerId and the
     // destinationCenterId should not be equated. Rather, this should
     // ideally return a value dependent on the current status of the shipment
     public function getCenterId()

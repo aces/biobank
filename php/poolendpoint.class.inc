@@ -131,6 +131,12 @@ class PoolEndpoint extends \NDB_Page implements RequestHandlerInterface
             return new \LORIS\Http\Response\JSON\InternalServerError(
                 $e->getMessage()
             );
+        } catch (\Exception $e) {                                               
+            $db->rollBack();                                                    
+            // PUT SOMETHING HERE LATER                                         
+            return new \LORIS\Http\Response\JSON\InternalServerError(           
+                $e->getMessage()                                                
+            ); 
         } finally {
             if ($db->inTransaction()) {
                 $db->commit();

@@ -646,7 +646,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
             $specimen->setUnitId((int) $data['UnitID']);
         }
         if (isset($data['ContainerCenterID'])) {
-            $specimen->setContainerCenterId((int) $data['ContainerCenterID']);
+            $specimen->setContainerCenterId(new \CenterID($data['ContainerCenterID']));
         }
         if (isset($data['FreezeThawCycle'])) {
             $specimen->setFTCycle((int) $data['FreezeThawCycle']);

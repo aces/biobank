@@ -95,10 +95,11 @@ class ShipmentHandler
     private function _getDataProvisioner() : \LORIS\Data\Provisioner
     {
         $dao = new ShipmentDAO($this->db);
-
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
+        // XXX: This has been temporarily commented out until CenterIDs have    
+        // been properly implemented within shipments.                          
+        // if ($this->user->hasPermission('access_all_profiles') === false) {   
+        //     $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());    
+        // }           
         return $dao;
     }
 

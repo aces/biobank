@@ -86,14 +86,14 @@ class BiobankIndex extends React.Component {
 
     const specimens = getStream(this.props.specimenAPI, updateProgress);
     const containers = get(this.props.containerAPI);
-    const pools = get(this.props.poolAPI);
+    // const pools = get(this.props.poolAPI);
     const options = await get(this.props.optionsAPI);
     this.setState({options});
 
     const data = this.state.data;
     data.containers = await containers;
     data.specimens = await specimens;
-    data.pools = await pools;
+    // data.pools = await pools;
     this.setState({data});
     updateProgress(100);
   }

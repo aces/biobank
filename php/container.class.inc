@@ -30,7 +30,10 @@ namespace LORIS\biobank;
  * @link     https://www.github.com/aces/Loris/
  */
 
-class Container implements \JsonSerializable, \LORIS\Data\DataInstance
+class Container implements
+    \JsonSerializable,
+    \LORIS\Data\DataInstance,
+    \LORIS\StudyEntities\SiteHaver
 {
     /**
      * Persistent Instance variables.
@@ -45,8 +48,8 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
      * @var float     $temperature
      * @var int       $statusId
      * @var array     $projectIds
-     * @var array     $shipmentBarocdes
-     * @var int       $centerId
+     * @var array     $shipmentBarcodes
+     * @var \CenterID $centerId
      * @var int       $parentContainerId
      * @var array     $childContainerIds
      * @var int       $coordinate
@@ -295,19 +298,17 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
      *
      * @return void
      */
-    public function setCenterId(int $centerId) : void
+    public function setCenterId(\CenterID $centerId) : void
     {
-        if ($centerId > 0) {
-            $this->centerId = $centerId;
-        }
+          $this->centerId = $centerId;
     }
 
     /**
      * Gets the ID of the container's current centerId
      *
-     * @return ?int
+     * @return \CenterID
      */
-    public function getCenterId() : ?int
+    public function getCenterId() : \CenterID
     {
         return $this->centerId;
     }
@@ -483,7 +484,7 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
             $this->setShipmentBarcodes($data['shipmentBarcodes']);
         }
         if (isset($data['centerId'])) {
-            $this->setCenterId((int) $data['centerId']);
+            $this->setCenterId(new \CenterID($data['centerId']));
         }
         if (isset($data['parentContainerId'])) {
             $this->setParentContainerId((int) $data['parentContainerId']);

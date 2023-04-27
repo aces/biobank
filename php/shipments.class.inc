@@ -121,6 +121,12 @@ class Shipments implements RequestHandlerInterface
                 return (new \LORIS\Http\Response())
                     ->withHeader('Allow', $this->allowedMethods());
             }
+        } catch (\Exception $e) {                                               
+            $this->db->rollBack();                                                    
+            // PUT SOMETHING HERE LATER                                         
+            return new \LORIS\Http\Response\JSON\InternalServerError(           
+                $e->getMessage()                                                
+            ); 
         } finally {
             if ($this->db->inTransaction()) {
                 $this->db->commit();
@@ -141,9 +147,11 @@ class Shipments implements RequestHandlerInterface
         // }
         $shipments = [];
         $dao       = new ShipmentDAO($this->db);
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
+        // XXX: This has been temporarily commented out until CenterIDs have    
+        // been properly implemented within shipments.                          
+        // if ($this->user->hasPermission('access_all_profiles') === false) {   
+        //     $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());    
+        // }    
         $shipmentIterator = $dao->execute($this->user);
         foreach ($shipmentIterator as $barcode=>$shipment) {
             $shipments[$barcode] = $shipment;
