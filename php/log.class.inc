@@ -37,7 +37,7 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
      * These properties describe a shipment entity.
      *
      * @var string    $barcode
-     * @var string    $centerId
+     * @var \CenterID $centerId
      * @var string    $status
      * @var string    $user
      * @var string    $temperature
@@ -45,14 +45,14 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
      * @var \DateTime $time
      * @var string    $comments
      */
-    public $barcode;
-    public $centerId;
-    public $status;
-    public $user;
-    public $temperature;
-    public $date;
-    public $time;
-    public $comments;
+    public ?string $barcode;
+    public ?\CenterID $centerId;
+    public ?string $status;
+    public ?string $user;
+    public ?string $temperature;
+    public ?\DateTime $date;
+    public ?\DateTime $time;
+    public ?string $comments;
 
     /**
      * Initiliazes a new instance of the Log Class
@@ -62,12 +62,12 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     function __construct(array $data)
     {
         $this->barcode     = $data['barcode'] ?? null;
-        $this->centerId    = $data['centerId'] ?? null;
+        $this->centerId    = new \CenterID($data['centerId'] ?? null);
         $this->status      = $data['status'] ?? null;
         $this->user        = $data['user'] ?? null;
         $this->temperature = $data['temperature'] ?? null;
-        $this->date        = $data['date'] ?? null;
-        $this->time        = $data['time'] ?? null;
+        $this->date        = new \DateTime($data['date'] ?? null);
+        $this->time        = new \DateTime($data['time'] ?? null);
         $this->comments    = $data['comments'] ?? null;
     }
 
@@ -84,9 +84,9 @@ class Log implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Get the center for this log
      *
-     * @return ?string
+     * @return \CenterID
      */
-    public function getCenterId() : ?string
+    public function getCenterId() : \CenterID
     {
         return $this->centerId;
     }

@@ -219,7 +219,7 @@ function ContainerDisplay(props) {
       for (let x=1; x <= dimensions.x; x++) {
         let nodeWidth = (500/dimensions.x) - (500/dimensions.x * 0.08);
         let nodeStyle = {width: nodeWidth};
-        let nodeClass = 'node';
+        let nodeClass = container.coordinates.includes(coordinate) ? 'node forbidden' : 'node';
         let tooltipTitle = null;
         let title = null;
         let dataHtml = 'false';
@@ -234,9 +234,11 @@ function ContainerDisplay(props) {
 
         if (!select) {
           if ((coordinates||{})[coordinate]) {
-            if (!loris.userHasPermission('biobank_specimen_view') &&
-                children[coordinates[coordinate]] === undefined) {
+            if (children[coordinates[coordinate]] === undefined) {
+              // If the coordinate does not exist within the coordinates, then 
+              // the user does not have permission for that specimen or container. 
               nodeClass = 'node forbidden';
+              console.log('FORBIDDEN');
             } else {
               onClick = redirectURL;
               if (coordinate in current.list) {

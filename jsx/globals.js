@@ -266,21 +266,23 @@ function Globals(props) {
   };
 
   const parentSpecimenField = () => {
-    if ((specimen||{}).parentSpecimenIds) {
-      const parentSpecimenBarcodes = Object.values(specimen.parentSpecimenIds)
-      .map((id) => {
-        const barcode = data.containers[data.specimens[id].containerId].barcode;
-        return <Link to={`/barcode=${barcode}`}>{barcode}</Link>;
-      })
-      .reduce((prev, curr) => [prev, ', ', curr], []);
-
-      return (
-        <InlineField
-          label={'Parent Specimen'}
-          value={parentSpecimenBarcodes || 'None'}
-        />
-      );
+    if (!specimen) {
+      return null; // Return null if specimen is undefined or null to handle edge case
     }
+  
+    const { parentSpecimenIds, parentSpecimenBarcodes } = specimen;
+    const value = parentSpecimenIds?.length === 0
+      ? 'None'
+      : Object.values(parentSpecimenBarcodes)
+          .map(barcode => <Link to={`/barcode=${barcode}`}>{barcode}</Link>)
+          .join(', ');
+  
+    return (
+      <InlineField
+        label="Parent Specimen"
+        value={value}
+      />
+    );
   };
 
   // TODO: Find a way to make this conform to the GLOBAL ITEM structure.

@@ -30,7 +30,10 @@ namespace LORIS\biobank;
  * @link     https://www.github.com/aces/Loris/
  */
 
-class Container implements \JsonSerializable, \LORIS\Data\DataInstance
+class Container implements
+    \JsonSerializable,
+    \LORIS\Data\DataInstance,
+    \LORIS\StudyEntities\SiteHaver
 {
     /**
      * Persistent Instance variables.
@@ -45,10 +48,12 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
      * @var float     $temperature
      * @var int       $statusId
      * @var array     $projectIds
-     * @var array     $shipmentBarocdes
-     * @var int       $centerId
+     * @var array     $shipmentBarcodes
+     * @var \CenterID $centerId
      * @var int       $parentContainerId
+     * @var string    $parentContainerBarocde
      * @var array     $childContainerIds
+     * @var array     $coordinates
      * @var int       $coordinate
      * @var string    $lotNumber
      * @var \DateTime $expirationDate
@@ -67,7 +72,9 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
     private $shipmentBarcodes;
     private $centerId;
     private $parentContainerId;
+    private string $parentContainerBarocde;
     private $childContainerIds;
+    private array $coordinates;
     private $coordinate;
     private $lotNumber;
     private $expirationDate;
@@ -295,19 +302,17 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
      *
      * @return void
      */
-    public function setCenterId(int $centerId) : void
+    public function setCenterId(\CenterID $centerId) : void
     {
-        if ($centerId > 0) {
-            $this->centerId = $centerId;
-        }
+          $this->centerId = $centerId;
     }
 
     /**
      * Gets the ID of the container's current centerId
      *
-     * @return ?int
+     * @return \CenterID
      */
-    public function getCenterId() : ?int
+    public function getCenterId() : \CenterID
     {
         return $this->centerId;
     }
@@ -335,6 +340,28 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
+     * Sets the parent container's barcode
+     *
+     * @param ?int $parentContainerBarcode the parent container's barcode
+     *
+     * @return void
+     */
+    public function setParentContainerBarcode(?string $parentContainerBarcode) : void
+    {
+        $this->parentContainerBarcode = $parentContainerBarcode;
+    }
+
+    /**
+     * Gets the parent container's barcode
+     *
+     * @return ?string
+     */
+    public function getParentContainerBarcode() : ?string
+    {
+        return $this->parentContainerBarcode;
+    }
+
+    /**
      * Sets the IDs of the children containers
      *
      * @param array $childContainerIds array of IDs of children container
@@ -354,6 +381,28 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
     public function getChildContainerIds() : ?array
     {
         return $this->childContainerIds;
+    }
+
+    /**
+     * Sets the coordinates of the children containers
+     *
+     * @param array $coordinates
+     *
+     * @return void
+     */
+    public function setCoordinates(array $coordinates) : void
+    {
+        $this->coordinates = $coordinates;
+    }
+
+    /**
+     * Gets the coordinates of the children containers
+     *
+     * @return ?array
+     */
+    public function getCoordinates() : ?array
+    {
+        return $this->coordinates;
     }
 
     /**
@@ -483,13 +532,19 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
             $this->setShipmentBarcodes($data['shipmentBarcodes']);
         }
         if (isset($data['centerId'])) {
-            $this->setCenterId((int) $data['centerId']);
+            $this->setCenterId(new \CenterID($data['centerId']));
         }
         if (isset($data['parentContainerId'])) {
             $this->setParentContainerId((int) $data['parentContainerId']);
         }
+        if (isset($data['parentContainerBarcode'])) {
+            $this->setParentContainerBarcode((string) $data['parentContainerBarcode']);
+        }
         if (isset($data['childContainerIds'])) {
             $this->setChildContainerIds($data['childContainerIds']);
+        }
+        if (isset($data['coordinates'])) {
+            $this->setCoordinates($data['coordinates']);
         }
         if (isset($data['coordinate'])) {
             $this->setCoordinate((int) $data['coordinate']);
@@ -531,22 +586,24 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance
         }
 
         return [
-            'id'                => $this->id,
-            'barcode'           => $this->barcode,
-            'specimenId'        => $this->specimenId,
-            'typeId'            => $this->typeId,
-            'dimensionId'       => $this->dimensionId,
-            'temperature'       => $this->temperature,
-            'statusId'          => $this->statusId,
-            'projectIds'        => $this->projectIds,
-            'shipmentBarcodes'  => $this->shipmentBarcodes,
-            'centerId'          => $this->centerId,
-            'parentContainerId' => $this->parentContainerId,
-            'childContainerIds' => $this->childContainerIds,
-            'coordinate'        => $this->coordinate,
-            'lotNumber'         => $this->lotNumber,
-            'expirationDate'    => $expirationDate,
-            'comments'          => $this->comments,
+            'id'                     => $this->id,
+            'barcode'                => $this->barcode,
+            'specimenId'             => $this->specimenId,
+            'typeId'                 => $this->typeId,
+            'dimensionId'            => $this->dimensionId,
+            'temperature'            => $this->temperature,
+            'statusId'               => $this->statusId,
+            'projectIds'             => $this->projectIds,
+            'shipmentBarcodes'       => $this->shipmentBarcodes,
+            'centerId'               => $this->centerId,
+            'parentContainerId'      => $this->parentContainerId,
+            'parentContainerBarcode' => $this->getParentContainerBarcode,
+            'childContainerIds'      => $this->childContainerIds,
+            'coordinates'            => $this->coordinates,
+            'coordinate'             => $this->coordinate,
+            'lotNumber'              => $this->lotNumber,
+            'expirationDate'         => $expirationDate,
+            'comments'               => $this->comments,
         ];
     }
 

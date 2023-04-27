@@ -233,25 +233,12 @@ class BiobankIndex extends React.Component {
    * @return {int}
    */
   increaseCoordinate(coordinate, parentContainerId) {
-    const containers = this.state.data.containers;
-    const childCoordinates = containers[parentContainerId].childContainerIds
-    .reduce((result, id) => {
-      const container = containers[id];
-      if (container.coordinate) {
-        result[container.coordinate] = id;
-      }
-      return result;
-    }, {});
-
+    const coordinates = this.state.data.containers[parentContainerId].coordinates;
+  
     const increment = (coord) => {
-      coord++;
-      if (childCoordinates.hasOwnProperty(coord)) {
-        coord = increment(coord);
-      }
-
-      return coord;
+      return coordinates.includes(coord) ? increment(coord + 1) : coord;
     };
-
+  
     return increment(coordinate);
   }
 
@@ -436,6 +423,9 @@ class BiobankIndex extends React.Component {
     .reduce((result, item) => {
       item.container.statusId = dispensedId;
       item.specimen.quantity = '0';
+      // XXX: By updating the container and specimen after, it's causing issues
+      // if they don't meet validation. The error is being thrown only after the
+      // pool has already been saved to the database! Not sure how to resolve this.
       return [...result,
               () => this.updateContainer(item.container, false),
               () => this.updateSpecimen(item.specimen, false),

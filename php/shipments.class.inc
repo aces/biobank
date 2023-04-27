@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * This implement the Shipment endpoint class for the Biobank Module.
+ * This implements the Shipment endpoint class for the Biobank Module.
  *
  * PHP Version 7.2
  *
@@ -36,7 +36,7 @@ class Shipments implements RequestHandlerInterface
     private \User $user;
 
     /**
-     * Returns true if user has acces to this Endpoint.
+     * Returns true if user has access to this Endpoint.
      *
      * @param \User $user The user whose access is being checked
      *
@@ -103,11 +103,9 @@ class Shipments implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        $this->loris = $request->getAttribute('loris');
-        $this->db    = $this->loris->getDatabaseConnection();
+        $this->db    = \NDB_Factory::singleton()->database();
         $this->user  = $request->getAttribute('user');
 
-        // TODO: This entire thing NEEDS to have a try block wrapped around it!
         try {
             $this->db->beginTransaction();
             switch ($request->getMethod()) {
@@ -121,6 +119,12 @@ class Shipments implements RequestHandlerInterface
                 return (new \LORIS\Http\Response())
                     ->withHeader('Allow', $this->allowedMethods());
             }
+        } catch (\Exception $e) {                                               
+            $this->db->rollBack();                                                    
+            // PUT SOMETHING HERE LATER                                         
+            return new \LORIS\Http\Response\JSON\InternalServerError(           
+                $e->getMessage()                                                
+            ); 
         } finally {
             if ($this->db->inTransaction()) {
                 $this->db->commit();
@@ -135,15 +139,12 @@ class Shipments implements RequestHandlerInterface
      */
     private function _handleGET() : ResponseInterface
     {
-        // TODO: This needs to be checked but should probably go somewhere else...
         // if (!$this->user->hasPermission('biobank_shipment_view')) {
-        //     throw new \Forbidden('Shipment: View Permission Denied');
+        //     return new \Forbidden('Shipment: View Permission Denied');
         // }
         $shipments = [];
-        $dao       = new ShipmentDAO($this->db);
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
+        $dao       = (new ShipmentDAO($this->db))
+          ->filter(new \LORIS\Data\Filters\UserSiteMatch());    
         $shipmentIterator = $dao->execute($this->user);
         foreach ($shipmentIterator as $barcode=>$shipment) {
             $shipments[$barcode] = $shipment;
@@ -167,8 +168,6 @@ class Shipments implements RequestHandlerInterface
             $this->user,
         );
 
-        // TODO: A lot of what the handler does should ACTUALLY be done here.
-        // Handlers should not know how operate multiple shipments, only 1 each!
         if (!$shipmentHandler->isValid()) {
             return new \LORIS\Http\Response\JsonResponse(
                 $shipmentHandler->getErrors(),
@@ -199,8 +198,6 @@ class Shipments implements RequestHandlerInterface
             $this->user,
         );
 
-        // TODO: A lot of what the handler does should ACTUALLY be done here.
-        // Handlers should not know how operate multiple shipments, only 1 each!
         if (!$shipmentHandler->isValid()) {
             return new \LORIS\Http\Response\JsonResponse(
                 $shipmentHandler->getErrors(),
@@ -209,7 +206,7 @@ class Shipments implements RequestHandlerInterface
         }
 
         return new \LORIS\Http\Response\JsonResponse(
-            $shipmentHandler->createInstance(),
+            $shipmentHandler->updateInstance(),
             200,
         );
     }
