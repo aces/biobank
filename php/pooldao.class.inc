@@ -88,7 +88,6 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
                          bp.Quantity,
                          bp.UnitID,
                          GROUP_CONCAT(bspr.SpecimenID) as SpecimenIDs,
-                         bp.CenterID,
                          bp.Date,
                          DATE_FORMAT(bp.Time, '%H:%i') as Time
                   FROM   biobank_pool bp
@@ -110,21 +109,32 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
 
         $pools       = [];
         $specimenDAO = new SpecimenDAO($this->loris);
-        if (!empty($poolRows)) {
-            foreach ($poolRows as $id => $poolRow) {
-                $specimenIds = explode(',', $poolRow['SpecimenIDs']);
-                $specimenId  = (int) $specimenIds[0];
-                $specimen    = $specimenDAO->selectInstances(
-                    [
-                        ['column'=>'SpecimenID', 'value'=>$specimenId],
-                    ],
-                )[$specimenId];
-                $poolRow['CandidateID'] = $specimen->getCandidateId();
-                $poolRow['SessionID']   = $specimen->getSessionId();
-                $poolRow['TypeID']      = $specimen->getTypeId();
-
-                $pools[$id] = $this->_getInstanceFromSQL($poolRow, $specimenIds);
+        
+        foreach ($poolRows as $id => $poolRow) {
+            $specimenIds = explode(',', $poolRow['SpecimenIDs']);
+            $specimenBarcodes = [];
+            foreach ($specimenIds as $specimenId) {
+              $specimen = $specimenDAO->getInstanceFromId((int) $specimenId);
+              $specimenBarcodes[] = $specimen->getBarcode();
             }
+
+            // set global pool properties based on first specimen of pool
+            $specimenId  = (int) $specimenIds[0];
+            $specimen    = $specimenDAO->getInstanceFromId($specimenId);
+            $poolRow['CandidateID']    = $specimen->getCandidateId();
+            $poolRow['CandidatePSCID'] = $specimen->getCandidatePSCID();
+            $poolRow['SessionID']      = $specimen->getSessionId();
+            $poolRow['CenterID']       = $specimen->getCenterId();
+            $projectIds                = $specimen->getProjectIds();
+            $poolRow['TypeID']         = $specimen->getTypeId();
+
+            // instantiate pool entity
+            $pools[$id] = $this->_getInstanceFromSQL(
+              $poolRow,
+              $specimenIds,
+              $specimenBarcodes,
+              $projectIds
+            );
         }
 
         return $pools;
@@ -206,7 +216,6 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
             'Label'    => $pool->getLabel(),
             'Quantity' => $pool->getQuantity(),
             'UnitID'   => $pool->getUnitId(),
-            'CenterID' => $pool->getCenterID(),
             'Date'     => $pool->getDate()->format('Y-m-d'),
             'Time'     => $pool->getTime()->format('H:i'),
         ];
@@ -232,10 +241,17 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
      * @param array $data        Values to be reassigned.
      * @param array $specimenIds List of specimen IDs associated with the given
      *                           Pool.
+     * @param array $projectIds  List of project IDs associated with the given
+     *                           Pool via the constituent specimens.
      *
      * @return Pool
      */
-    private function _getInstanceFromSQL(array $data, array $specimenIds) : Pool
+    private function _getInstanceFromSQL(
+        array $data,
+        array $specimenIds,
+        array $specimenBarcodes,
+        array $projectIds
+    ) : Pool
     {
         $pool = new Pool();
         if (isset($data['PoolID'])) {
@@ -253,8 +269,17 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         if (!empty($specimenIds)) {
             $pool->setSpecimenIds($specimenIds);
         }
+        if (!empty($specimenBarcodes)) {
+            $pool->setSpecimenBarcodes($specimenBarcodes);
+        }
         if (isset($data['CandidateID'])) {
             $pool->setCandidateId((int) $data['CandidateID']);
+        }
+        if (isset($data['CandidatePSCID'])) {
+            $pool->setCandidatePSCID((string) $data['CandidatePSCID']);
+        }
+        if (isset($data['SessionID'])) {
+            $pool->setSessionId((int) $data['SessionID']);
         }
         if (isset($data['SessionID'])) {
             $pool->setSessionId((int) $data['SessionID']);
@@ -262,8 +287,13 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['TypeID'])) {
             $pool->setTypeId((int) $data['TypeID']);
         }
+        if (isset($projectIds)) {
+            $pool->setProjectIds($projectIds);
         if (isset($data['CenterID'])) {
-            $pool->setCenterId(new \CenterID(strval($data['CenterID'])));
+            $pool->setCenterId($data['CenterID']);
+        }
+        if (isset($projectIds)) {
+            $pool->setProjectIds($projectIds);
         }
         if (isset($data['Date'])) {
             $pool->setDate(new \DateTime($data['Date']));

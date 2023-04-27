@@ -344,7 +344,7 @@
 }
 
 .display .node.forbidden {
-  background: #DDDDDD;
+  background: 2px solid #000000;
 }
 
 .display .occupied:hover, .display .available:hover{

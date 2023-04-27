@@ -99,13 +99,16 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
     ) : array {
         $query = "SELECT bs.SpecimenID,
                       bs.ContainerID,
+                      bc.Barcode,
                       bs.SpecimenTypeID,
                       bs.Quantity,
                       bs.UnitID,
-                      bc.CenterID as ContainerCenterID,
+                      bc.CenterID,
+                      GROUP_CONCAT(DISTINCT(bcpr.ProjectID)) as ProjectIDs,
                       bsf.FreezeThawCycle,
                       GROUP_CONCAT(bspa.ParentSpecimenID) as ParentSpecimenIDs,
                       s.CandID as CandidateID,
+                      c.PSCID as CandidatePSCID,
                       bs.SessionID,
                       (
                         SELECT FLOOR(DATEDIFF(s.Date_visit, c.DoB)/365.25)
@@ -136,6 +139,8 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       bsa.Data as AnalysisData
                FROM biobank_specimen bs
                JOIN biobank_container bc USING (ContainerID)
+               LEFT JOIN biobank_container_project_rel bcpr
+                 ON bc.ContainerID=bcpr.ContainerID
                LEFT JOIN biobank_specimen_freezethaw bsf
                  USING (SpecimenID)
                LEFT JOIN session s
@@ -172,10 +177,25 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                 $parentSpecimenIds = $specimenRow['ParentSpecimenIDs']
                     ? explode(',', $specimenRow['ParentSpecimenIDs'])
                     : [];
+                $parentSpecimenBarcodes = [];
+                foreach ($parentSpecimenIds as $parentSpecimenId) {                             
+                  $parentSpecimen = $this->getInstanceFromId((int) $parentSpecimenId);   
+                  $parentsSpecimenBarcodes[] = $parentSpecimen->getBarcode();                    
+                } 
+
+                $projectIds = array_map(function($projectId) {
+                    return new \ProjectID($projectId); // store projectId within object
+                }, explode(',', $specimenRow['ProjectIDs']));
+
+                $projectIds = array_map(function($projectId) {
+                    return new \ProjectID($projectId); // store projectId within object
+                }, explode(',', $specimenRow['ProjectIDs']));
 
                 $specimen = $this->_getInstanceFromSQL(
                     $specimenRow,
-                    $parentSpecimenIds
+                    $projectIds,
+                    $parentSpecimenIds,
+                    $parentSpecimenBarcodes,
                 );
 
                 $specimens[$id] = $specimen;
@@ -625,7 +645,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
      */
     private function _getInstanceFromSQL(
         array $data,
-        array $parentSpecimenIds
+        array $projectIds,
+        array $parentSpecimenIds,
+        array $parentSpecimenBarcodes,
     ) : Specimen {
         $specimen = new Specimen($this->loris);
         if (isset($data['SpecimenID'])) {
@@ -634,19 +656,23 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['ContainerID'])) {
             $specimen->setContainerId((int) $data['ContainerID']);
         }
+        if (isset($data['Barcode'])) {
+            $specimen->setBarcode((string) $data['Barcode']);
+        }
         if (isset($data['SpecimenTypeID'])) {
             $specimen->setTypeId((int) $data['SpecimenTypeID']);
         }
-
         if (isset($data['Quantity'])) {
             $specimen->setQuantity((string) $data['Quantity']);
         }
-
         if (isset($data['UnitID'])) {
             $specimen->setUnitId((int) $data['UnitID']);
         }
-        if (isset($data['ContainerCenterID'])) {
-            $specimen->setContainerCenterId(new \CenterID(strval($data['ContainerCenterID'])));
+        if (isset($data['CenterID'])) {
+            $specimen->setCenterId(new \CenterID($data['CenterID']));
+        }
+        if (isset($projectIds)) {
+            $specimen->setProjectIds($projectIds);
         }
         if (isset($data['FreezeThawCycle'])) {
             $specimen->setFTCycle((int) $data['FreezeThawCycle']);
@@ -654,12 +680,17 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
 
         if (!empty($parentSpecimenIds)) {
             $specimen->setParentSpecimenIds($parentSpecimenIds);
+            $specimen->setParentSpecimenBarcodes($parentSpecimenBarcodes);
         } else {
             $specimen->setParentSpecimenIds([]);
+            $specimen->setParentSpecimenBarcodes([]);
         }
 
         if (isset($data['CandidateID'])) {
             $specimen->setCandidateId((int) $data['CandidateID']);
+        }
+        if (isset($data['CandidatePSCID'])) {
+            $specimen->setCandidatePSCID((string) $data['CandidatePSCID']);
         }
 
         if (isset($data['CandidateAge'])) {

@@ -256,7 +256,7 @@ class Module extends \Module
      */
     public function getMenuCategory() : string
     {
-        return "Biospecimens";
+        return "Biobank";
     }
 
     /**

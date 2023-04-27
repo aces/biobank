@@ -76,7 +76,6 @@ class PoolSpecimenForm extends React.Component {
     // Set current pool values
     const specimenIds = pool.specimenIds || [];
     specimenIds.push(specimen.id);
-    pool.centerId = container.centerId;
     pool.specimenIds = specimenIds;
 
     this.setState(
