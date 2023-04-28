@@ -44,7 +44,7 @@ class Specimen implements
      * @var int         $typeId
      * @var string      $quantity
      * @var int         $unitId
-     * @var \CenterID   $containerCenterId
+     * @var \CenterID   $CenterId
      * @var int         $fTCycle
      * @var array       $parentSpecimenIds
      * @var int         $candidateId
@@ -61,7 +61,7 @@ class Specimen implements
     private $quantity;
     private $unitId;
     private $fTCycle;
-    private $containerCenterId;
+    private $CenterId;
     private $parentSpecimenIds;
     private $candidateId;
     private $candidateAge;
@@ -411,9 +411,9 @@ class Specimen implements
         return $this->analysis;
     }
 
-    public function setContainerCenterId(\CenterID $containerCenterId)
+    public function setCenterId(\CenterID $centerId)
     {
-        $this->containerCenterId = $containerCenterId;
+        $this->centerId = $centerId;
     }
 
     // FIXME: THIS IS A MASSIVE HACK. Specimens should not be provisioned if
@@ -438,7 +438,7 @@ class Specimen implements
         // $container    = $containerDAO->getInstanceFromId($containerId);
         // return $container->getCenterId();
 
-        return $this->containerCenterId;
+        return $this->centerId;
     }
 
     /**
@@ -465,8 +465,8 @@ class Specimen implements
         if (isset($data['unitId'])) {
             $this->setUnitId((int) $data['unitId']);
         }
-        if (isset($data['containerCenterId'])) {
-            $this->setContainerCenterId(new \CenterID($data['containerCenterId']));
+        if (isset($data['centerId'])) {
+            $this->setCenterId(new \CenterID($data['centerId']));
         }
         if (isset($data['fTCycle'])) {
             $this->setFTCycle((int) $data['fTCycle']);
@@ -531,7 +531,7 @@ class Specimen implements
             'typeId'            => $this->typeId,
             'quantity'          => $this->quantity,
             'unitId'            => $this->unitId,
-            'containerCenterId' => $this->containerCenterId,
+            'centerId'          => $this->centerId,
             'fTCycle'           => $this->fTCycle,
             'parentSpecimenIds' => $this->parentSpecimenIds,
             'candidateId'       => $this->candidateId,

@@ -97,11 +97,9 @@ class PoolController
     private function _getDataProvisioner() : \LORIS\Data\Provisioner
     {
         $dao = new PoolDAO($this->loris);
-        // XXX: This has been temporarily commented out until CenterIDs have    
-        // been properly implemented within pools.                          
-        // if ($this->user->hasPermission('access_all_profiles') === false) {   
-        //     $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());    
-        // }           
+        if ($this->user->hasPermission('access_all_profiles') === false) {   
+            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());    
+        }           
         return $dao;
     }
 
@@ -141,7 +139,6 @@ class PoolController
         // $this->_validateQuantity($pool);
         // $this->_validateUnitId($pool);
         $this->_validateSpecimenIds($pool);
-        $this->_validateCenterId($pool);
         // $this->_validateDate($pool);
         // $this->_validateTime($pool);
     }
@@ -187,8 +184,10 @@ class PoolController
             );
         }
 
+        // XXX: not sure why a loris oobject is being passed to instatiate the
+        // DAO. Maybe this is right, but I'm not sure why.
         $specimenDAO   = new SpecimenDAO($this->loris);
-        $containerDAO  = new ContainerDAO($this->loris->getDatabaseConnection());
+        $containerDAO  = new ContainerDAO($this->db);
         $baseSpecimen  = $specimenDAO->getInstanceFromId($specimenIds[0]);
         $baseContainer = $containerDAO->getInstanceFromId(
             $baseSpecimen->getContainerId()
@@ -217,7 +216,7 @@ class PoolController
                 throw new BadRequest('Pooled specimens must be of the same Type');
             }
 
-            if ($baseContainer->getCenterID() !== $container->getCenterID()) {
+            if ($baseContainer->getCenterId()->__toString() !== $container->getCenterId()->__toString()) {
                 throw new BadRequest('Pooled specimens must be at the same Site');
             }
 
@@ -238,22 +237,6 @@ class PoolController
             if ($stati[$statusId]['label'] !== 'Available') {
                 throw new BadRequest("Specimen '$barcode' is not 'Available'");
             }
-        }
-    }
-
-    /**
-     * Validates Pool Object Center ID
-     *
-     * @param Pool $pool Pool to be checked.
-     *
-     * @throws BadRequest if the provided Pool does not meet validation requirements
-     *
-     * @return void
-     */
-    private function _validateCenterId(Pool $pool) : void
-    {
-        if (is_null($pool->getCenterId())) {
-            throw new BadRequest('Pool Center must be set');
         }
     }
 }

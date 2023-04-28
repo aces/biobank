@@ -102,7 +102,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       bs.SpecimenTypeID,
                       bs.Quantity,
                       bs.UnitID,
-                      bc.CenterID as ContainerCenterID,
+                      bc.CenterID,
                       bsf.FreezeThawCycle,
                       GROUP_CONCAT(bspa.ParentSpecimenID) as ParentSpecimenIDs,
                       s.CandID as CandidateID,
@@ -645,8 +645,8 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['UnitID'])) {
             $specimen->setUnitId((int) $data['UnitID']);
         }
-        if (isset($data['ContainerCenterID'])) {
-            $specimen->setContainerCenterId(new \CenterID($data['ContainerCenterID']));
+        if (isset($data['CenterID'])) {
+            $specimen->setCenterId(new \CenterID($data['CenterID']));
         }
         if (isset($data['FreezeThawCycle'])) {
             $specimen->setFTCycle((int) $data['FreezeThawCycle']);

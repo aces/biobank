@@ -168,8 +168,6 @@ class PoolTab extends Component {
     const specimenTypes = mapFormOptions(
       options.specimen.types, 'label'
     );
-    console.log(data.pools);
-    console.log(options.candidates);
     const poolData = Object.values(data.pools).map((pool) => {
       return [
         pool.id,

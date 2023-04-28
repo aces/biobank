@@ -86,14 +86,14 @@ class BiobankIndex extends React.Component {
 
     const specimens = getStream(this.props.specimenAPI, updateProgress);
     const containers = get(this.props.containerAPI);
-    // const pools = get(this.props.poolAPI);
+    const pools = get(this.props.poolAPI);
     const options = await get(this.props.optionsAPI);
     this.setState({options});
 
     const data = this.state.data;
     data.containers = await containers;
     data.specimens = await specimens;
-    // data.pools = await pools;
+    data.pools = await pools;
     this.setState({data});
     updateProgress(100);
   }
@@ -436,6 +436,9 @@ class BiobankIndex extends React.Component {
     .reduce((result, item) => {
       item.container.statusId = dispensedId;
       item.specimen.quantity = '0';
+      // XXX: By updating the container and specimen after, it's causing issues
+      // if they don't meet validation. The error is being thrown only after the
+      // pool has already been saved to the database! Not sure how to resolve this.
       return [...result,
               () => this.updateContainer(item.container, false),
               () => this.updateSpecimen(item.specimen, false),

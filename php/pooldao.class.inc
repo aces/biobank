@@ -88,7 +88,6 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
                          bp.Quantity,
                          bp.UnitID,
                          GROUP_CONCAT(bspr.SpecimenID) as SpecimenIDs,
-                         bp.CenterID,
                          bp.Date,
                          DATE_FORMAT(bp.Time, '%H:%i') as Time
                   FROM   biobank_pool bp
@@ -121,6 +120,7 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
                 )[$specimenId];
                 $poolRow['CandidateID'] = $specimen->getCandidateId();
                 $poolRow['SessionID']   = $specimen->getSessionId();
+                $poolRow['CenterID']    = $specimen->getCenterId();
                 $poolRow['TypeID']      = $specimen->getTypeId();
 
                 $pools[$id] = $this->_getInstanceFromSQL($poolRow, $specimenIds);
@@ -206,7 +206,6 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
             'Label'    => $pool->getLabel(),
             'Quantity' => $pool->getQuantity(),
             'UnitID'   => $pool->getUnitId(),
-            'CenterID' => $pool->getCenterId(),
             'Date'     => $pool->getDate()->format('Y-m-d'),
             'Time'     => $pool->getTime()->format('H:i'),
         ];
@@ -259,11 +258,14 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['SessionID'])) {
             $pool->setSessionId((int) $data['SessionID']);
         }
+        if (isset($data['SessionID'])) {
+            $pool->setSessionId((int) $data['SessionID']);
+        }
         if (isset($data['TypeID'])) {
             $pool->setTypeId((int) $data['TypeID']);
         }
         if (isset($data['CenterID'])) {
-            $pool->setCenterId(new \CenterID($data['CenterID']));
+            $pool->setCenterId($data['CenterID']);
         }
         if (isset($data['Date'])) {
             $pool->setDate(new \DateTime($data['Date']));

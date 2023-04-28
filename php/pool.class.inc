@@ -47,7 +47,7 @@ class Pool implements
      * @var int       $candidateId
      * @var int       $sessionId
      * @var int       $typeId
-     * @var int       $centerId
+     * @var \CenterID $centerId
      * @var \DateTime $date
      * @var \DateTime $time
      */
@@ -259,7 +259,7 @@ class Pool implements
     /**
      * Sets the Center ID of the pool
      *
-     * @param int $centerId Center ID of the pool
+     * @param \CenterID $centerId Center ID of the pool
      *
      * @return void
      */

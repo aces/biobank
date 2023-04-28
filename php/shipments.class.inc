@@ -107,7 +107,6 @@ class Shipments implements RequestHandlerInterface
         $this->db    = $this->loris->getDatabaseConnection();
         $this->user  = $request->getAttribute('user');
 
-        // TODO: This entire thing NEEDS to have a try block wrapped around it!
         try {
             $this->db->beginTransaction();
             switch ($request->getMethod()) {
