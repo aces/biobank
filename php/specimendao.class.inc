@@ -103,6 +103,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       bs.Quantity,
                       bs.UnitID,
                       bc.CenterID,
+                      GROUP_CONCAT(DISTINCT(bcpr.ProjectID)) as ProjectIDs,
                       bsf.FreezeThawCycle,
                       GROUP_CONCAT(bspa.ParentSpecimenID) as ParentSpecimenIDs,
                       s.CandID as CandidateID,
@@ -136,6 +137,8 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       bsa.Data as AnalysisData
                FROM biobank_specimen bs
                JOIN biobank_container bc USING (ContainerID)
+               LEFT JOIN biobank_container_project_rel bcpr
+                 ON bc.ContainerID=bcpr.ContainerID
                LEFT JOIN biobank_specimen_freezethaw bsf
                  USING (SpecimenID)
                LEFT JOIN session s
@@ -173,8 +176,13 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                     ? explode(',', $specimenRow['ParentSpecimenIDs'])
                     : [];
 
+                $projectIds = array_map(function($projectId) {
+                    return new \ProjectID($projectId); // store projectId within object
+                }, explode(',', $specimenRow['ProjectIDs']));
+
                 $specimen = $this->_getInstanceFromSQL(
                     $specimenRow,
+                    $projectIds,
                     $parentSpecimenIds
                 );
 
@@ -625,6 +633,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
      */
     private function _getInstanceFromSQL(
         array $data,
+        array $projectIds,
         array $parentSpecimenIds
     ) : Specimen {
         $specimen = new Specimen($this->loris);
@@ -637,16 +646,17 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['SpecimenTypeID'])) {
             $specimen->setTypeId((int) $data['SpecimenTypeID']);
         }
-
         if (isset($data['Quantity'])) {
             $specimen->setQuantity((string) $data['Quantity']);
         }
-
         if (isset($data['UnitID'])) {
             $specimen->setUnitId((int) $data['UnitID']);
         }
         if (isset($data['CenterID'])) {
             $specimen->setCenterId(new \CenterID($data['CenterID']));
+        }
+        if (isset($projectIds)) {
+            $specimen->setProjectIds($projectIds);
         }
         if (isset($data['FreezeThawCycle'])) {
             $specimen->setFTCycle((int) $data['FreezeThawCycle']);

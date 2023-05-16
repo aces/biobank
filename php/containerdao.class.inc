@@ -189,7 +189,9 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             $childContainerIds = $containerRow['ChildContainerIDs']
                 ? explode(',', $containerRow['ChildContainerIDs'])
                 : [];
-            $projectIds        = explode(',', $containerRow['ProjectIDs']);
+            $projectIds = array_map(function($projectId) {                  
+                return new \ProjectID($projectId); // store projectId within object
+            }, explode(',', $containerRow['ProjectIDs']));       
             $shipmentBarcodes  = $containerRow['ShipmentBarcodes']
                 ? explode(',', $containerRow['ShipmentBarcodes'])
                 : [];

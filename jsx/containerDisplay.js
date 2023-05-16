@@ -234,9 +234,11 @@ function ContainerDisplay(props) {
 
         if (!select) {
           if ((coordinates||{})[coordinate]) {
-            if (!loris.userHasPermission('biobank_specimen_view') &&
-                children[coordinates[coordinate]] === undefined) {
+            if (children[coordinates[coordinate]] === undefined) {
+              // If the coordinate does not exist within the coordinates, then 
+              // the user does not have permission for that specimen or container. 
               nodeClass = 'node forbidden';
+              console.log('FORBIDDEN');
             } else {
               onClick = redirectURL;
               if (coordinate in current.list) {

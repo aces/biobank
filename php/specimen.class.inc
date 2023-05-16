@@ -45,6 +45,7 @@ class Specimen implements
      * @var string      $quantity
      * @var int         $unitId
      * @var \CenterID   $CenterId
+     * @var array       $ProjectIds
      * @var int         $fTCycle
      * @var array       $parentSpecimenIds
      * @var int         $candidateId
@@ -61,7 +62,8 @@ class Specimen implements
     private $quantity;
     private $unitId;
     private $fTCycle;
-    private $CenterId;
+    private $centerId;
+    private $projectIds;
     private $parentSpecimenIds;
     private $candidateId;
     private $candidateAge;
@@ -416,10 +418,6 @@ class Specimen implements
         $this->centerId = $centerId;
     }
 
-    // FIXME: THIS IS A MASSIVE HACK. Specimens should not be provisioned if
-    // their Container is not provisioned. Therefore, a check must be made that
-    // the Container's Center ID is accesibile by the current User. This function
-    // allows this check to happen upon provisioner filtering.
     /**
      * Return Center ID of affiliated specimen container.
      *
@@ -427,18 +425,22 @@ class Specimen implements
      */
     public function getCenterId() : \CenterID
     {
-        // NOTE: with the introduction of setContainerCenterId, this has been
-        // temporarily disabled to fix performance issues. A more permanent
-        // fix should be issued that considers container and specimen object
-        // design
-
-        // $db           = \Database::singleton();
-        // $containerDAO = new ContainerDAO($db);
-        // $containerId  = $this->getContainerId();
-        // $container    = $containerDAO->getInstanceFromId($containerId);
-        // return $container->getCenterId();
-
         return $this->centerId;
+    }
+
+    public function setProjectIds(array $projectIds)
+    {
+        $this->projectIds = $projectIds;
+    }
+
+    /**
+     * Return Project ID of affiliated specimen container.
+     *
+     * @return \ProjectID[]
+     */
+    public function getProjectIds() : array
+    {
+        return $this->projectIds;
     }
 
     /**
@@ -467,6 +469,9 @@ class Specimen implements
         }
         if (isset($data['centerId'])) {
             $this->setCenterId(new \CenterID($data['centerId']));
+        }
+        if (isset($data['projectIds'])) {
+            $this->setProjectIds($data['projectIds']);
         }
         if (isset($data['fTCycle'])) {
             $this->setFTCycle((int) $data['fTCycle']);
@@ -532,6 +537,7 @@ class Specimen implements
             'quantity'          => $this->quantity,
             'unitId'            => $this->unitId,
             'centerId'          => $this->centerId,
+            'projectIds'        => $this->projectIds,
             'fTCycle'           => $this->fTCycle,
             'parentSpecimenIds' => $this->parentSpecimenIds,
             'candidateId'       => $this->candidateId,

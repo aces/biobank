@@ -48,6 +48,7 @@ class Pool implements
      * @var int       $sessionId
      * @var int       $typeId
      * @var \CenterID $centerId
+     * @var array     $projectIds
      * @var \DateTime $date
      * @var \DateTime $time
      */
@@ -60,6 +61,7 @@ class Pool implements
     private $sessionId;
     private $typeId;
     private $centerId;
+    private $projectIds;
     private $date;
     private $time;
 
@@ -279,6 +281,27 @@ class Pool implements
     }
 
     /**
+     * Sets the Project IDs of the constituent specimens
+     *
+     * @param array $projectIds Project IDs of the pool
+     *
+     * @return void
+     */
+    public function setProjectIds(array $projectIds) : void
+    {
+         $this->projectIds = $projectIds;
+    }
+
+    /**
+     * Gets the Project IDs of the pool
+     *
+     * @return array
+     */
+    public function getProjectIds() : array
+    {
+        return $this->projectIds;
+    }
+    /**
      * Sets the date at which the pool was created.
      *
      * @param \DateTime $date the date of the pool
@@ -358,6 +381,9 @@ class Pool implements
         if (isset($data['centerId'])) {
             $this->setCenterId(new \CenterID($data['centerId']));
         }
+        if (isset($data['projectIds'])) {
+            $this->setProjectIds($data['projectIds']);
+        }
         if (isset($data['date'])) {
             $this->setDate(new \DateTime($data['date']));
         }
@@ -398,6 +424,7 @@ class Pool implements
             'sessionId'   => $this->sessionId,
             'typeId'      => $this->typeId,
             'centerId'    => $this->centerId,
+            'projectIds'  => $this->projectIds,
             'date'        => $this->date->format('d-m-Y'),
             'time'        => $this->time->format('H:i'),
         ];

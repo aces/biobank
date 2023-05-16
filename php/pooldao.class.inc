@@ -121,9 +121,14 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
                 $poolRow['CandidateID'] = $specimen->getCandidateId();
                 $poolRow['SessionID']   = $specimen->getSessionId();
                 $poolRow['CenterID']    = $specimen->getCenterId();
+                $projectIds             = $specimen->getProjectIds();
                 $poolRow['TypeID']      = $specimen->getTypeId();
 
-                $pools[$id] = $this->_getInstanceFromSQL($poolRow, $specimenIds);
+                $pools[$id] = $this->_getInstanceFromSQL(
+                  $poolRow,
+                  $specimenIds,
+                  $projectIds
+                );
             }
         }
 
@@ -231,10 +236,16 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
      * @param array $data        Values to be reassigned.
      * @param array $specimenIds List of specimen IDs associated with the given
      *                           Pool.
+     * @param array $projectIds  List of project IDs associated with the given
+     *                           Pool via the constituent specimens.
      *
      * @return Pool
      */
-    private function _getInstanceFromSQL(array $data, array $specimenIds) : Pool
+    private function _getInstanceFromSQL(
+        array $data,
+        array $specimenIds,
+        array $projectIds
+    ) : Pool
     {
         $pool = new Pool();
         if (isset($data['PoolID'])) {
@@ -266,6 +277,9 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         }
         if (isset($data['CenterID'])) {
             $pool->setCenterId($data['CenterID']);
+        }
+        if (isset($projectIds)) {
+            $pool->setProjectIds($projectIds);
         }
         if (isset($data['Date'])) {
             $pool->setDate(new \DateTime($data['Date']));

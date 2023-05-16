@@ -75,9 +75,9 @@ class ContainerController
     {
         $this->_validatePermission('view');
         $containers  = [];
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $this->dao = $this->dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
+        $this->dao = $this->dao
+          ->filter(new \LORIS\Data\Filters\UserSiteMatch())
+          ->filter(new \LORIS\Data\Filters\UserProjectMatch());
         $containerIt = $this->dao->execute($this->user);
         foreach ($containerIt as $id => $container) {
             $containers[$id] = $container;
@@ -408,45 +408,49 @@ class ContainerController
             }
         }
 
-        // Check that current container's projects are a subset of the parent
-        // Container's projects.
-        $parentContainerId = $container->getParentContainerId();
-        if (false) {
-            $parentContainer  = $this->dao->getInstanceFromId($parentContainerId);
-            $parentProjectIds = $parentContainer->getProjectIds();
-            if (array_intersect($projectIds, $parentProjectIds) != $projectIds) {
-                $barcode       = $container->getBarcode();
-                $parentBarcode = $parentContainer->getBarcode();
-                throw new BadRequest(
-                    "The Projects to which $barcode
-                                      belongs must be a subset of the Projects to
-                                      which $parentBarcode
-                                      belongs."
-                );
-            }
-        }
+        // XXX: We are now in the process of removing projects from container's
+        // entirely and re-assigning them exclusively to specimens. For this
+        // reason, the following code has been disabled pending deletion.
 
-        // Check the current container's projects are a superset of the child
-        // Containers' projects.
-        $childContainerIds = $container->getChildContainerIds();
-        if ($childContainerIds) {
-            forEach ($childContainerIds as $id) {
-                $childContainer  = $this->dao->getInstanceFromId((int) $id);
-                $childProjectIds = $childContainer->getProjectIds();
-                if (array_intersect(
-                    $childProjectIds,
-                    $projectIds
-                ) != $childProjectIds
-                ) {
-                    $barcode = $container->getBarcode();
-                    throw new BadRequest(
-                        "The projects to which $barcode
-                                           belongs must be a superset 
-                                           of it's child Containers' Projects"
-                    );
-                }
-            }
-        }
+        // // Check that current container's projects are a subset of the parent
+        // // Container's projects.
+        // $parentContainerId = $container->getParentContainerId();
+        // if (false) {
+        //     $parentContainer  = $this->dao->getInstanceFromId($parentContainerId);
+        //     $parentProjectIds = $parentContainer->getProjectIds();
+        //     if (array_intersect($projectIds, $parentProjectIds) != $projectIds) {
+        //         $barcode       = $container->getBarcode();
+        //         $parentBarcode = $parentContainer->getBarcode();
+        //         throw new BadRequest(
+        //             "The Projects to which $barcode
+        //                               belongs must be a subset of the Projects to
+        //                               which $parentBarcode
+        //                               belongs."
+        //         );
+        //     }
+        // }
+
+        // // Check the current container's projects are a superset of the child
+        // // Containers' projects.
+        // $childContainerIds = $container->getChildContainerIds();
+        // if ($childContainerIds) {
+        //     forEach ($childContainerIds as $id) {
+        //         $childContainer  = $this->dao->getInstanceFromId((int) $id);
+        //         $childProjectIds = $childContainer->getProjectIds();
+        //         if (array_intersect(
+        //             $childProjectIds,
+        //             $projectIds
+        //         ) != $childProjectIds
+        //         ) {
+        //             $barcode = $container->getBarcode();
+        //             throw new BadRequest(
+        //                 "The projects to which $barcode
+        //                                    belongs must be a superset 
+        //                                    of it's child Containers' Projects"
+        //             );
+        //         }
+        //     }
+        // }
     }
 
     /**

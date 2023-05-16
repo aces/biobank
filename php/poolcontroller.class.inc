@@ -97,9 +97,9 @@ class PoolController
     private function _getDataProvisioner() : \LORIS\Data\Provisioner
     {
         $dao = new PoolDAO($this->loris);
-        if ($this->user->hasPermission('access_all_profiles') === false) {   
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());    
-        }           
+        $dao = $dao
+          ->filter(new \LORIS\Data\Filters\UserSiteMatch())
+          ->filter(new \LORIS\Data\Filters\UserProjectMatch());    
         return $dao;
     }
 
