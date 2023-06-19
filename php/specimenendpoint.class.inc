@@ -28,7 +28,7 @@ use \Psr\Http\Message\ResponseInterface;
  * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
  * @link       http://www.github.com/aces/Lors/
  */
-class SpecimenEndpoint implements RequestHandlerInterface
+class SpecimenEndpoint extends \NDB_Page implements RequestHandlerInterface
 {
     /**
      * Returns true if user has acces to this Endpoint.
@@ -50,11 +50,25 @@ class SpecimenEndpoint implements RequestHandlerInterface
     protected function allowedMethods() : array
     {
         return [
-                'GET',
-                'PUT',
-                'POST',
-                'OPTIONS',
-               ];
+            'GET',
+            'PUT',
+            'POST',
+            'OPTIONS',
+        ];
+    }
+
+    /**
+     * This function can be overridden in a module's page to load the necessary
+     * resources to check the permissions of a user.
+     *
+     * @param User                   $user    The user to load the resources for
+     * @param ServerRequestInterface $request The PSR15 Request being handled
+     *
+     * @return void
+     */
+    public function loadResources(
+        \User $user, ServerRequestInterface $request
+    ) : void {
     }
 
     /**
@@ -85,64 +99,66 @@ class SpecimenEndpoint implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
         ini_set('memory_limit', '-1');
-        $db       = \Database::singleton();
+        $db       = $this->loris->getDatabaseConnection();
         $user     = $request->getAttribute('user');
-        $specCont = new SpecimenController($db, $user);
+        $specCont = new SpecimenController($this->loris, $user);
 
         try {
             $db->beginTransaction();
-            switch($request->getMethod()) {
+            switch ($request->getMethod()) {
             case 'GET':
                 $specimens = $specCont->getInstances();
-                return new \LORIS\Http\Response\OK($specimens); 
+                return new \LORIS\Http\Response\JSON\OK($specimens);
             case 'POST':
-                $specimenArray = json_decode($request->getBody()->getContents(), true);
-                $specimens = $specCont->createInstances($specimenArray);
+                $specimenArray = json_decode(
+                    $request->getBody()->getContents(),
+                    true
+                );
+                $specimens     = $specCont->createInstances($specimenArray);
 
                 if (!empty($request->getUploadedFiles())) {
-                  $response = $this->uploadFiles($request);
-                  if ($response->getStatusCode() !== 200) {
-                      $db->rollBack();
-                      return $response;
-                  }
+                    $response = $this->uploadFiles($request);
+                    if ($response->getStatusCode() !== 200) {
+                        $db->rollBack();
+                        return $response;
+                    }
                 }
-                return new \LORIS\Http\Response\OK($specimens); 
+                return new \LORIS\Http\Response\JSON\OK($specimens);
             case 'PUT':
-                $specimenArray = json_decode($request->getBody()->getContents(), true);
+                $specimenArray = json_decode(
+                    $request->getBody()->getContents(),
+                    true
+                );
                 $specimen      = $specCont->updateInstance($specimenArray);
-                return new \LORIS\Http\Response\OK([$specimen]); 
+                return new \LORIS\Http\Response\JSON\OK([$specimen]);
             case 'OPTIONS':
                 return (new \LORIS\Http\Response())
                     ->withHeader('Allow', $this->allowedMethods());
             }
-        } catch (\BadRequest $e) {
-            $db->rollBack();
-            return new \LORIS\Http\Response\BadRequest($e->getMessage());
-        } catch (\Forbidden $e) {
-            $db->rollBack();
-            return new \LORIS\Http\Response\Forbidden($e->getMessage());
         } catch (\NotFound $e) {
             $db->rollBack();
-            return new \LORIS\Http\Response\NotFound($e->getMessage());
+            return new \LORIS\Http\Response\JSON\NotFound($e->getMessage());
         } catch (\DatabaseException $e) {
             $db->rollBack();
-            $message = $e->getMessage().'. If this error occurs again, please 
+            $message = $e->getMessage().'. If this error occurs again, please
                 contact your administrator.';
-            return new \LORIS\Http\Response\InternalServerError($message);
+            return new \LORIS\Http\Response\JSON\InternalServerError($message);
         } catch (\TypeError $e) {
             $db->rollBack();
-            $message = $e->getMessage().'. If this error occurs again, please 
+            $message = $e->getMessage().'. If this error occurs again, please
                 contact your administrator.';
-            return new \LORIS\Http\Response\InternalServerError($message);
+            return new \LORIS\Http\Response\JSON\InternalServerError($message);
         } catch (\Error $e) {
             $db->rollBack();
-            $message = $e->getMessage().'. If this error occurs again, please 
+            $message = $e->getMessage().'. If this error occurs again, please
                 contact your administrator.';
-            return new \LORIS\Http\Response\InternalServerError($message);
+            return new \LORIS\Http\Response\JSON\InternalServerError($message);
         } catch (\Exception $e) {
             $db->rollBack();
             // PUT SOMETHING HERE LATER
-            return new \LORIS\Http\Response\InternalServerError($e->getMessage());
+            return new \LORIS\Http\Response\JSON\InternalServerError(
+                $e->getMessage()
+            );
         } finally {
             if ($db->inTransaction()) {
                 $db->commit();

@@ -168,7 +168,7 @@ abstract class Process implements \JsonSerializable
     /**
      * Gets the time of processing
      *
-     * @return DateTime
+     * @return \DateTime
      */
     public function getTime() : \DateTime
     {
@@ -228,13 +228,28 @@ abstract class Process implements \JsonSerializable
      */
     public function fromArray(array $data) : Process
     {
-        isset($data['protocolId']) && $this->setProtocolId((int) $data['protocolId']);
-        isset($data['centerId'])   && $this->setCenterId((int) $data['centerId']);
-        isset($data['examinerId']) && $this->setExaminerId((int) $data['examinerId']);
-        isset($data['date'])       && $this->setDate(new \DateTime($data['date']));
-        isset($data['time'])       && $this->setTime(new \DateTime($data['time']));
-        isset($data['data'])       && $this->setData($data['data']);
-        isset($data['comments'])   && $this->setComments((string) $data['comments']);
+        if (isset($data['protocolId'])) {
+            $this->setProtocolId((int) $data['protocolId']);
+        }
+        if (isset($data['centerId'])) {
+            $this->setCenterId((int) $data['centerId']);
+        }
+
+        if (isset($data['examinerId'])) {
+            $this->setExaminerId((int) $data['examinerId']);
+        }
+        if (isset($data['date'])) {
+            $this->setDate(new \DateTime($data['date']));
+        }
+        if (isset($data['time'])) {
+            $this->setTime(new \DateTime($data['time']));
+        }
+        if (isset($data['data'])) {
+            $this->setData($data['data']);
+        }
+        if (isset($data['comments'])) {
+            $this->setComments((string) $data['comments']);
+        }
 
         return $this;
     }
@@ -249,15 +264,15 @@ abstract class Process implements \JsonSerializable
     {
         // TODO: Date and Time formats should be gotten from some sort of config
         // setting.
-        return array(
-                'protocolId' => $this->protocolId,
-                'centerId'   => $this->centerId,
-                'examinerId' => $this->examinerId,
-                'date'       => $this->date->format('Y-m-d'),
-                'time'       => $this->time->format('H:i'),
-                'comments'   => $this->comments,
-                'data'       => $this->data,
-               );
+        return [
+            'protocolId' => $this->protocolId,
+            'centerId'   => $this->centerId,
+            'examinerId' => $this->examinerId,
+            'date'       => $this->date->format('Y-m-d'),
+            'time'       => $this->time->format('H:i'),
+            'comments'   => $this->comments,
+            'data'       => $this->data,
+        ];
     }
 }
 

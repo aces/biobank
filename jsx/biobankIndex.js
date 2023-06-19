@@ -1,11 +1,18 @@
 import {BrowserRouter, Route, Switch} from 'react-router-dom';
-import swal from 'sweetalert2';
+import Swal from 'sweetalert2';
 
 import BiobankFilter from './filter';
 import BarcodePage from './barcodePage';
 import {clone, isEmpty, get, getStream, post} from './helpers.js';
 
+/**
+ * The main React entrypoint for the biobank module. This component
+ * renders the index page.
+ */
 class BiobankIndex extends React.Component {
+  /**
+   * Constructor
+   */
   constructor() {
     super();
 
@@ -71,6 +78,9 @@ class BiobankIndex extends React.Component {
     this.validateContainer = this.validateContainer.bind(this);
   }
 
+  /**
+   * React lifecycle method
+   */
   async componentDidMount() {
     const updateProgress = (loading) => this.setState({loading});
 
@@ -88,6 +98,14 @@ class BiobankIndex extends React.Component {
     updateProgress(100);
   }
 
+  /**
+   * Sets data for entities
+   *
+   * @param {string} type - the type of entity
+   * @param {object} entities - the entities to set
+   *
+   * @return {Promise}
+   */
   setData(type, entities) {
     return new Promise((resolve) => {
       const data = clone(this.state.data);
@@ -96,10 +114,24 @@ class BiobankIndex extends React.Component {
     });
   }
 
+  /**
+   * Send a request to a server to print a label
+   *
+   * @param {object} labelParams - the properties of the label to print
+   *
+   * @return {Promise}
+   */
   printLabel(labelParams) {
     return post(labelParams, this.props.labelAPI, 'POST');
   }
 
+  /**
+   * Find the appropriate container for a barcode.
+   *
+   * @param {string} barcode - the value to route
+   *
+   * @return {object}
+   */
   routeBarcode(barcode) {
     const container = Object.values(this.state.data.containers)
       .find((container) => container.barcode == barcode);
@@ -110,6 +142,14 @@ class BiobankIndex extends React.Component {
     return {container, specimen};
   }
 
+  /**
+   * Send a request to update a single specimen on the server after
+   * validating it
+   *
+   * @param {object} specimen - the specimen to update
+   *
+   * @return {Promise}
+   */
   updateSpecimen(specimen) {
     const errors = this.validateSpecimen(specimen);
     if (!isEmpty(errors)) {
@@ -120,10 +160,18 @@ class BiobankIndex extends React.Component {
     .then((specimens) => this.setData('specimens', specimens));
   }
 
-  // TODO: This should eventually check for errors and replace 'updateSpecimen'
-  // All updates can be sent via an array. This change should be reflected in
-  // the backend too. It should also be able to be be sent with a nested
-  // container object.
+  /**
+   * Update multiple specimens at once
+   *
+   * TODO: This should eventually check for errors and replace 'updateSpecimen'
+   * All updates can be sent via an array. This change should be reflected in
+   * the backend too. It should also be able to be be sent with a nested
+   * container object.
+   *
+   * @param {array} list - the list of specimens to update
+   *
+   * @return {Promise}
+   */
   updateSpecimens(list) {
     const updateList = list
     .map((specimen) => () => this.updateSpecimen(specimen));
@@ -131,6 +179,13 @@ class BiobankIndex extends React.Component {
     return Promise.all(updateList.map((updateSpecimen) => updateSpecimen()));
   }
 
+  /**
+   * Edit a list of specimens
+   *
+   * @param {array} list - a list of specimens
+   *
+   * @return {Promise}
+   */
   editSpecimens(list) {
     let errors = {};
     errors.specimen = this.validateSpecimen(list[0].specimen);
@@ -151,6 +206,13 @@ class BiobankIndex extends React.Component {
     .then(() => Promise.all(containerList.map((item) => item())));
   }
 
+  /**
+   * Sends a request to update a container on the server
+   *
+   * @param {object} container - the container to update
+   *
+   * @return {Promise}
+   */
   updateContainer(container) {
     const errors = this.validateContainer(container);
     if (!isEmpty(errors)) {
@@ -161,10 +223,20 @@ class BiobankIndex extends React.Component {
     .then((containers) => this.setData('containers', containers));
   }
 
+  /**
+   * Increase the coordinates of a container to put it in the
+   * next available slot.
+   *
+   * @param {object} coordinate - the coordinate to increment
+   * @param {int} parentContainerId - the parent container
+   *
+   * @return {int}
+   */
   increaseCoordinate(coordinate, parentContainerId) {
-    const childCoordinates = this.state.data.containers[parentContainerId].childContainerIds
+    const containers = this.state.data.containers;
+    const childCoordinates = containers[parentContainerId].childContainerIds
     .reduce((result, id) => {
-      const container = this.state.data.containers[id];
+      const container = containers[id];
       if (container.coordinate) {
         result[container.coordinate] = id;
       }
@@ -183,6 +255,15 @@ class BiobankIndex extends React.Component {
     return increment(coordinate);
   }
 
+  /**
+   * Create a batch of speciments
+   *
+   * @param {object} list - ?
+   * @param {object} current - ?
+   * @param {object} print - ?
+   *
+   * @return {Promise}
+   */
   createSpecimens(list, current, print) {
     const {options, data} = this.state;
     const labelParams = [];
@@ -218,11 +299,16 @@ class BiobankIndex extends React.Component {
       // If the container is assigned to a parent, place it sequentially in the
       // parent container and inherit the status, temperature and centerId.
       if (current.container.parentContainerId) {
+        const containerParentId = current.container.parentContainerId;
         container.parentContainerId = current.container.parentContainerId;
-        const parentContainer = data.containers[current.container.parentContainerId];
-        const dimensions = options.container.dimensions[parentContainer.dimensionId];
+        const parentContainer = data.containers[containerParentId];
+        const dims = options.container.dimensions;
+        const dimensions = dims[parentContainer.dimensionId];
         const capacity = dimensions.x * dimensions.y * dimensions.z;
-        coord = this.increaseCoordinate(coord, current.container.parentContainerId);
+        coord = this.increaseCoordinate(
+           coord,
+           current.container.parentContainerId
+        );
         if (coord <= capacity) {
           container.coordinate = parseInt(coord);
         } else {
@@ -270,7 +356,7 @@ class BiobankIndex extends React.Component {
     const printBarcodes = () => {
       return new Promise((resolve) => {
         if (print) {
-          swal({
+          Swal.fire({
             title: 'Print Barcodes?',
             type: 'question',
             confirmButtonText: 'Yes',
@@ -294,9 +380,19 @@ class BiobankIndex extends React.Component {
     .then(() => Promise.resolve());
   }
 
+  /**
+   * Create containers
+   *
+   * @param {object} list - ?
+   * @param {object} current - ?
+   * @param {object} errors - ?
+   *
+   * @return {Promise}
+   */
   createContainers(list, current, errors) {
-    const availableId = Object.keys(this.state.options.container.stati)
-    .find((key) => this.state.options.container.stati[key].label === 'Available');
+    const stati = this.state.options.container.stati;
+    const availableId = Object.keys(stati)
+    .find((key) => stati[key].label === 'Available');
 
     let isError = false;
     Object.entries(list).forEach(([key, container]) => {
@@ -322,9 +418,20 @@ class BiobankIndex extends React.Component {
     .then(() => Promise.resolve());
   }
 
+  /**
+   * Create a new pool
+   *
+   * @param {object} pool - the pool to create
+   * @param {object} list - the specimens to add to the pool
+   *
+   * @return {Promise}
+   */
   createPool(pool, list) {
-    const dispensedId = Object.keys(this.state.options.container.stati)
-    .find((key) => this.state.options.container.stati[key].label === 'Dispensed');
+    const stati = this.state.options.container.stati;
+    const dispensedId = Object.keys(stati)
+    .find(
+       (key) => stati[key].label === 'Dispensed'
+       );
     const update = Object.values(list)
     .reduce((result, item) => {
       item.container.statusId = dispensedId;
@@ -345,6 +452,13 @@ class BiobankIndex extends React.Component {
     .then(() => Promise.all(update.map((update) => update())));
   }
 
+  /**
+   * Save a batch of edits
+   *
+   * @param {object} list - a list of edits
+   *
+   * @return {Promise}
+   */
   saveBatchEdit(list) {
     const saveList = list
     .map((specimen) => () => post(specimen, this.props.specimenAPI, 'PUT'));
@@ -355,14 +469,32 @@ class BiobankIndex extends React.Component {
     }
 
     return Promise.all(saveList.map((item) => item()))
-    .then((data) => Promise.all(data.map((item) => this.setData('specimens', item))))
-    .then(() => swal('Batch Preparation Successful!', '', 'success'));
+    .then(
+       (data) => Promise.all(
+          data.map((item) => this.setData('specimens', item))
+       )
+    ).then(() => Swal.fire('Batch Preparation Successful!', '', 'success'));
   }
 
+  /**
+   * Validate a specimen
+   *
+   * @param {object} specimen - the specimen to validate
+   * @param {string} key - unused?
+   *
+   * @return {object} an object of errors
+   */
   validateSpecimen(specimen, key) {
     const errors = {};
 
-    const required = ['typeId', 'quantity', 'unitId', 'candidateId', 'sessionId', 'collection'];
+    const required = [
+      'typeId',
+      'quantity',
+      'unitId',
+      'candidateId',
+      'sessionId',
+      'collection',
+    ];
     const float = ['quantity'];
     const positive = ['quantity', 'fTCycle'];
     const integer = ['fTCycle'];
@@ -387,16 +519,27 @@ class BiobankIndex extends React.Component {
     });
 
     integer.map((field) => {
-      if (specimen[field] != null && !/^\+?(0|[1-9]\d*)$/.test(specimen[field])) {
+      if (specimen[field] != null
+          && !/^\+?(0|[1-9]\d*)$/.test(specimen[field])
+      ) {
         errors[field] = 'This field must be an integer!';
       }
     });
 
+    const optspecimen = this.state.options.specimen;
     errors.collection =
       this.validateProcess(
         specimen.collection,
-        this.state.options.specimen.protocolAttributes[specimen.collection.protocolId],
-        ['protocolId', 'examinerId', 'quantity', 'unitId', 'centerId', 'date', 'time'],
+        optspecimen.protocolAttributes[specimen.collection.protocolId],
+        [
+          'protocolId',
+          'examinerId',
+          'quantity',
+          'unitId',
+          'centerId',
+          'date',
+          'time',
+        ],
         ['quantity']
       );
 
@@ -409,7 +552,7 @@ class BiobankIndex extends React.Component {
       errors.preparation =
         this.validateProcess(
           specimen.preparation,
-          this.state.options.specimen.protocolAttributes[specimen.preparation.protocolId],
+          optspecimen.protocolAttributes[specimen.preparation.protocolId],
           ['protocolId', 'examinerId', 'centerId', 'date', 'time']
         );
     }
@@ -422,7 +565,7 @@ class BiobankIndex extends React.Component {
       errors.analysis =
         this.validateProcess(
           specimen.analysis,
-          this.state.options.specimen.protocolAttributes[specimen.analysis.protocolId],
+          optspecimen.protocolAttributes[specimen.analysis.protocolId],
           ['protocolId', 'examinerId', 'centerId', 'date', 'time']
         );
     }
@@ -434,6 +577,16 @@ class BiobankIndex extends React.Component {
     return errors;
   }
 
+  /**
+   * Validate a process
+   *
+   * @param {object} process - the process to validate
+   * @param {object} attributes - the attributes of the process
+   * @param {array} required - the required fields
+   * @param {array} number - an array of fields that must be numbers
+   *
+   * @return {object} errors
+   */
   validateProcess(process, attributes, required, number) {
     let errors = {};
     let regex;
@@ -467,9 +620,11 @@ class BiobankIndex extends React.Component {
     // validate custom attributes
     if (!isEmpty(process.data)) {
       errors.data = {};
-      const datatypes = this.state.options.specimen.attributeDatatypes;
+      const specimenopts = this.state.options.specimen;
+      const datatypes = specimenopts.attributeDatatypes;
 
-      const protocolAttributes = this.state.options.specimen.protocolAttributes[process.protocolId];
+      const protocolId = process.protocolId;
+      const protocolAttributes = specimenopts.protocolAttributes[protocolId];
       // FIXME: This if statement was introduced because certain processes have
       // a data object even though their protocol isn't associated with attributes.
       // This is a sign of bad importing/configuration and should be fixed in configuration
@@ -483,8 +638,9 @@ class BiobankIndex extends React.Component {
             errors.data[attributeId] = 'This field is required!';
           }
 
+          const dataTypeId= attributes[attributeId].datatypeId;
           // validate number
-          if (datatypes[attributes[attributeId].datatypeId].datatype === 'number') {
+          if (datatypes[dataTypeId].datatype === 'number') {
             if (isNaN(parseInt(process.data[attributeId])) ||
                 !isFinite(process.data[attributeId])) {
               errors.data[attributeId] = 'This field must be a number!';
@@ -492,7 +648,7 @@ class BiobankIndex extends React.Component {
           }
 
           // validate date
-          if (datatypes[attributes[attributeId].datatypeId].datatype === 'date') {
+          if (datatypes[dataTypeId].datatype === 'date') {
             regex = /^[12]\d{3}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/;
             if (regex.test(process.data[attributeId]) === false ) {
               errors.data[attributeId] = 'This field must be a valid date! ';
@@ -500,7 +656,7 @@ class BiobankIndex extends React.Component {
           }
 
           // validate time
-          if (datatypes[attributes[attributeId].datatypeId].datatype === 'time') {
+          if (datatypes[dataTypeId].datatype === 'time') {
             regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
             if (regex.test(process.data[attributeId]) === false) {
               errors.data[attributeId] = 'This field must be a valid time! ';
@@ -520,6 +676,14 @@ class BiobankIndex extends React.Component {
     return errors;
   }
 
+  /**
+   * Validate a container object
+   *
+   * @param {object} container - the container to validate
+   * @param {string} key - unused?
+   *
+   * @return {object} - an object full of errors
+   */
   validateContainer(container, key) {
     const errors = {};
 
@@ -561,6 +725,13 @@ class BiobankIndex extends React.Component {
     return errors;
   }
 
+  /**
+   * Validate a pool of speciments
+   *
+   * @param {object} pool - The pool to validate
+   *
+   * @return {object} an object of any errors
+   */
   validatePool(pool) {
     let regex;
     const errors = {};
@@ -596,6 +767,11 @@ class BiobankIndex extends React.Component {
     return errors;
   }
 
+  /**
+   * Render React component
+   *
+   * @return {JSX}
+   */
   render() {
     const barcode = (props) => {
       const target = this.routeBarcode(props.match.params.barcode);

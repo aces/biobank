@@ -30,6 +30,11 @@ use \Psr\Http\Message\ResponseInterface;
  */
 class Shipments implements RequestHandlerInterface
 {
+
+    private \LORIS\LorisInstance $loris;
+    private \Database $db;
+    private \User $user;
+
     /**
      * Returns true if user has acces to this Endpoint.
      *
@@ -50,11 +55,25 @@ class Shipments implements RequestHandlerInterface
     protected function allowedMethods() : array
     {
         return [
-                'GET',
-                'PUT',
-                'POST',
-                'OPTIONS',
-               ];
+            'GET',
+            'PUT',
+            'POST',
+            'OPTIONS',
+        ];
+    }
+
+    /**
+     * This function can be overridden in a module's page to load the necessary
+     * resources to check the permissions of a user.
+     *
+     * @param User                   $user    The user to load the resources for
+     * @param ServerRequestInterface $request The PSR15 Request being handled
+     *
+     * @return void
+     */
+    public function loadResources(
+        \User $user, ServerRequestInterface $request
+    ) : void {
     }
 
     /**
@@ -84,15 +103,14 @@ class Shipments implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        $this->db       = \Database::singleton();
-        $this->user     = $request->getAttribute('user');
-
-        $pathparts = $request->getAttribute('pathparts');
+        $this->loris = $request->getAttribute('loris');
+        $this->db    = $this->loris->getDatabaseConnection();
+        $this->user  = $request->getAttribute('user');
 
         // TODO: This entire thing NEEDS to have a try block wrapped around it!
         try {
             $this->db->beginTransaction();
-            switch($request->getMethod()) {
+            switch ($request->getMethod()) {
             case 'GET':
                 return $this->_handleGET($request);
             case 'POST':
@@ -110,14 +128,19 @@ class Shipments implements RequestHandlerInterface
         }
     }
 
-    private function _handleGET(ServerRequestInterface $request) : ResponseInterface
+    /**
+     * Handle the logic of an incoming HTTP GET request
+     *
+     * @return ResponseInterface
+     */
+    private function _handleGET() : ResponseInterface
     {
         // TODO: This needs to be checked but should probably go somewhere else...
         // if (!$this->user->hasPermission('biobank_shipment_view')) {
         //     throw new \Forbidden('Shipment: View Permission Denied');
         // }
         $shipments = [];
-        $dao = new ShipmentDAO($this->db);
+        $dao       = new ShipmentDAO($this->db);
         if ($this->user->hasPermission('access_all_profiles') === false) {
             $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
         }
@@ -125,34 +148,69 @@ class Shipments implements RequestHandlerInterface
         foreach ($shipmentIterator as $barcode=>$shipment) {
             $shipments[$barcode] = $shipment;
         }
-        return new \LORIS\Http\Response\OK($shipments);
+        return new \LORIS\Http\Response\JSON\OK($shipments);
     }
 
+    /**
+     * Handle the logic of an incoming HTTP POST request
+     *
+     * @param ServerRequestInterface $request The PSR7 request
+     *
+     * @return ResponseInterface
+     */
     private function _handlePOST(ServerRequestInterface $request) : ResponseInterface
     {
         $shipmentArray   = json_decode($request->getBody()->getContents(), true);
-        $shipmentHandler = new ShipmentHandler($shipmentArray, $this->db, $this->user);
+        $shipmentHandler = new ShipmentHandler(
+            $shipmentArray,
+            $this->db,
+            $this->user,
+        );
 
         // TODO: A lot of what the handler does should ACTUALLY be done here.
         // Handlers should not know how operate multiple shipments, only 1 each!
         if (!$shipmentHandler->isValid()) {
-            return new \LORIS\Http\Response\JsonResponse($shipmentHandler->getErrors(), 422);
+            return new \LORIS\Http\Response\JsonResponse(
+                $shipmentHandler->getErrors(),
+                422
+            );
         }
-        
-        return new \LORIS\Http\Response\JsonResponse($shipmentHandler->createInstance(), 200);
+
+        return new \LORIS\Http\Response\JsonResponse(
+            $shipmentHandler->createInstance(),
+            200
+        );
     }
 
-    private function _handlePUT(ServerRequestInterface $request) : ResponseInterface
-    {
+    /**
+     * Logic to handle an incoming HTTP PUT request
+     *
+     * @param ServerRequestInterface $request the PSR7 request
+     *
+     * @return ResponseInterface
+     */
+    private function _handlePUT(
+        ServerRequestInterface $request
+    ) : ResponseInterface {
         $shipmentArray   = json_decode($request->getBody()->getContents(), true);
-        $shipmentHandler = new ShipmentHandler($shipmentArray, $this->db, $this->user);
+        $shipmentHandler = new ShipmentHandler(
+            $shipmentArray,
+            $this->db,
+            $this->user,
+        );
 
         // TODO: A lot of what the handler does should ACTUALLY be done here.
         // Handlers should not know how operate multiple shipments, only 1 each!
         if (!$shipmentHandler->isValid()) {
-            return new \LORIS\Http\Response\JsonResponse($shipmentHandler->getErrors(), 422);
+            return new \LORIS\Http\Response\JsonResponse(
+                $shipmentHandler->getErrors(),
+                422,
+            );
         }
-        
-        return new \LORIS\Http\Response\JsonResponse($shipmentHandler->createInstance(), 200);
+
+        return new \LORIS\Http\Response\JsonResponse(
+            $shipmentHandler->createInstance(),
+            200,
+        );
     }
 }

@@ -25,13 +25,17 @@ function Globals(props) {
     />
   );
 
-  const edit = loris.userHasPermission('biobank_specimen_alter') && specimen && (
+  const edit = loris.userHasPermission('biobank_specimen_alter')
+    && specimen && (
     () => {
       props.edit('containerType');
       editContainer();
     }
   );
-  const containerTypes = mapFormOptions(options.container.typesPrimary, 'label');
+  const containerTypes = mapFormOptions(
+    options.container.typesPrimary,
+    'label'
+  );
   const containerTypeField = (
     <InlineField
       loading={props.loading}
@@ -237,7 +241,9 @@ function Globals(props) {
   const drawField = specimen && (
     <InlineField
       label='Draw Site'
-      value={options.centers[options.sessionCenters[specimen.sessionId].centerId]}
+      value={options.centers[
+        options.sessionCenters[specimen.sessionId].centerId
+      ]}
     />
   );
 
@@ -266,7 +272,7 @@ function Globals(props) {
         const barcode = data.containers[data.specimens[id].containerId].barcode;
         return <Link to={`/barcode=${barcode}`}>{barcode}</Link>;
       })
-      .reduce((prev, curr) => [prev, ', ', curr]);
+      .reduce((prev, curr) => [prev, ', ', curr], []);
 
       return (
         <InlineField
@@ -423,7 +429,11 @@ function InlineField(props) {
   const editButton = props.edit instanceof Function && !props.editable && (
     <div className='action' title={'Update '+props.label}>
       <span
-        className={props.pencil ? 'glyphicon glyphicon-pencil' : 'action-button update'}
+        className={
+            props.pencil
+              ? 'glyphicon glyphicon-pencil'
+              : 'action-button update'
+        }
         onClick={() => {
           props.edit();
           props.editValue();

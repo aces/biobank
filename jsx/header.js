@@ -4,12 +4,23 @@ import Modal from 'Modal';
 import LifeCycle from './lifeCycle.js';
 import SpecimenForm from './specimenForm.js';
 
-import swal from 'sweetalert2';
+import Swal from 'sweetalert2';
 
+/**
+ * React component to display a header.
+ */
 class Header extends Component {
+  /**
+   * Render react component
+   *
+   * @return {JSX}
+   */
   render() {
     const {options, container, specimen, editable, current} = this.props;
-    const updateContainer = () => Promise.resolve(this.props.updateContainer(current.container));
+    const updateContainer = () =>
+        Promise.resolve(
+          this.props.updateContainer(current.container)
+    );
 
     const status = options.container.stati[container.statusId].label;
     const renderActionButton = () => {
@@ -128,7 +139,7 @@ class Header extends Component {
         type: options.specimen.types[specimen.typeId].label,
       }];
       this.props.printLabel(labelParams)
-        .then(() => (swal.fire('Print Barcode Number: ' + container.barcode)));
+        .then(() => (Swal.fire('Print Barcode Number: ' + container.barcode)));
     };
 
     return (

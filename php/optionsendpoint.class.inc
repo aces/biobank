@@ -28,7 +28,7 @@ use \Psr\Http\Message\ResponseInterface;
  * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
  * @link       http://www.github.com/aces/Loris/
  */
-class OptionsEndpoint implements RequestHandlerInterface
+class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
 {
     /**
      * Returns true if user has access to this endpoint.
@@ -49,10 +49,24 @@ class OptionsEndpoint implements RequestHandlerInterface
      */
     protected function allowedMethods() : array
     {
-        return array(
-                'GET',
-                'OPTIONS',
-               );
+        return [
+            'GET',
+            'OPTIONS',
+        ];
+    }
+
+    /**
+     * This function can be overridden in a module's page to load the necessary
+     * resources to check the permissions of a user.
+     *
+     * @param User                   $user    The user to load the resources for
+     * @param ServerRequestInterface $request The PSR15 Request being handled
+     *
+     * @return void
+     */
+    public function loadResources(
+        \User $user, ServerRequestInterface $request
+    ) : void {
     }
 
     /**
@@ -82,41 +96,39 @@ class OptionsEndpoint implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        $db   = \Database::singleton();
+        ini_set('memory_limit', '-1');
+        $db   = $this->loris->getDatabaseConnection();
         $user = $request->getAttribute('user');
 
         try {
-            switch($request->getMethod()) {
+            switch ($request->getMethod()) {
             case 'GET':
                 $options = $this->getOptions($db, $user);
-                return new \LORIS\Http\Response\OK($options);
+                return new \LORIS\Http\Response\JSON\OK($options);
             case 'OPTIONS':
                 return (new \LORIS\Http\Response())
                     ->withHeader('Allow', $this->allowedMethods());
             }
-        } catch (\Invalid $e) {
-            return new \LORIS\Http\Response\BadRequest($e->getMessage());
-        } catch (\Forbidden $e) {
-            return new \LORIS\Http\Response\Forbidden($e->getMessage());
+        } catch (Forbidden $e) {
+            return new \LORIS\Http\Response\JSON\Forbidden($e->getMessage());
         }
     }
 
     /**
      * Retrieves all options for populating forms and mapping front-end data.
      *
-     * @param Database $db   Database instance
-     * @param User     $user User instance
+     * @param \Database $db   Database instance
+     * @param \User     $user User instance
      *
      * @return array All options required by the Biobank Module
      */
     function getOptions(\Database $db, \User $user)
     {
-        $contCont = new ContainerController($db, $user);
-        $specCont = new SpecimenController($db, $user);
-        $shipDAO = new ShipmentDAO($db);
+        $contCont = new ContainerController($this->loris, $user);
+        $specCont = new SpecimenController($this->loris, $user);
+        $shipDAO  = new ShipmentDAO($db);
 
         $userCenters = implode(',',$user->getCenterIDs());
-
         // XXX: This should eventually be replaced by a call directly to a
         // Candidate endpoint or Candidate controller that will be able to
         // provide Candidate Objects.
@@ -139,41 +151,43 @@ class OptionsEndpoint implements RequestHandlerInterface
         }
         $group      =   " GROUP BY CandID";
         $candidates = $db->pselectWithIndexKey($query.$where.$group, array(), 'id');
-        foreach($candidates as $id => $candidate) {
-          $candidate['diagnosisIds'] = $candidate['diagnosisIds'] ? explode(',', $candidate['diagnosisIds']) : [];
-          $candidates[$id] = $candidate;
+        foreach ($candidates as $id => $candidate) {
+            $candidate['diagnosisIds'] = $candidate['diagnosisIds']
+                ? explode(',', $candidate['diagnosisIds'])
+                : [];
+            $candidates[$id]           = $candidate;
         }
 
         // XXX: This should eventually be replaced by a call directly to a
         // Candidate endpoint or Candidate controller that will be able to provide
         // Diagnosis Options.
-        $query    = 'SELECT DiagnosisID as id, Name as label FROM diagnosis';
-        $diagnoses = $db->pselectWithIndexKey($query, array(), 'id');
+        $query     = 'SELECT DiagnosisID as id, Name as label FROM diagnosis';
+        $diagnoses = $db->pselectWithIndexKey($query, [], 'id');
 
         // XXX: This should eventually be replaced by a call directly to a
         // Session endpoint or Session controller that will be able to provide
         // Session Objects.
         $query    = 'SELECT ID as id, Visit_label as label FROM session';
-        $sessions = $db->pselectWithIndexKey($query, array(), 'id');
+        $sessions = $db->pselectWithIndexKey($query, [], 'id');
 
         // XXX: This should eventually be replaced by a call directly to a
         // Examiner endpoint or Examiner controller that will be able to provide
         // Examiner Objects.
         $query     = 'SELECT examinerID as id, full_name as label FROM examiners';
-        $examiners = $db->pselectWithIndexKey($query, array(), 'id');
+        $examiners = $db->pselectWithIndexKey($query, [], 'id');
 
         // XXX: This should eventually be replaced by a call directly to a
         // User endpoint or Examiner controller that will be able to provide
         // User Objects.
-        $query     = 'SELECT ID as id, Real_name as label FROM users';
-        $users = $db->pselectWithIndexKey($query, array(), 'id');
+        $query = 'SELECT ID as id, Real_name as label FROM users';
+        $users = $db->pselectWithIndexKey($query, [], 'id');
 
         // XXX: This should eventually be replaced by a call directly to a
         // Center Endpoint or Center Controller that will be able to provide
         // Center Objects.
         $centers = \Utility::getSiteList();
         foreach ($centers as $id => $center) {
-            if ($user->hasCenter($id) === false) {
+            if ($user->hasCenter(new \CenterID(strval($id))) === false) {
                 unset($centers[$id]);
             }
         }
@@ -198,33 +212,37 @@ class OptionsEndpoint implements RequestHandlerInterface
                             OR bp.CenterID IN ($userCenters)";
         }
         $result = $db->pselect($query.$where, array());
-        $candidateSessions = array();
-        $sessionCenters    = array();
+        $candidateSessions = [];
+        $sessionCenters    = [];
         foreach ($result as $row) {
-            foreach ($row as $column=>$value) {
-                $candidateSessions[$row['candidateId']][$row['sessionId']]['id'] = $row['sessionId'];
-                $candidateSessions[$row['candidateId']][$row['sessionId']]['label'] = $row['label'];
-                $sessionCenters[$row['sessionId']]['centerId'] = $row['centerId'];
-            }
+            if (!isset($candidateSessions[$row['candidateId']][$row['sessionId']])) {
+                    $candidateSessions[$row['candidateId']][$row['sessionId']] = [];
+            };
+            $ses =& $candidateSessions[$row['candidateId']][$row['sessionId']];
+            $ses['id'] = $row['sessionId'];
+            $ses['label'] = $row['label'];
+
+            $sessionCenters[$row['sessionId']]['centerId'] = $row['centerId'];
         }
 
         $shipment = [
-          'statuses' => $shipDAO->getStatuses(),
-          'types'    => $shipDAO->getTypes(),
+            'statuses' => $shipDAO->getStatuses(),
+            'types'    => $shipDAO->getTypes(),
         ];
-        return array(
-                'candidates'        => $candidates,
-                'diagnoses'         => $diagnoses,
-                'sessions'          => $sessions,
-                'projects'          => \Utility::getProjectList(),
-                'centers'           => $centers,
-                'examiners'         => $examiners,
-                'users'             => $users,
-                'candidateSessions' => $candidateSessions,
-                'sessionCenters'    => $sessionCenters,
-                'container'         => $contCont->getOptions(),
-                'specimen'          => $specCont->getOptions(),
-                'shipment'          => $shipment,
-               );
+
+        return [
+            'candidates'        => $candidates,
+            'diagnoses'         => $diagnoses,
+            'sessions'          => $sessions,
+            'projects'          => \Utility::getProjectList(),
+            'centers'           => $centers,
+            'examiners'         => $examiners,
+            'users'             => $users,
+            'candidateSessions' => $candidateSessions,
+            'sessionCenters'    => $sessionCenters,
+            'container'         => $contCont->getOptions(),
+            'specimen'          => $specCont->getOptions(),
+            'shipment'          => $shipment,
+        ];
     }
 }
