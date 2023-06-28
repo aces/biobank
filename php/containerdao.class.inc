@@ -76,7 +76,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             [
                 ['column'=>'bc.ContainerID', 'value'=>$id],
             ],
-        )[$id] ?? null;;
+        )[$id] ?? null;
     }
 
     /**
