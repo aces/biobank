@@ -97,7 +97,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
         ini_set('memory_limit', '-1');
-        $db   = $this->loris->getDatabaseConnection();
+        $db   = \NDB_Factory::singleton()->database();
         $user = $request->getAttribute('user');
 
         try {

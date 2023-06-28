@@ -97,7 +97,7 @@ class PoolEndpoint extends \NDB_Page implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        $db       = $this->loris->getDatabaseConnection();
+        $db       = \NDB_Factory::singleton()->database();
         $user     = $request->getAttribute('user');
         $poolCont = new PoolController($this->loris, $user);
 

@@ -104,7 +104,7 @@ class Shipments implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
         $this->loris = $request->getAttribute('loris');
-        $this->db    = $this->loris->getDatabaseConnection();
+        $this->db    = \NDB_Factory::singleton()->database();
         $this->user  = $request->getAttribute('user');
 
         try {
