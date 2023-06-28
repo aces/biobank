@@ -118,16 +118,11 @@ class PoolEndpoint extends \NDB_Page implements RequestHandlerInterface
         } catch (BadRequest $e) {
             $db->rollBack();
             return new \LORIS\Http\Response\JSON\BadRequest($e->getMessage());
-<<<<<<< HEAD
         } catch (Forbidden $e) {
-=======
-        } catch (\Forbidden $e) {
->>>>>>> fix response name space and DB calls
             $db->rollBack();
             return new \LORIS\Http\Response\JSON\Forbidden($e->getMessage());
         } catch (\TypeError $e) {
             $db->rollback();
-<<<<<<< HEAD
             return new \LORIS\Http\Response\JSON\InternalServerError(
                 $e->getMessage()
             );
@@ -136,12 +131,6 @@ class PoolEndpoint extends \NDB_Page implements RequestHandlerInterface
             return new \LORIS\Http\Response\JSON\InternalServerError(
                 $e->getMessage()
             );
-=======
-            return new \LORIS\Http\Response\JSON\InternalServerError($e->getMessage());
-        } catch (\DatabaseException $e) {
-            $db->rollBack();
-            return new \LORIS\Http\Response\JSON\InternalServerError($e->getMessage());
->>>>>>> fix response name space and DB calls
         } finally {
             if ($db->inTransaction()) {
                 $db->commit();
