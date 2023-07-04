@@ -57,9 +57,8 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
     private $typeId;
     private $quantity;
     private $unitId;
-    private \CenterID $containerCenterId;
     private $fTCycle;
-    private $containerCenterId;
+    private \CenterID $containerCenterId;
     private $parentSpecimenIds;
     private $candidateId;
     private $candidateAge;
