@@ -409,8 +409,8 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             $updatedChildren = $this->cascadeToChildren($container, 'ContainerStatusID', $container->getStatusId());
             $updatedContainers = array_merge($updatedChildren, $updatedContainers);
         }
-        if ($container->getCenterID() !== $oldContainer->getCenterID()) {
-            $updatedChildren = $this->cascadeToChildren($container, 'CenterID', $container->getCenterID());
+        if ($container->getCenterId() !== $oldContainer->getCenterId()) {
+            $updatedChildren = $this->cascadeToChildren($container, 'CenterID', $container->getCenterId());
             $updatedContainers = array_merge($updatedChildren, $updatedContainers);
         }
 
@@ -561,7 +561,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                            'ContainerTypeID'   => $container->getTypeId(),
                            'Temperature'       => $container->getTemperature(),
                            'ContainerStatusID' => $container->getStatusId(),
-                           'CenterID'          => $container->getCenterID(),
+                           'CenterID'          => $container->getCenterId(),
                            'LotNumber'         => $container->getLotNumber(),
                            'ExpirationDate'    => $expirationDate,
                            'Comments'          => $container->getComments(),
@@ -608,7 +608,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         isset($data['ContainerStatusID'])    && $container->setStatusId((int) $data['ContainerStatusID']);
         isset($projectIds)                   && $container->setProjectIds($projectIds);
         isset($shipmentBarcodes)             && $container->setShipmentBarcodes($shipmentBarcodes);
-        isset($data['CenterID'])             && $container->setCenterId(new \CenterID(strval($data['CenterID'])));
+        isset($data['CenterID'])             && $container->setCenterId((int) $data['CenterID']);
         isset($data['ParentContainerID'])    && $container->setParentContainerId((int) $data['ParentContainerID']);
         isset($childContainerIds)            && $container->setChildContainerIds($childContainerIds);
         isset($data['Coordinate'])           && $container->setCoordinate((int) $data['Coordinate']);

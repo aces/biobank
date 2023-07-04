@@ -622,7 +622,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         isset($data['SpecimenTypeID'])  && $specimen->setTypeId((int) $data['SpecimenTypeID']);
         isset($data['Quantity'])        && $specimen->setQuantity((string) $data['Quantity']);
         isset($data['UnitID'])          && $specimen->setUnitId((int) $data['UnitID']);
-        isset($data['ContainerCenterID']) && $specimen->setContainerCenterId(new \CenterID(strval($data['ContainerCenterID'])));
+        isset($data['ContainerCenterID']) && $specimen->setContainerCenterId((int) $data['ContainerCenterID']);
         isset($data['FreezeThawCycle']) && $specimen->setFTCycle((int) $data['FreezeThawCycle']);
         !empty($parentSpecimenIds)      && $specimen->setParentSpecimenIds(!empty($parentSpecimenIds) ? $parentSpecimenIds : null);
         isset($data['CandidateID'])     && $specimen->setCandidateId((int) $data['CandidateID']);

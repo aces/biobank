@@ -205,7 +205,7 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
                      'Label'    => $pool->getLabel(),
                      'Quantity' => $pool->getQuantity(),
                      'UnitID'   => $pool->getUnitId(),
-                     'CenterID' => $pool->getCenterID(),
+                     'CenterID' => $pool->getCenterId(),
                      'Date'     => $pool->getDate()->format('Y-m-d'),
                      'Time'     => $pool->getTime()->format('H:i'),
                     );
@@ -245,7 +245,7 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         isset($data['CandidateID']) && $pool->setCandidateId((int) $data['CandidateID']);
         isset($data['SessionID'])   && $pool->setSessionId((int) $data['SessionID']);
         isset($data['TypeID'])      && $pool->setTypeId((int) $data['TypeID']);
-        isset($data['CenterID'])    && $pool->setCenterId(new \CenterID(strval($data['CenterID'])));
+        isset($data['CenterID'])    && $pool->setCenterId((int) $data['CenterID']);
         isset($data['Date'])        && $pool->setDate(new \DateTime($data['Date']));
         isset($data['Time'])        && $pool->setTime(new \DateTime($data['Time']));
 
