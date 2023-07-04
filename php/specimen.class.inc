@@ -29,7 +29,7 @@ namespace LORIS\biobank;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyEntities\SiteHaver
+class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance
 {
     /**
      * Persistent Instance variables.
@@ -41,7 +41,6 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
      * @var int         $typeId
      * @var string      $quantity
      * @var int         $unitId
-     * @var \CenterID   $containerCenterId
      * @var int         $fTCycle
      * @var array       $parentSpecimenIds
      * @var int         $candidateId
@@ -57,7 +56,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
     private $typeId;
     private $quantity;
     private $unitId;
-    private \CenterID $containerCenterId;
+    private $containerCenterId;
     private $fTCycle;
     private $parentSpecimenIds;
     private $candidateId;
@@ -403,7 +402,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
         return $this->analysis;
     }
 
-    public function setContainerCenterId(\CenterID $containerCenterId)
+    public function setContainerCenterId(int $containerCenterId)
     {
         $this->containerCenterId = $containerCenterId;
     }
@@ -415,9 +414,9 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
     /**
      * Return Center ID of affiliated specimen container.
      *
-     * @return \CenterID
+     * @return int
      */
-    public function getCenterID() : \CenterID
+    public function getCenterId()
     {
 //        $db           = \Database::singleton();
 //        $containerDAO = new ContainerDAO($db);
@@ -442,7 +441,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
         isset($data['typeId'])            && $this->setTypeId((int) $data['typeId']);
         isset($data['quantity'])          && $this->setQuantity((string) $data['quantity']);
         isset($data['unitId'])            && $this->setUnitId((int) $data['unitId']);
-        isset($data['containerCenterId']) && $this->setContainerCenterId(new \CenterID(strval($data['containerCenterId'])));
+        isset($data['containerCenterId']) && $this->setContainerCenterId((int) $data['containerCenterId']);
         isset($data['fTCycle'])           && $this->setFTCycle((int) $data['fTCycle']);
         isset($data['parentSpecimenIds']) && $this->setParentSpecimenIds($data['parentSpecimenIds']);
         isset($data['candidateId'])       && $this->setCandidateId((int) $data['candidateId']);
@@ -491,7 +490,7 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
                 'typeId'            => $this->typeId,
                 'quantity'          => $this->quantity,
                 'unitId'            => $this->unitId,
-                'containerCenterId' => $this->containerCenterId->__toString(),
+                'containerCenterId' => $this->containerCenterId,
                 'fTCycle'           => $this->fTCycle,
                 'parentSpecimenIds' => $this->parentSpecimenIds,
                 'candidateId'       => $this->candidateId,

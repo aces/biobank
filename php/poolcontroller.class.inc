@@ -259,7 +259,7 @@ class PoolController
      */
     private function validateCenterId(Pool $pool) : void
     {
-        if (is_null($pool->getCenterID())) {
+        if (is_null($pool->getCenterId())) {
             throw new \BadRequest('Pool Center must be set');
         }
     }
