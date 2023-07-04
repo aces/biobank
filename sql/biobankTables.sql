@@ -201,7 +201,7 @@ CREATE TABLE `biobank_specimen_collection` (
   `ExaminerID` integer unsigned NOT NULL,
   `Date` DATE NOT NULL,
   `Time` TIME NOT NULL,
-  `Comments` varchar(255),
+  `Comments` varchar(500),
   `Data` json DEFAULT NULL,
   CONSTRAINT `PK_biobank_specimen_collection` PRIMARY KEY (`SpecimenID`),
   CONSTRAINT `FK_biobank_specimen_collection_SpecimenID`
@@ -228,7 +228,7 @@ CREATE TABLE `biobank_specimen_preparation` (
   `ExaminerID` integer unsigned NOT NULL,
   `Date` DATE NOT NULL,
   `Time` TIME NOT NULL,
-  `Comments` varchar(255),
+  `Comments` varchar(500),
   `Data` json DEFAULT NULL,
   CONSTRAINT `PK_biobank_specimen_preparation` PRIMARY KEY (`SpecimenID`),
   CONSTRAINT `FK_biobank_specimen_preparation_SpecimenID`
@@ -252,7 +252,7 @@ CREATE TABLE `biobank_specimen_analysis` (
   `ExaminerID` integer unsigned NOT NULL,
   `Date` DATE NOT NULL,
   `Time` TIME NOT NULL,
-  `Comments` varchar(255),
+  `Comments` varchar(500),
   `Data` json DEFAULT NULL,
   CONSTRAINT `PK_biobank_specimen` PRIMARY KEY (`SpecimenID`),
   CONSTRAINT `FK_biobank_specimen_analysis_SpecimenID`

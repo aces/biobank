@@ -127,8 +127,6 @@ class ContainerController
     {
         $this->_validatePermission('update');
         $container = (new Container)->fromArray($containerArray);
-        // $containerId  = $container->getId();
-        // $oldContainer = $this->dao->getInstanceFromId($containerId);
 
         $this->validateInstance($container);
         return $this->dao->updateInstance($container);
@@ -278,7 +276,7 @@ class ContainerController
 
         if ($id) {
             $prevContainer = $this->dao->getInstanceFromId($id);
-            if ($container->getBarcode() !== $prevContainer->getBarcode()) {
+            if ($prevContainer && ($container->getBarcode() !== $prevContainer->getBarcode())) {
                 throw new BadRequest('Barcode can not be changed.');
             }
         }
@@ -356,20 +354,22 @@ class ContainerController
     {
         if ($container->getId()) {
             $prevContainer = $this->dao->getInstanceFromId($container->getId());
-            $stati         = $this->dao->getStati();
-            $statusLabel   = $stati[$prevContainer->getStatusId() ?? '']['label'];
-            if ($statusLabel == 'Dispensed') {
-                // TODO: figure out what else should not be changed if the container
-                // is dispensed. This should eventually be blocked in the front-end
-                // as well. These validations can wait until more testing has
-                // been done on the module.
+            if ($prevContainer) {
+                $stati         = $this->dao->getStati();
+                $statusLabel   = $stati[$prevContainer->getStatusId() ?? '']['label'];
+                if ($statusLabel == 'Dispensed') {
+                    // TODO: figure out what else should not be changed if the container
+                    // is dispensed. This should eventually be blocked in the front-end
+                    // as well. These validations can wait until more testing has
+                    // been done on the module.
 
-                if ($prevContainer->getTemperature()!= $container->getTemperature()
-                ) {
-                    throw new BadRequest(
-                        "Temperature cannot be changed if Container
-                                           is Dispensed."
-                    );
+                    if ($prevContainer->getTemperature()!= $container->getTemperature()
+                    ) {
+                        throw new BadRequest(
+                            "Temperature cannot be changed if Container
+                                               is Dispensed."
+                        );
+                    }
                 }
             }
         }
