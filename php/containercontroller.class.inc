@@ -447,7 +447,7 @@ class ContainerController
      */
     private function validateCenterId(Container $container) : void
     {
-        if (is_null($container->getCenterId())) {
+        if (is_null($container->getCenterID())) {
             throw new \BadRequest("Center value must be set.");
         }
 
