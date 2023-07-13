@@ -98,8 +98,7 @@ class PoolController
     {
         $dao = new PoolDAO($this->loris);
         $dao = $dao
-          ->filter(new \LORIS\Data\Filters\UserSiteMatch())
-          ->filter(new \LORIS\Data\Filters\UserProjectMatch());    
+          ->filter(new \LORIS\Data\Filters\UserProjectOrSiteMatch());
         return $dao;
     }
 

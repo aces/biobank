@@ -31,26 +31,27 @@ namespace LORIS\biobank;
  */
 class Shipment implements
     \JsonSerializable,
-    \LORIS\Data\DataInstance
+    \LORIS\Data\DataInstance,
+    \LORIS\StudyEntities\MultiSiteHaver
 {
     /**
      * Persistent Instance variables.
      *
      * These properties describe a shipment entity.
      *
-     * @var string  $id
-     * @var string  $barcode
-     * @var string  $type
-     * @var string  $destinationCenterId
-     * @var array   $containerIds
-     * @var array   $logs
+     * @var string     $id
+     * @var string     $barcode
+     * @var string     $type
+     * @var \CenterID  $destinationCenterId
+     * @var array      $containerIds
+     * @var array      $logs
      */
-    public ?string $id;
-    public ?string $barcode;
-    public ?string $type;
-    public ?string $destinationCenterId;
-    public ?array $containerIds;
-    public ?array $logs;
+    public ?string    $id;
+    public ?string    $barcode;
+    public ?string    $type;
+    public ?\CenterID $destinationCenterId;
+    public ?array     $containerIds;
+    public ?array     $logs;
 
     /**
      * Initiliazes a new instance of the Shipment Class
@@ -62,7 +63,7 @@ class Shipment implements
         $this->id      = $data['id'] ?? null;
         $this->barcode = $data['barcode'] ?? null;
         $this->type    = $data['type'] ?? null;
-        $this->destinationCenterId = $data['destinationCenterId'] ?? null;
+        $this->destinationCenterId = new \CenterID($data['destinationCenterId'] ?? null);
         $this->containerIds        = $data['containerIds'] ?? null;
         $this->_setLogs($data['logs']) ?? null;
     }
@@ -112,9 +113,9 @@ class Shipment implements
     /**
      * Gets the origin center of the shipment
      *
-     * @return ?string
+     * @return \CenterID
      */
-    public function getOriginCenterId() : ?string
+    public function getOriginCenterId() : \CenterID
     {
         if (!empty($this->getLogs())) {
             return $this->getLogs()[0]->centerId;
@@ -124,9 +125,9 @@ class Shipment implements
     /**
      * Gets the destination center of the shipment
      *
-     * @return ?string
+     * @return \CenterID
      */
-    public function getDestinationCenterId() : ?string
+    public function getDestinationCenterId() : \CenterID
     {
         return $this->destinationCenterId;
     }
@@ -173,7 +174,6 @@ class Shipment implements
      */
     private function _setLogs(array $logs) : void
     {
-        // TODO: THis should maybe go in the SHipment Handler.
         foreach ($logs as $i => $log) {
             $this->logs[$i] = new Log($log);
         }
@@ -192,15 +192,18 @@ class Shipment implements
     /**
      * Return Center ID of affiliated specimen container.
      *
-     * @return int
+     * @return array
      */
-    // NOTE: this function was added for reasons relating to permissions. I do
-    // not find this an ideal solution, given that the centerId and the
-    // destinationCenterId should not be equated. Rather, this should
-    // ideally return a value dependent on the current status of the shipment
-    public function getCenterId()
+    public function getCenterIds() : array
     {
-        return $this->getDestinationCenterId();
+       switch ($this->getStatus()) {
+       case 'received':
+           return [$this->getDestinationCenterId()];
+       case 'shipped':
+           return [$this->getOriginCenterId(), $this->getDestinationCenterId];
+       default:
+           return [$this->getOriginCenterId()];
+       }
     }
 
     /**

@@ -335,7 +335,7 @@ function CreateShipment({
         onUserInput={handler.set}
         value={shipment.destinationCenterId}
         options={centers}
-        errorMessage={errors.destinationCenterId}
+        errorMessage={errors.destinationCenter}
         required={true}
       />
       <ShipmentLogForm
