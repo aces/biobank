@@ -88,11 +88,16 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
                          bp.Quantity,
                          bp.UnitID,
                          GROUP_CONCAT(bspr.SpecimenID) as SpecimenIDs,
+                         GROUP_CONCAT(bc.Barcode) as SpecimenBarcodes,
                          bp.Date,
                          DATE_FORMAT(bp.Time, '%H:%i') as Time
                   FROM   biobank_pool bp
                   LEFT JOIN biobank_specimen_pool_rel bspr
-                    USING (PoolID)";
+                    USING (PoolID)
+                  LEFT JOIN biobank_specimen bs
+                    USING (SpecimenID)
+                  LEFT JOIN biobank_container bc
+                    USING (ContainerID)";
         if (!empty($conditions)) {
             $whereClause = [];
             foreach ($conditions as $condition) {
@@ -109,27 +114,28 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
 
         $pools       = [];
         $specimenDAO = new SpecimenDAO($this->loris);
-        if (!empty($poolRows)) {
-            foreach ($poolRows as $id => $poolRow) {
-                $specimenIds = explode(',', $poolRow['SpecimenIDs']);
-                $specimenId  = (int) $specimenIds[0];
-                $specimen    = $specimenDAO->selectInstances(
-                    [
-                        ['column'=>'SpecimenID', 'value'=>$specimenId],
-                    ],
-                )[$specimenId];
-                $poolRow['CandidateID'] = $specimen->getCandidateId();
-                $poolRow['SessionID']   = $specimen->getSessionId();
-                $poolRow['CenterID']    = $specimen->getCenterId();
-                $projectIds             = $specimen->getProjectIds();
-                $poolRow['TypeID']      = $specimen->getTypeId();
+        
+        foreach ($poolRows as $id => $poolRow) {
+            $specimenIds = explode(',', $poolRow['SpecimenIDs']);
+            $specimenBarcodes = explode(',', $poolRow['SpecimenBarcodes']);
 
-                $pools[$id] = $this->_getInstanceFromSQL(
-                  $poolRow,
-                  $specimenIds,
-                  $projectIds
-                );
-            }
+            // set global pool properties based on first specimen of pool
+            $specimenId  = (int) $specimenIds[0];
+            $specimen    = $specimenDAO->getInstanceFromId($specimenId);
+            $poolRow['CandidateID']    = $specimen->getCandidateId();
+            $poolRow['CandidatePSCID'] = $specimen->getCandidatePSCID();
+            $poolRow['SessionID']      = $specimen->getSessionId();
+            $poolRow['CenterID']       = $specimen->getCenterId();
+            $projectIds                = $specimen->getProjectIds();
+            $poolRow['TypeID']         = $specimen->getTypeId();
+
+            // instantiate pool entity
+            $pools[$id] = $this->_getInstanceFromSQL(
+              $poolRow,
+              $specimenIds,
+              $specimenBarcodes,
+              $projectIds
+            );
         }
 
         return $pools;
@@ -244,6 +250,7 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
     private function _getInstanceFromSQL(
         array $data,
         array $specimenIds,
+        array $specimenBarcodes,
         array $projectIds
     ) : Pool
     {
@@ -263,8 +270,14 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         if (!empty($specimenIds)) {
             $pool->setSpecimenIds($specimenIds);
         }
+        if (!empty($specimenBarcodes)) {
+            $pool->setSpecimenBarcodes($specimenBarcodes);
+        }
         if (isset($data['CandidateID'])) {
             $pool->setCandidateId((int) $data['CandidateID']);
+        }
+        if (isset($data['CandidatePSCID'])) {
+            $pool->setCandidatePSCID((string) $data['CandidatePSCID']);
         }
         if (isset($data['SessionID'])) {
             $pool->setSessionId((int) $data['SessionID']);

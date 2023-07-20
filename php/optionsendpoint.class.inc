@@ -133,6 +133,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         $shipDAO  = new ShipmentDAO($db);
 
         $userCenters = implode(',',$user->getCenterIDs());
+        $userProjects = implode(',', $user->getProjectIDs());
         // XXX: This should eventually be replaced by a call directly to a
         // Candidate endpoint or Candidate controller that will be able to
         // provide Candidate Objects.
@@ -146,10 +147,11 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                             LEFT JOIN biobank_container bc USING (ContainerID)
                             LEFT JOIN candidate_diagnosis_rel USING (CandID)";
         $where = ' ';
-        if (!$user->hasPermission('access_all_profiles')) {
-            $where = " WHERE s.CenterID IN ($userCenters)
-                            OR bc.CenterID IN ($userCenters)";
-        }
+        // XXX: This is commented out because the access all profiles permission
+        // is causing some issues.
+        //  if (!$user->hasPermission('access_all_profiles')) {
+            $where = " WHERE s.CenterID IN ($userCenters) OR s.ProjectID IN ($userProjects)";
+        // }
         $group      =   " GROUP BY CandID";
         $candidates = $db->pselectWithIndexKey($query.$where.$group, array(), 'id');
         foreach ($candidates as $id => $candidate) {

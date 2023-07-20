@@ -64,10 +64,6 @@ class PoolTab extends Component {
   mapPoolColumns(column, value) {
     const {data, options} = this.props;
     switch (column) {
-      case 'Pooled Specimens':
-        return value.map((id) => {
-          return (data.containers[data.specimens[id].containerId]||{}).barcode;
-        });
       case 'Type':
         return options.specimen.types[value].label;
       case 'Site':
@@ -91,25 +87,33 @@ class PoolTab extends Component {
     value = this.mapPoolColumns(column, value);
     const candId = Object.values(options.candidates)
       .find((cand) => cand.pscid == row['PSCID']).id;
+
+    // If candId is defined, then the user has access to the candidate and a
+    // hyperlink can be established.
+    const candidatePermission = candId !== undefined;
     switch (column) {
       case 'Pooled Specimens':
         const barcodes = value
           .map((barcode, i) => {
-            if (loris.userHasPermission('biobank_specimen_view')) {
-              return <Link key={i} to={`/barcode=${barcode}`}>{barcode}</Link>;
-            }
+            return <Link key={i} to={`/barcode=${barcode}`}>{barcode}</Link>;
           })
           .reduce((prev, curr) => [prev, ', ', curr]);
         return <td>{barcodes}</td>;
       case 'PSCID':
-        return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+        if (candidatePermission) {
+          return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+        }
+        return <td>{value}</td>;
       case 'Visit Label':
-        const ses = Object.values(options.candidateSessions[candId]).find(
-          (sess) => sess.label == value
-        ).id;
-        const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
-          '&sessionID='+ses;
-        return <td><a href={visitLabelURL}>{value}</a></td>;
+        if (candidatePermission) {
+          const ses = Object.values(options.candidateSessions[candId]).find(
+            (sess) => sess.label == value
+          ).id;
+          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
+            '&sessionID='+ses;
+          return <td><a href={visitLabelURL}>{value}</a></td>;
+        }
+        return <td>{value}</td>; 
       case 'Aliquot':
         const onClick = () => this.openAliquotForm(row['ID']);
         return <td><CTA label='Aliquot' onUserInput={onClick}/></td>;
@@ -169,14 +173,15 @@ class PoolTab extends Component {
       options.specimen.types, 'label'
     );
     const poolData = Object.values(data.pools).map((pool) => {
+      console.log(pool);
       return [
         pool.id,
         pool.label,
         Math.round(pool.quantity*100)/100 +
            ' ' +
             options.specimen.units[pool.unitId].label,
-        pool.specimenIds,
-        options.candidates[pool.candidateId].pscid,
+        pool.specimenBarcodes,
+        pool.candidatePSCID,
         options.sessions[pool.sessionId].label,
         pool.typeId,
         pool.centerId,

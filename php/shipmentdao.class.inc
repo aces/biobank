@@ -97,7 +97,8 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
                          s.Barcode as barcode,
                          st.Label as type,
                          s.DestinationCenterID as destinationCenterId,
-                         GROUP_CONCAT(bc.ContainerId) as containerIds
+                         GROUP_CONCAT(bc.ContainerId) as containerIds,
+                         GROUP_CONCAT(bc.Barcode) as containerBarcodes
                   FROM shipment s
                   LEFT JOIN shipment_type st
                     USING (ShipmentTypeID)
@@ -126,6 +127,8 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
         foreach ($shipmentRows as $barcode => $shipmentRow) {
             $shipmentRow['containerIds'] = $shipmentRow['containerIds'] ?
               explode(',', $shipmentRow['containerIds']) : [];
+            $shipmentRow['containerBarcodes'] = $shipmentRow['containerBarcodes'] ?
+              explode(',', $shipmentRow['containerBarcodes']) : [];
             $shipmentRow['logs']         = $logs[$barcode];
             $shipment            = new Shipment($shipmentRow);
             $shipments[$barcode] = $shipment;

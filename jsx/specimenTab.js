@@ -68,7 +68,10 @@ class SpecimenTab extends Component {
         }
         break;
       case 'Diagnosis':
-        return value.map((id) => options.diagnoses[id].label);
+        if (value) {
+          return value.map((id) => options.diagnoses[id].label);
+        }
+        break;
       case 'Status':
         return options.container.stati[value].label;
       case 'Current Site':
@@ -96,6 +99,7 @@ class SpecimenTab extends Component {
     value = this.mapSpecimenColumns(column, value);
     const candId = Object.values(options.candidates)
       .find((cand) => cand.pscid == row['PSCID']).id;
+    const candidatePermission = candId !== undefined;
     switch (column) {
       case 'Barcode':
         return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
@@ -105,14 +109,20 @@ class SpecimenTab extends Component {
         }).reduce((prev, curr) => [prev, ', ', curr]);
         return <td>{barcodes}</td>;
       case 'PSCID':
-        return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+        if (candidatePermission) {
+          return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+        }
+        return <td>{value}</td>;
       case 'Visit Label':
-        const ses = Object.values(options.candidateSessions[candId]).find(
-          (sess) => sess.label == value
-        ).id;
-        const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
-          '&sessionID='+ses;
-        return <td><a href={visitLabelURL}>{value}</a></td>;
+        if (candidatePermission) {
+          const ses = Object.values(options.candidateSessions[candId]).find(
+            (sess) => sess.label == value
+          ).id;
+          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
+            '&sessionID='+ses;
+          return <td><a href={visitLabelURL}>{value}</a></td>;
+        }
+        return <td>{value}</td>;
       case 'Status':
         const style = {};
         switch (value) {
@@ -184,6 +194,7 @@ class SpecimenTab extends Component {
               }
             });
         });
+      const candidate = options.candidates[specimen.candidateId];
       return [
         container.barcode,
         specimen.typeId,
@@ -191,10 +202,10 @@ class SpecimenTab extends Component {
         specimen.quantity+' '+options.specimen.units[specimen.unitId].label,
         specimen.fTCycle || null,
         specimen.parentSpecimenIds,
-        options.candidates[specimen.candidateId].pscid,
-        options.candidates[specimen.candidateId].sex,
+        specimen.candidatePSCID,
+        candidate?.sex || null,
         specimen.candidateAge,
-        options.candidates[specimen.candidateId].diagnosisIds,
+        candidate?.diagnosis || null,
         options.sessions[specimen.sessionId].label,
         specimen.poolId ? (data.pools[specimen.poolId]||{}).label : null,
         container.statusId,

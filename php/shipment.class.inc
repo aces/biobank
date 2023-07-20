@@ -44,6 +44,7 @@ class Shipment implements
      * @var string     $type
      * @var \CenterID  $destinationCenterId
      * @var array      $containerIds
+     * @var array      $containerBarcodes
      * @var array      $logs
      */
     public ?string    $id;
@@ -51,6 +52,7 @@ class Shipment implements
     public ?string    $type;
     public ?\CenterID $destinationCenterId;
     public ?array     $containerIds;
+    public ?array     $containerBarcodes;
     public ?array     $logs;
 
     /**
@@ -65,6 +67,7 @@ class Shipment implements
         $this->type    = $data['type'] ?? null;
         $this->destinationCenterId = new \CenterID($data['destinationCenterId'] ?? null);
         $this->containerIds        = $data['containerIds'] ?? null;
+        $this->containerBarcodes   = $data['containerBarcodes'] ?? null;
         $this->_setLogs($data['logs']) ?? null;
     }
 
@@ -166,6 +169,16 @@ class Shipment implements
     }
 
     /**
+     * Gets the container barcodes associated with the shipment
+     *
+     * @return ?array
+     */
+    public function getContainerBarcodes() : ?array
+    {
+        return $this->containerBarcodes;
+    }
+
+    /**
      * Sets the logs for the shipment
      *
      * @param array $logs the shipment's logs
@@ -197,6 +210,10 @@ class Shipment implements
     public function getCenterIds() : array
     {
        switch ($this->getStatus()) {
+       // TODO: Instead of checking for strings, this ideally would check for
+       // boolean values from functions such as getActive(). This way, the
+       // strings will be relegated to singular functions that then serve
+       // functional purposes.
        case 'received':
            return [$this->getDestinationCenterId()];
        case 'shipped':
@@ -231,6 +248,7 @@ class Shipment implements
             'originCenterId'      => $this->getOriginCenterId(),
             'destinationCenterId' => $this->destinationCenterId,
             'containerIds'        => $this->containerIds,
+            'containerBarcodes'   => $this->containerBarcodes,
             'status'              => $this->getStatus(),
             'active'              => $this->getActive(),
             'logs'                => $this->logs,

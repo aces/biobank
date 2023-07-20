@@ -44,7 +44,9 @@ class Pool implements
      * @var float     $quantity
      * @var int       $unitId
      * @var array     $specimenIds
+     * @var array     $specimenBarcodes
      * @var int       $candidateId
+     * @var string    $candidatePSCID
      * @var int       $sessionId
      * @var int       $typeId
      * @var \CenterID $centerId
@@ -57,7 +59,9 @@ class Pool implements
     private $quantity;
     private $unitId;
     private $specimenIds;
+    private array $specimenBarcodes;
     private $candidateId;
+    private string $candidatePSCID;
     private $sessionId;
     private $typeId;
     private $centerId;
@@ -187,6 +191,28 @@ class Pool implements
     }
 
     /**
+     * Sets the Specimen Barcodes of the pool
+     *
+     * @param array $specimenBarcodes Specimen Barcodes of the pool
+     *
+     * @return void
+     */
+    public function setSpecimenBarcodes(array $specimenBarcodes) : void
+    {
+        $this->specimenBarcodes = $specimenBarcodes;
+    }
+
+    /**
+     * Gets the Specimen Barcodess of the pool
+     *
+     * @return array
+     */
+    public function getSpecimenBarcodes() : array
+    {
+        return $this->specimenBarcodes;
+    }
+
+    /**
      * Sets the Candidate ID of the pool
      *
      * @param int $candidateId Candidate ID of the pool
@@ -208,6 +234,28 @@ class Pool implements
     public function getCandidateId() : ?int
     {
         return $this->candidateId;
+    }
+
+    /**
+     * Sets the Candidate PSCID of the pool
+     *
+     * @param int $candidateId Candidate ID of the pool
+     *
+     * @return void
+     */
+    public function setCandidatePSCID(string $candidatePSCID) : void
+    {
+        $this->candidatePSCID = $candidatePSCID;
+    }
+
+    /**
+     * Gets the Candidate PSCID of the pool
+     *
+     * @return string
+     */
+    public function getCandidatePSCID() : string
+    {
+        return $this->candidatePSCID;
     }
 
     /**
@@ -369,8 +417,14 @@ class Pool implements
         if (isset($data['specimenIds'])) {
             $this->setSpecimenIds($data['specimenIds']);
         }
+        if (isset($data['specimenBarcodes'])) {
+            $this->setSpecimenBarcodes($data['specimenBarcodes']);
+        }
         if (isset($data['candidateId'])) {
             $this->setCandidateId((int) $data['candidateId']);
+        }
+        if (isset($data['candidatePSCID'])) {
+            $this->setCandidatePSCID((string) $data['candidatePSCID']);
         }
         if (isset($data['sessionId'])) {
             $this->setSessionId((int) $data['sessionId']);
@@ -415,18 +469,20 @@ class Pool implements
         // TODO: Date and Time formats should be gotten from some sort of
         // config setting.
         return [
-            'id'          => $this->id,
-            'label'       => $this->label,
-            'quantity'    => $this->quantity,
-            'unitId'      => $this->unitId,
-            'specimenIds' => $this->specimenIds,
-            'candidateId' => $this->candidateId,
-            'sessionId'   => $this->sessionId,
-            'typeId'      => $this->typeId,
-            'centerId'    => $this->centerId,
-            'projectIds'  => $this->projectIds,
-            'date'        => $this->date->format('d-m-Y'),
-            'time'        => $this->time->format('H:i'),
+            'id'               => $this->id,
+            'label'            => $this->label,
+            'quantity'         => $this->quantity,
+            'unitId'           => $this->unitId,
+            'specimenIds'      => $this->specimenIds,
+            'specimenBarcodes' => $this->specimenBarcodes,
+            'candidateId'      => $this->candidateId,
+            'candidatePSCID'   => $this->candidatePSCID,
+            'sessionId'        => $this->sessionId,
+            'typeId'           => $this->typeId,
+            'centerId'         => $this->centerId,
+            'projectIds'       => $this->projectIds,
+            'date'             => $this->date->format('d-m-Y'),
+            'time'             => $this->time->format('H:i'),
         ];
     }
 

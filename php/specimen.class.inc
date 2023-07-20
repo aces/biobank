@@ -41,6 +41,7 @@ class Specimen implements
      *
      * @var int         $id
      * @var int         $containerId
+     * @var string      $barcode
      * @var int         $typeId
      * @var string      $quantity
      * @var int         $unitId
@@ -49,6 +50,7 @@ class Specimen implements
      * @var int         $fTCycle
      * @var array       $parentSpecimenIds
      * @var int         $candidateId
+     * @var string      $candidatePSCID
      * @var int         $candidateAge
      * @var int         $sessionId
      * @var int         $poolId
@@ -58,6 +60,7 @@ class Specimen implements
      */
     private $id;
     private $containerId;
+    private string $barcode;
     private $typeId;
     private $quantity;
     private $unitId;
@@ -66,23 +69,13 @@ class Specimen implements
     private $projectIds;
     private $parentSpecimenIds;
     private $candidateId;
+    private $candidatePCSID;
     private $candidateAge;
     private $sessionId;
     private $poolId;
     private $collection;
     private $preparation;
     private $analysis;
-
-    private $loris;
-    /**
-     * Initiliazes a new instance of the Specimen Class
-     *
-     * @param \LORIS\LorisInstance $loris The LORIS instance with the specimen
-     */
-    function __construct(\LORIS\LorisInstance $loris)
-    {
-        $this->loris = $loris;
-    }
 
     /**
      * Sets the specimen's ID.
@@ -130,6 +123,28 @@ class Specimen implements
     public function getContainerId() : ?int
     {
         return $this->containerId;
+    }
+
+    /**
+     * Sets the Barcode of the specimen's container
+     *
+     * @param string $barcode the Barcode of the specimen's container
+     *
+     * @return void
+     */
+    public function setBarcode($barcode) : void
+    {
+        $this->barcode = $barcode;
+    }
+
+    /**
+     * Gets the Barcode of the specimen's container
+     *
+     * @return string
+     */
+    public function getBarcode() : string
+    {
+        return $this->barcode;
     }
 
     /**
@@ -270,6 +285,28 @@ class Specimen implements
     public function getCandidateId() : ?int
     {
         return $this->candidateId;
+    }
+
+    /**
+     * Sets the PSCID of the candidate to which the specimen belongs
+     *
+     * @param string $pscid of the specimen's donor
+     *
+     * @return void
+     */
+    public function setCandidatePSCID(string $candidatePSCID) : void
+    {
+        $this->candidatePSCID = $candidatePSCID;
+    }
+
+    /**
+     * Gets the PSCID of the candidate to which the specimen belongs
+     *
+     * @return string
+     */
+    public function getCandidatePSCID() : string
+    {
+        return $this->candidatePSCID;
     }
 
     /**
@@ -458,6 +495,9 @@ class Specimen implements
         if (isset($data['containerId'])) {
             $this->setContainerId((int) $data['containerId']);
         }
+        if (isset($data['barcode'])) {
+            $this->setBarcode((string) $barcode['barcode']);
+        }
         if (isset($data['typeId'])) {
             $this->setTypeId((int) $data['typeId']);
         }
@@ -481,6 +521,9 @@ class Specimen implements
         }
         if (isset($data['candidateId'])) {
             $this->setCandidateId((int) $data['candidateId']);
+        }
+        if (isset($data['candidatePSCID'])) {
+            $this->setCandidatePSCID((string) $data['candidatePSCID']);
         }
         if (isset($data['candidateAge'])) {
             $this->setCandidateAge((int) $data['candidateAge']);
@@ -533,6 +576,7 @@ class Specimen implements
         $array = [
             'id'                => $this->id,
             'containerId'       => $this->containerId,
+            'barcode'           => $this->barcode,
             'typeId'            => $this->typeId,
             'quantity'          => $this->quantity,
             'unitId'            => $this->unitId,
@@ -541,6 +585,7 @@ class Specimen implements
             'fTCycle'           => $this->fTCycle,
             'parentSpecimenIds' => $this->parentSpecimenIds,
             'candidateId'       => $this->candidateId,
+            'candidatePSCID'    => $this->candidatePSCID,
             'candidateAge'      => $this->candidateAge,
             'sessionId'         => $this->sessionId,
             'poolId'            => $this->poolId,

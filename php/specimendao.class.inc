@@ -99,6 +99,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
     ) : array {
         $query = "SELECT bs.SpecimenID,
                       bs.ContainerID,
+                      bc.Barcode,
                       bs.SpecimenTypeID,
                       bs.Quantity,
                       bs.UnitID,
@@ -107,6 +108,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       bsf.FreezeThawCycle,
                       GROUP_CONCAT(bspa.ParentSpecimenID) as ParentSpecimenIDs,
                       s.CandID as CandidateID,
+                      c.PSCID as CandidatePSCID,
                       bs.SessionID,
                       (
                         SELECT FLOOR(DATEDIFF(s.Date_visit, c.DoB)/365.25)
@@ -643,6 +645,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['ContainerID'])) {
             $specimen->setContainerId((int) $data['ContainerID']);
         }
+        if (isset($data['Barcode'])) {
+            $specimen->setBarcode((string) $data['Barcode']);
+        }
         if (isset($data['SpecimenTypeID'])) {
             $specimen->setTypeId((int) $data['SpecimenTypeID']);
         }
@@ -670,6 +675,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
 
         if (isset($data['CandidateID'])) {
             $specimen->setCandidateId((int) $data['CandidateID']);
+        }
+        if (isset($data['CandidatePSCID'])) {
+            $specimen->setCandidatePSCID((string) $data['CandidatePSCID']);
         }
 
         if (isset($data['CandidateAge'])) {
