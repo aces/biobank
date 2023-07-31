@@ -88,16 +88,11 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
                          bp.Quantity,
                          bp.UnitID,
                          GROUP_CONCAT(bspr.SpecimenID) as SpecimenIDs,
-                         GROUP_CONCAT(bc.Barcode) as SpecimenBarcodes,
                          bp.Date,
                          DATE_FORMAT(bp.Time, '%H:%i') as Time
                   FROM   biobank_pool bp
                   LEFT JOIN biobank_specimen_pool_rel bspr
-                    USING (PoolID)
-                  LEFT JOIN biobank_specimen bs
-                    USING (SpecimenID)
-                  LEFT JOIN biobank_container bc
-                    USING (ContainerID)";
+                    USING (PoolID)";
         if (!empty($conditions)) {
             $whereClause = [];
             foreach ($conditions as $condition) {
@@ -117,7 +112,11 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         
         foreach ($poolRows as $id => $poolRow) {
             $specimenIds = explode(',', $poolRow['SpecimenIDs']);
-            $specimenBarcodes = explode(',', $poolRow['SpecimenBarcodes']);
+            $specimenBarcodes = [];
+            foreach ($specimenIds as $specimenId) {
+              $specimen = $specimenDAO->getInstanceFromId($specimenId);
+              $specimenBarcodes[] = $specimen->getBarcode();
+            }
 
             // set global pool properties based on first specimen of pool
             $specimenId  = (int) $specimenIds[0];
