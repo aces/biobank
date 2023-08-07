@@ -133,7 +133,6 @@ class BiobankContainer extends Component {
         if (child === undefined) {
           // if the child container is undefined, user does not have permission
           // to view it.
-          console.log('child undefined!');
         } else if (child.coordinate) {
           listAssigned.push(
             <div>

@@ -49,6 +49,7 @@ class Specimen implements
      * @var array       $ProjectIds
      * @var int         $fTCycle
      * @var array       $parentSpecimenIds
+     * @var array       $parentSpecimenBarcodes
      * @var int         $candidateId
      * @var string      $candidatePSCID
      * @var int         $candidateAge
@@ -68,6 +69,7 @@ class Specimen implements
     private $centerId;
     private $projectIds;
     private $parentSpecimenIds;
+    private $parentSpecimenBarcodes;
     private $candidateId;
     private $candidatePCSID;
     private $candidateAge;
@@ -126,9 +128,9 @@ class Specimen implements
     }
 
     /**
-     * Sets the Barcode of the specimen's container
+     * Sets the specimen's barcode
      *
-     * @param string $barcode the Barcode of the specimen's container
+     * @param string $barcode
      *
      * @return void
      */
@@ -138,7 +140,7 @@ class Specimen implements
     }
 
     /**
-     * Gets the Barcode of the specimen's container
+     * Gets the specimen's barcode
      *
      * @return string
      */
@@ -261,6 +263,28 @@ class Specimen implements
     public function getParentSpecimenIds() : ?array
     {
         return $this->parentSpecimenIds;
+    }
+
+    /**
+     * Sets the parent specimen's barcodes.
+     *
+     * @param array $parentSpecimenBarocdes the parent specimen's Barcodes
+     *
+     * @return void
+     */
+    public function setParentSpecimenBarcodes(array $parentSpecimenBarcodes) : void
+    {
+        $this->parentSpecimenBarcodes = $parentSpecimenBarcodes;
+    }
+
+    /**
+     * Gets the parent specimen's barcodes.
+     *
+     * @return ?array
+     */
+    public function getParentSpecimenBarcodes() : ?array
+    {
+        return $this->parentSpecimenBarcodes;
     }
 
     /**
@@ -496,7 +520,7 @@ class Specimen implements
             $this->setContainerId((int) $data['containerId']);
         }
         if (isset($data['barcode'])) {
-            $this->setBarcode((string) $barcode['barcode']);
+            $this->setBarcode((string) $data['barcode']);
         }
         if (isset($data['typeId'])) {
             $this->setTypeId((int) $data['typeId']);
@@ -518,6 +542,9 @@ class Specimen implements
         }
         if (isset($data['parentSpecimenIds'])) {
             $this->setParentSpecimenIds($data['parentSpecimenIds']);
+        }
+        if (isset($data['parentSpecimenBarocdes'])) {
+            $this->setParentSpecimenBarcodes($data['parentSpecimenBarcodes']);
         }
         if (isset($data['candidateId'])) {
             $this->setCandidateId((int) $data['candidateId']);
@@ -574,22 +601,23 @@ class Specimen implements
     public function jsonSerialize() : array
     {
         $array = [
-            'id'                => $this->id,
-            'containerId'       => $this->containerId,
-            'barcode'           => $this->barcode,
-            'typeId'            => $this->typeId,
-            'quantity'          => $this->quantity,
-            'unitId'            => $this->unitId,
-            'centerId'          => $this->centerId,
-            'projectIds'        => $this->projectIds,
-            'fTCycle'           => $this->fTCycle,
-            'parentSpecimenIds' => $this->parentSpecimenIds,
-            'candidateId'       => $this->candidateId,
-            'candidatePSCID'    => $this->candidatePSCID,
-            'candidateAge'      => $this->candidateAge,
-            'sessionId'         => $this->sessionId,
-            'poolId'            => $this->poolId,
-            'collection'        => $this->collection->jsonSerialize(),
+            'id'                     => $this->id,
+            'containerId'            => $this->containerId,
+            'barcode'                => $this->barcode,
+            'typeId'                 => $this->typeId,
+            'quantity'               => $this->quantity,
+            'unitId'                 => $this->unitId,
+            'centerId'               => $this->centerId,
+            'projectIds'             => $this->projectIds,
+            'fTCycle'                => $this->fTCycle,
+            'parentSpecimenIds'      => $this->parentSpecimenIds,
+            'parentSpecimenBarcodes' => $this->parentSpecimenBarcodes,
+            'candidateId'            => $this->candidateId,
+            'candidatePSCID'         => $this->candidatePSCID,
+            'candidateAge'           => $this->candidateAge,
+            'sessionId'              => $this->sessionId,
+            'poolId'                 => $this->poolId,
+            'collection'             => $this->collection->jsonSerialize(),
         ];
         if ($this->preparation) {
             $array['preparation'] = $this->preparation->jsonSerialize();

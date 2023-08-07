@@ -173,7 +173,6 @@ class PoolTab extends Component {
       options.specimen.types, 'label'
     );
     const poolData = Object.values(data.pools).map((pool) => {
-      console.log(pool);
       return [
         pool.id,
         pool.label,

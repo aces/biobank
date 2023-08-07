@@ -177,6 +177,11 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                 $parentSpecimenIds = $specimenRow['ParentSpecimenIDs']
                     ? explode(',', $specimenRow['ParentSpecimenIDs'])
                     : [];
+                $parentSpecimenBarcodes = [];
+                foreach ($parentSpecimenIds as $parentSpecimenId) {                             
+                  $parentSpecimen = $this->getInstanceFromId((int) $parentSpecimenId);   
+                  $parentsSpecimenBarcodes[] = $parentSpecimen->getBarcode();                    
+                } 
 
                 $projectIds = array_map(function($projectId) {
                     return new \ProjectID($projectId); // store projectId within object
@@ -185,7 +190,8 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                 $specimen = $this->_getInstanceFromSQL(
                     $specimenRow,
                     $projectIds,
-                    $parentSpecimenIds
+                    $parentSpecimenIds,
+                    $parentSpecimenBarcodes,
                 );
 
                 $specimens[$id] = $specimen;
@@ -636,7 +642,8 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
     private function _getInstanceFromSQL(
         array $data,
         array $projectIds,
-        array $parentSpecimenIds
+        array $parentSpecimenIds,
+        array $parentSpecimenBarcodes,
     ) : Specimen {
         $specimen = new Specimen($this->loris);
         if (isset($data['SpecimenID'])) {
@@ -669,8 +676,10 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
 
         if (!empty($parentSpecimenIds)) {
             $specimen->setParentSpecimenIds($parentSpecimenIds);
+            $specimen->setParentSpecimenBarcodes($parentSpecimenBarcodes);
         } else {
             $specimen->setParentSpecimenIds([]);
+            $specimen->setParentSpecimenBarcodes([]);
         }
 
         if (isset($data['CandidateID'])) {

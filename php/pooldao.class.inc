@@ -114,7 +114,7 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
             $specimenIds = explode(',', $poolRow['SpecimenIDs']);
             $specimenBarcodes = [];
             foreach ($specimenIds as $specimenId) {
-              $specimen = $specimenDAO->getInstanceFromId($specimenId);
+              $specimen = $specimenDAO->getInstanceFromId((int) $specimenId);
               $specimenBarcodes[] = $specimen->getBarcode();
             }
 

@@ -79,24 +79,32 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         )[$id];
     }
 
-    /**
-     * Returns an array of all the Child Container IDs associated with
-     * the given Container ID from the biobank_container_parent table.
-     *
-     * @param ?int $id of Container
-     *
-     * @return array $childContainerIds List of Container IDs that are
-     *                                  children of the Container ID
-     */
-    private function _getChildContainerIds(?int $id) : array
-    {
-         $query = 'SELECT ContainerID
-                   FROM biobank_container_parent
-                   WHERE ParentContainerID=:i';
-         $childContainerIds = $this->db->pselectCol($query, ['i' => $id]);
+    //  /**
+    //   * Returns an array of all the Child Container Barcodes associated with
+    //   * the given Container ID from the biobank_container_parent table.
+    //   *
+    //   * @param ?int $id
+    //   *
+    //   * @return array $childContainerBarocdes
+    //   */
+    //  private function _getChildContainerBarcodes(?int $id) : array
+    //  {
+    //       $query = 'SELECT bcp.Coordinate,
+    //                        bc2.Barcode
+    //                 FROM biobank_container bc
+    //                 LEFT JOIN biobank_container_parent bc
+    //                   ON bc.ContainerID=bcp.ParentContainerID
+    //                 LEFT JOIN biobank_container bc2
+    //                   ON bcp.ContainerID=bc2.ContainerID
+    //                 WHERE bc.ContainerID=:i';
+    //       $childContainerBarcodes = $this->db->pselectColWithIndexKey(
+    //           $query,
+    //           ['i' => $id],
+    //           'Coordinate'
+    //       );
 
-         return $childContainerIds;
-    }
+    //       return $childContainerBarcodes;
+    //  }
 
     /**
      * Returns an array of all the Project IDs associated with the given
@@ -146,7 +154,9 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                      bc.Temperature,
                      bc.CenterID,
                      bcp.ParentContainerID,
-                     GROUP_CONCAT(DISTINCT(bcp2.ContainerID)) as ChildContainerIDs,
+                     bc2.Barcode as ParentContainerBarcode,
+                     GROUP_CONCAT(DISTINCT bcp2.ContainerID ORDER BY bcp2.ContainerID) as ChildContainerIDs,
+                     GROUP_CONCAT(DISTINCT bcp2.Coordinate ORDER BY bcp2.ContainerID) as Coordinates,
                      bcp.Coordinate as Coordinate,
                      bc.LotNumber,
                      bc.ExpirationDate,
@@ -156,10 +166,12 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                   FROM biobank_container bc
                   LEFT JOIN biobank_container_parent bcp
                     ON bc.ContainerID=bcp.ContainerID
+                  LEFT JOIN biobank_container bc2
+                    ON bcp.ParentContainerID=bc2.ContainerID
                   LEFT JOIN biobank_container_parent bcp2
                     ON bc.ContainerID=bcp2.ParentContainerID
                   LEFT JOIN biobank_container_type bct
-                    USING (ContainerTypeID)
+                    ON bc.ContainerTypeID=bct.ContainerTypeID
                   LEFT JOIN biobank_container_project_rel bcpr
                     ON bc.ContainerID=bcpr.ContainerID
                   LEFT JOIN biobank_container_shipment_rel bcsr
@@ -172,8 +184,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             $whereClause = [];
             foreach ($conditions as $condition) {
                 $whereClause[] = $condition['column']
-                    . '='
-                    . '"'
+                    . '="'
                     . $condition['value']
                     . '"';
             }
@@ -184,28 +195,16 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
 
         $containers = [];
         foreach ($containerRows as $id => $containerRow) {
-            // TODO: This whole section needs to be redone more like
-            //       the shipment module
-            $childContainerIds = $containerRow['ChildContainerIDs']
-                ? explode(',', $containerRow['ChildContainerIDs'])
-                : [];
-            $projectIds = array_map(function($projectId) {                  
-                return new \ProjectID($projectId); // store projectId within object
-            }, explode(',', $containerRow['ProjectIDs']));       
-            $shipmentBarcodes  = $containerRow['ShipmentBarcodes']
-                ? explode(',', $containerRow['ShipmentBarcodes'])
-                : [];
-            $containers[$id]   = $this->_getInstanceFromSQL(
+            $containers[$id] = $this->_getInstanceFromSQL(
                 $containerRow,
-                $childContainerIds,
-                $projectIds,
-                $shipmentBarcodes
+                explode(',', $containerRow['ChildContainerIDs'] ?? ''),
+                explode(',', $containerRow['Coordinates'] ?? ''),
+                array_map(fn($id) => new \ProjectID($id), explode(',', $containerRow['ProjectIDs'])),
+                explode(',', $containerRow['ShipmentBarcodes'] ?? '')
             );
         }
-
         return $containers;
     }
-
     /**
      * Instantiates an ArrayIterator class that is composed of all the Container
      * Objects.
@@ -344,7 +343,10 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         $query       = "SELECT ContainerID as childContainerId,
                          ParentContainerID as parentContainerId,
                          Coordinate as coordinate
-                        FROM biobank_container_parent";
+                         Barcode as barcode
+                        FROM biobank_container_parent
+                        LEFT JOIN biobank_container
+                        USING (ContainerID)";
         $result      = $this->db->pselect($query, []);
         $coordinates = [];
         foreach ($result as $row) {
@@ -353,9 +355,15 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             };
             $container =& $coordinates[$row['parentContainerId']];
             if (empty($row['coordinate'])) {
-                $container['Unassigned'][] = $row['childContainerId'];
+                $container['Unassigned'][] = [
+                  'id' => $row['childContainerId'],
+                  'barcode' => $row['barcode'],
+                ];
             } else {
-                $container[$row['coordinate']] = $row['childContainerId'];
+                $container[$row['coordinate']] = [
+                  'id' => $row['childContainerId'],
+                  'barcode' => $row['barcode'],
+                ];
             }
         }
 
@@ -593,28 +601,6 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         return $childContainerIds;
     }
 
-    // FIXME: Not in use. Delete if not used by November.
-    /**
-     * This function takes a Container Object and retrieves an array of objects
-     * representing the childre of the $container.
-     *
-     * @param object $container Container Object from which to retrieve
-     *                          children
-     *
-     * @return array  $childContainers Array of child container instances
-     */
-    // public function getChildContainers(Container $container) : array
-    // {
-    //     $childContainers   = array();
-    //     $childContainerIds = $this->_getChildContainerIds($container->getId());
-    //     if (!empty($childContainerIds)) {
-    //         foreach ($childContainerIds as $id) {
-    //             $childContainers[$id] = $this->getInstanceFromId((int) $id);
-    //         }
-    //     }
-    //     return $childContainers;
-    // }
-
     /**
      * This function takes a Container Object and prepares the data to be
      * inserted into the database by converting it to a data array. This mapping
@@ -679,6 +665,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
     private function _getInstanceFromSQL(
         array $data,
         ?array $childContainerIds,
+        ?array $coordinates,
         ?array $projectIds,
         ?array $shipmentBarcodes
     ) : Container {
@@ -717,8 +704,14 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['ParentContainerID'])) {
             $container->setParentContainerId((int) $data['ParentContainerID']);
         }
+        if (isset($data['ParentContainerBarcode'])) {
+            $container->setParentContainerBarcode((string) $data['ParentContainerBarcode']);
+        }
         if (isset($childContainerIds)) {
             $container->setChildContainerIds($childContainerIds);
+        }
+        if (isset($coordinates)) {
+            $container->setCoordinates($coordinates);
         }
         if (isset($data['Coordinate'])) {
             $container->setCoordinate((int) $data['Coordinate']);

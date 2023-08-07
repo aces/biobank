@@ -233,25 +233,12 @@ class BiobankIndex extends React.Component {
    * @return {int}
    */
   increaseCoordinate(coordinate, parentContainerId) {
-    const containers = this.state.data.containers;
-    const childCoordinates = containers[parentContainerId].childContainerIds
-    .reduce((result, id) => {
-      const container = containers[id];
-      if (container.coordinate) {
-        result[container.coordinate] = id;
-      }
-      return result;
-    }, {});
-
+    const coordinates = this.state.data.containers[parentContainerId].coordinates;
+  
     const increment = (coord) => {
-      coord++;
-      if (childCoordinates.hasOwnProperty(coord)) {
-        coord = increment(coord);
-      }
-
-      return coord;
+      return coordinates.includes(coord) ? increment(coord + 1) : coord;
     };
-
+  
     return increment(coordinate);
   }
 

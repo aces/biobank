@@ -61,12 +61,6 @@ class SpecimenTab extends Component {
         return options.specimen.types[value].label;
       case 'Container Type':
         return options.container.typesPrimary[value].label;
-      case 'Parent Specimen(s)':
-        if (value instanceof Array) {
-          return value
-          .map((id) => data.containers[data.specimens[id].containerId].barcode);
-        }
-        break;
       case 'Diagnosis':
         if (value) {
           return value.map((id) => options.diagnoses[id].label);
@@ -104,6 +98,7 @@ class SpecimenTab extends Component {
       case 'Barcode':
         return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
       case 'Parent Specimens':
+        // TODO: if the user doesn't have access then these shouldn't be hyperlinked
         const barcodes = value && value.map((id, key) => {
           return <Link key={key} to={`/barcode=${value}`}>{value}</Link>;
         }).reduce((prev, curr) => [prev, ', ', curr]);
@@ -172,8 +167,6 @@ class SpecimenTab extends Component {
     const diagnoses = mapFormOptions(options.diagnoses, 'label');
     const specimenData = Object.values(data.specimens).map((specimen) => {
       const container = data.containers[specimen.containerId];
-      const pID = container.parentContainerId;
-      const parentContainer = data.containers[pID] || {};
       let specimenAttributeData = [];
       Object.keys(options.specimen.processAttributes)
         .forEach((processId) => {
@@ -201,7 +194,7 @@ class SpecimenTab extends Component {
         container.typeId,
         specimen.quantity+' '+options.specimen.units[specimen.unitId].label,
         specimen.fTCycle || null,
-        specimen.parentSpecimenIds,
+        specimen.parentSpecimenBarcodes,
         specimen.candidatePSCID,
         candidate?.sex || null,
         specimen.candidateAge,
@@ -215,7 +208,7 @@ class SpecimenTab extends Component {
         specimen.collection.date,
         specimen.collection.time,
         (specimen.preparation||{}).time,
-        parentContainer.barcode,
+        container.parentContainerBarcode,
         container.coordinate,
         ...specimenAttributeData,
       ];
