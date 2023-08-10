@@ -75,10 +75,7 @@ function ContainerParentForm(props) {
     ].childContainerIds
     .reduce((result, id) => {
       const container = data.containers[id];
-      if (container == undefined) {
-        // if the container is undefined, the user doesn't have permission to
-        // to view it
-      } else if (container.coordinate) {
+      if (container.coordinate) {
           result[container.coordinate] = id;
       }
       return result;

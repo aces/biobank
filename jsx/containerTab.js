@@ -57,8 +57,6 @@ class ContainerTab extends Component {
         return this.props.options.container.types[value].label;
       case 'Status':
         return this.props.options.container.stati[value].label;
-      case 'Projects':
-        return value.map((id) => this.props.options.projects[id]);
       case 'Site':
         return this.props.options.centers[value];
       default:
@@ -97,8 +95,6 @@ class ContainerTab extends Component {
             break;
         }
         return <td style={style}>{value}</td>;
-      case 'Projects':
-        return <td>{value.join(', ')}</td>;
       case 'Parent Barcode':
         return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
       default:
@@ -142,7 +138,6 @@ class ContainerTab extends Component {
           container.barcode,
           container.typeId,
           container.statusId,
-          container.projectIds,
           container.centerId,
           container.parentContainerId ?
             this.props.data.containers[container.parentContainerId].barcode :
@@ -165,11 +160,6 @@ class ContainerTab extends Component {
         name: 'status',
         type: 'select',
         options: stati,
-      }},
-      {label: 'Projects', show: true, filter: {
-        name: 'project',
-        type: 'multiselect',
-        options: this.props.options.projects,
       }},
       {label: 'Site', show: true, filter: {
         name: 'currentSite',

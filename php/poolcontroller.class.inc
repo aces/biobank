@@ -215,7 +215,7 @@ class PoolController
                 throw new BadRequest('Pooled specimens must be of the same Type');
             }
 
-            if ($baseContainer->getCenterId()->__toString() !== $container->getCenterId()->__toString()) {
+            if ($baseContainer->getCenterId() != $container->getCenterId()) {
                 throw new BadRequest('Pooled specimens must be at the same Site');
             }
 

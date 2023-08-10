@@ -64,8 +64,8 @@ class Pool implements
     private string $candidatePSCID;
     private $sessionId;
     private $typeId;
-    private $centerId;
-    private $projectIds;
+    private \CenterID $centerId;
+    private array $projectIds;
     private $date;
     private $time;
 
@@ -434,9 +434,6 @@ class Pool implements
         }
         if (isset($data['centerId'])) {
             $this->setCenterId(new \CenterID(strval($data['centerId'])));
-        }
-        if (isset($data['projectIds'])) {
-            $this->setProjectIds($data['projectIds']);
         }
         if (isset($data['projectIds'])) {
             $this->setProjectIds($data['projectIds']);

@@ -76,7 +76,7 @@ class ContainerController
         $this->_validatePermission('view');
         $containers  = [];
         $this->dao = $this->dao
-          ->filter(new \LORIS\Data\Filters\UserProjectOrSiteMatch());
+          ->filter(new \LORIS\Data\Filters\UserSiteMatch());
         $containerIt = $this->dao->execute($this->user);
         foreach ($containerIt as $id => $container) {
             $containers[$id] = $container;
@@ -162,17 +162,7 @@ class ContainerController
      */
     private function _getDataProvisioner() : ContainerDAO
     {
-        $dao = new ContainerDAO($this->db);
-        // if ($this->user->hasPermission('access_all_profiles') === false) {
-        //     $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        // }
-        //  if ($this->user->hasPermission('biobank_container_view') === false) {
-        //      $dao = $dao->filter(new PrimaryContainerFilter($this->loris, 0));
-        //  }
-        //  if ($this->user->hasPermission('biobank_specimen_view') === false) {
-        //      $dao = $dao->filter(new PrimaryContainerFilter($this->loris, 1));
-        //  }
-        return $dao;
+        return new ContainerDAO($this->db);
     }
 
     /**

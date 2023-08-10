@@ -202,7 +202,7 @@ class SpecimenTab extends Component {
         options.sessions[specimen.sessionId].label,
         specimen.poolId ? (data.pools[specimen.poolId]||{}).label : null,
         container.statusId,
-        container.projectIds,
+        specimen.projectIds,
         container.centerId,
         options.sessionCenters[specimen.sessionId].centerId,
         specimen.collection.date,

@@ -79,11 +79,7 @@ class BiobankContainer extends Component {
     const coordinates = data.containers[container.id].childContainerIds
       .reduce((result, id) => {
         const container = data.containers[id];
-        if (container === undefined) {
-          // if the container is undefined, user does not have permission
-          // to view it.
-          console.log('undefined');  
-        } else if (container.coordinate) {
+        if (container.coordinate) {
           result[container.coordinate] = id;
         }
         return result;
@@ -130,10 +126,7 @@ class BiobankContainer extends Component {
 
         const child = data.containers[childId];
         
-        if (child === undefined) {
-          // if the child container is undefined, user does not have permission
-          // to view it.
-        } else if (child.coordinate) {
+        if (child.coordinate) {
           listAssigned.push(
             <div>
                <Link

@@ -233,12 +233,25 @@ class BiobankIndex extends React.Component {
    * @return {int}
    */
   increaseCoordinate(coordinate, parentContainerId) {
-    const coordinates = this.state.data.containers[parentContainerId].coordinates;
-  
+    const containers = this.state.data.containers;
+    const childCoordinates = containers[parentContainerId].childContainerIds
+    .reduce((result, id) => {
+      const container = containers[id];
+      if (container.coordinate) {
+        result[container.coordinate] = id;
+      }
+      return result;
+    }, {});
+
     const increment = (coord) => {
-      return coordinates.includes(coord) ? increment(coord + 1) : coord;
+      coord++;
+      if (childCoordinates.hasOwnProperty(coord)) {
+        coord = increment(coord);
+      }
+
+      return coord;
     };
-  
+
     return increment(coordinate);
   }
 
@@ -267,6 +280,7 @@ class BiobankIndex extends React.Component {
       const specimen = list[key];
       specimen.candidateId = current.candidateId;
       specimen.sessionId = current.sessionId;
+      specimen.projectIds = projectIds;
       specimen.quantity = specimen.collection.quantity;
       specimen.unitId = specimen.collection.unitId;
       specimen.collection.centerId = centerId;
@@ -279,7 +293,6 @@ class BiobankIndex extends React.Component {
       const container = specimen.container;
       container.statusId = availableId;
       container.temperature = 20;
-      container.projectIds = projectIds;
       container.centerId = centerId;
       container.originId = centerId;
 
@@ -385,7 +398,6 @@ class BiobankIndex extends React.Component {
     Object.entries(list).forEach(([key, container]) => {
       container.statusId = availableId;
       container.temperature = 20;
-      container.projectIds = current.projectIds;
       container.originId = current.centerId;
       container.centerId = current.centerId;
 
@@ -483,6 +495,7 @@ class BiobankIndex extends React.Component {
       'unitId',
       'candidateId',
       'sessionId',
+      'projectIds',
       'collection',
     ];
     const float = ['quantity'];
@@ -682,7 +695,6 @@ class BiobankIndex extends React.Component {
       'typeId',
       'temperature',
       'statusId',
-      'projectIds',
       'centerId',
     ];
 

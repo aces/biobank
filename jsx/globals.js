@@ -212,16 +212,16 @@ function Globals(props) {
     </InlineField>
   );
 
-  const projectField = (
+  const projectField = () => specimen && (
     <InlineField
       loading={props.loading}
       label='Projects'
       clearAll={props.clearAll}
-      updateValue={updateContainer}
+      updateValue={props.updateSpecimen}
       edit={() => props.edit('project')}
-      editValue={editContainer}
-      value={container.projectIds.length !== 0 ?
-       container.projectIds
+      editValue={props.editSpecimen}
+      value={specimen.projectIds.length !== 0 ?
+       specimen.projectIds
          .map((id) => options.projects[id])
          .join(', ') : 'None'}
       editable={editable.project}
@@ -229,11 +229,11 @@ function Globals(props) {
       <SelectElement
         name='projectIds'
         options={props.options.projects}
-        onUserInput={props.setContainer}
+        onUserInput={props.setSpecimen}
         multiple={true}
         emptyOption={false}
-        value={props.current.container.projectIds}
-        errorMessage={props.errors.container.projectIds}
+        value={props.current.specimen.projectIds}
+        errorMessage={props.errors.specimen.projectIds}
       />
     </InlineField>
   );
@@ -267,7 +267,7 @@ function Globals(props) {
 
   const parentSpecimenField = () => {
     if (!specimen) {
-      return null; // Return null if specimen is undefined or null to handle edge case
+      return null;
     }
   
     const { parentSpecimenIds, parentSpecimenBarcodes } = specimen;
@@ -386,7 +386,7 @@ function Globals(props) {
         {fTCycleField()}
         {temperatureField}
         {statusField}
-        {projectField}
+        {projectField()}
         {drawField}
         {centerField}
         {shipmentField()}

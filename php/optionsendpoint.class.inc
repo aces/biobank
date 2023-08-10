@@ -145,15 +145,11 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                             LEFT JOIN session s USING (CandID)
                             LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
                             LEFT JOIN biobank_container bc USING (ContainerID)
-                            LEFT JOIN candidate_diagnosis_rel USING (CandID)";
-        $where = ' ';
-        // XXX: This is commented out because the access all profiles permission
-        // is causing some issues.
-        //  if (!$user->hasPermission('access_all_profiles')) {
-            $where = " WHERE s.CenterID IN ($userCenters) OR s.ProjectID IN ($userProjects)";
-        // }
-        $group      =   " GROUP BY CandID";
-        $candidates = $db->pselectWithIndexKey($query.$where.$group, array(), 'id');
+                            LEFT JOIN candidate_diagnosis_rel USING (CandID)
+                       WHERE s.CenterID IN ($userCenters) OR s.ProjectID IN ($userProjects)
+                       GROUP BY
+                          CandID";
+        $candidates = $db->pselectWithIndexKey($query, array(), 'id');
         foreach ($candidates as $id => $candidate) {
             $candidate['diagnosisIds'] = $candidate['diagnosisIds']
                 ? explode(',', $candidate['diagnosisIds'])
@@ -198,20 +194,20 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         // XXX: This should eventually be replaced by a call directly to a
         // Session Controller or Session Options endpoint that will be able to
         // provide these options.
-        $query  = "SELECT c.CandID as candidateId,
-                         s.ID sessionId,
-                         s.Visit_label as label,
-                         s.CenterID as centerId
-                 FROM candidate c
-                        LEFT JOIN session s USING(CandID)
-                        LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
-                        LEFT JOIN biobank_container bc USING (ContainerID)";
-        $where = ' ';
-        if (!$user->hasPermission('access_all_profiles')) {
-            $where = " WHERE s.CenterID IN ($userCenters)
-                            OR bc.CenterID IN ($userCenters)";
-        }
-        $result = $db->pselect($query.$where, array());
+        $query  = "SELECT
+                      c.CandID as candidateId,
+                      s.ID sessionId,
+                      s.Visit_label as label,
+                      s.CenterID as centerId
+                  FROM
+                      candidate c
+                  LEFT JOIN session s USING (CandID)
+                  LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
+                  LEFT JOIN biobank_container bc USING (ContainerID)
+                  WHERE
+                      s.CenterID IN ($userCenters) OR
+                      bc.CenterID IN ($userCenters)";
+        $result = $db->pselect($query, array());
         $candidateSessions = [];
         $sessionCenters    = [];
         foreach ($result as $row) {

@@ -47,13 +47,11 @@ class Container implements
      * @var int       $dimensionId
      * @var float     $temperature
      * @var int       $statusId
-     * @var array     $projectIds
-     * @var array     $shipmentBarocdes
+     * @var array     $shipmentBarcodes
      * @var \CenterID $centerId
      * @var int       $parentContainerId
-     * @var string    $parentContainerBarocde
+     * @var ?string   $parentContainerBarcode
      * @var array     $childContainerIds
-     * @var array     $coordinates
      * @var int       $coordinate
      * @var string    $lotNumber
      * @var \DateTime $expirationDate
@@ -68,13 +66,11 @@ class Container implements
     private $dimensionId;
     private $temperature;
     private $statusId;
-    private $projectIds;
     private $shipmentBarcodes;
     private \CenterID $centerId;
     private $parentContainerId;
-    private string $parentContainerBarocde;
+    private ?string $parentContainerBarcode = null;
     private $childContainerIds;
-    private array $coordinates;
     private $coordinate;
     private $lotNumber;
     private $expirationDate;
@@ -228,28 +224,6 @@ class Container implements
     }
 
     /**
-     * Sets the ID of the container's current projects
-     *
-     * @param int[] $projectIds the IDs of the container's current projects
-     *
-     * @return void
-     */
-    public function setProjectIds(array $projectIds) : void
-    {
-        $this->projectIds = $projectIds;
-    }
-
-    /**
-     * Gets the ID of the container's current projects
-     *
-     * @return ?array
-     */
-    public function getProjectIds() : ?array
-    {
-        return $this->projectIds;
-    }
-
-    /**
      * Sets the Barcodes of the container's shipments
      *
      * @param array $shipmentBarcodes the IDs of the container's shipments
@@ -262,7 +236,7 @@ class Container implements
     }
 
     /**
-     * Gets the Barocdes of the container's shipments
+     * Gets the Barcodes of the container's shipments
      *
      * @return ?array
      */
@@ -381,28 +355,6 @@ class Container implements
     public function getChildContainerIds() : ?array
     {
         return $this->childContainerIds;
-    }
-
-    /**
-     * Sets the coordinates of the children containers
-     *
-     * @param array $coordinates
-     *
-     * @return void
-     */
-    public function setCoordinates(array $coordinates) : void
-    {
-        $this->coordinates = $coordinates;
-    }
-
-    /**
-     * Gets the coordinates of the children containers
-     *
-     * @return ?array
-     */
-    public function getCoordinates() : ?array
-    {
-        return $this->coordinates;
     }
 
     /**
@@ -525,9 +477,6 @@ class Container implements
         if (isset($data['statusId'])) {
             $this->setStatusId((int) $data['statusId']);
         }
-        if (isset($data['projectIds'])) {
-            $this->setProjectIds($data['projectIds']);
-        }
         if (isset($data['shipmentBarcodes'])) {
             $this->setShipmentBarcodes($data['shipmentBarcodes']);
         }
@@ -542,9 +491,6 @@ class Container implements
         }
         if (isset($data['childContainerIds'])) {
             $this->setChildContainerIds($data['childContainerIds']);
-        }
-        if (isset($data['coordinates'])) {
-            $this->setCoordinates($data['coordinates']);
         }
         if (isset($data['coordinate'])) {
             $this->setCoordinate((int) $data['coordinate']);
@@ -593,13 +539,11 @@ class Container implements
             'dimensionId'            => $this->dimensionId,
             'temperature'            => $this->temperature,
             'statusId'               => $this->statusId,
-            'projectIds'             => $this->projectIds,
             'shipmentBarcodes'       => $this->shipmentBarcodes,
             'centerId'               => $this->centerId,
             'parentContainerId'      => $this->parentContainerId,
-            'parentContainerBarcode' => $this->getParentContainerBarcode,
+            'parentContainerBarcode' => $this->parentContainerBarcode,
             'childContainerIds'      => $this->childContainerIds,
-            'coordinates'            => $this->coordinates,
             'coordinate'             => $this->coordinate,
             'lotNumber'              => $this->lotNumber,
             'expirationDate'         => $expirationDate,

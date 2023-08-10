@@ -66,7 +66,7 @@ class Specimen implements
     private $quantity;
     private $unitId;
     private $fTCycle;
-    private $centerId;
+    private \CenterID $centerId;
     private $projectIds;
     private $parentSpecimenIds;
     private $parentSpecimenBarcodes;
@@ -531,10 +531,8 @@ class Specimen implements
         if (isset($data['unitId'])) {
             $this->setUnitId((int) $data['unitId']);
         }
-        if (isset($data['containerCenterId'])) {
-            $this->setContainerCenterId(new \CenterID(strval($data['containerCenterId'])));
-        if (isset($data['projectIds'])) {
-            $this->setProjectIds($data['projectIds']);
+        if (isset($data['centerId'])) {
+            $this->setCenterId(new \CenterID(strval($data['centerId'])));
         }
         if (isset($data['projectIds'])) {
             $this->setProjectIds($data['projectIds']);

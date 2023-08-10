@@ -287,8 +287,6 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['TypeID'])) {
             $pool->setTypeId((int) $data['TypeID']);
         }
-        if (isset($projectIds)) {
-            $pool->setProjectIds($projectIds);
         if (isset($data['CenterID'])) {
             $pool->setCenterId($data['CenterID']);
         }
