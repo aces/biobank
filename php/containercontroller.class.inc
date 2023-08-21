@@ -76,7 +76,7 @@ class ContainerController
         $this->_validatePermission('view');
         $containers  = [];
         $this->dao = $this->dao
-          ->filter(new \LORIS\Data\Filters\UserSiteMatch());
+          ->filter(new \LORIS\Data\Filters\UserProjectOrSiteMatch());
         $containerIt = $this->dao->execute($this->user);
         foreach ($containerIt as $id => $container) {
             $containers[$id] = $container;
@@ -206,7 +206,6 @@ class ContainerController
         $this->_validateTypeId($container);
         $this->_validateTemperature($container);
         $this->_validateStatusId($container);
-        $this->_validateProjectIds($container);
         $this->_validateShipmentBarcodes($container);
         $this->_validateCenterId($container);
         $this->_validateParentContainerId($container);
@@ -385,8 +384,13 @@ class ContainerController
      */
     private function _validateShipmentBarcodes(Container $container) : void
     {
+        if (empty($container->getShipmentBarcodes())) {
+            // Handle the null case here
+            return;
+        }
         $shipmentDAO = new ShipmentDAO($this->db);
         foreach ($container->getShipmentBarcodes() as $barcode) {
+            error_log($barcode);
             $shipment = $shipmentDAO->getInstanceFromBarcode($barcode);
             if ($shipment->getActive()) {
                 throw new BadRequest(

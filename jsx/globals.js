@@ -217,9 +217,9 @@ function Globals(props) {
       loading={props.loading}
       label='Projects'
       clearAll={props.clearAll}
-      updateValue={props.updateSpecimen}
+      updateValue={()=>props.updateSpecimen(current.specimen)}
       edit={() => props.edit('project')}
-      editValue={props.editSpecimen}
+      editValue={() => props.editSpecimen(specimen)}
       value={specimen.projectIds.length !== 0 ?
        specimen.projectIds
          .map((id) => options.projects[id])
@@ -271,12 +271,12 @@ function Globals(props) {
     }
   
     const { parentSpecimenIds, parentSpecimenBarcodes } = specimen;
-    const value = parentSpecimenIds?.length === 0
+    const value = parentSpecimenIds.length === 0
       ? 'None'
-      : Object.values(parentSpecimenBarcodes)
+      : parentSpecimenBarcodes
           .map(barcode => <Link to={`/barcode=${barcode}`}>{barcode}</Link>)
-          .join(', ');
-  
+          .reduce((prev, curr, index) => [prev, index == 0 ? '' : ', ', curr]);
+
     return (
       <InlineField
         label="Parent Specimen"

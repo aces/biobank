@@ -189,7 +189,7 @@ class SpecimenTab extends Component {
         });
       const candidate = options.candidates[specimen.candidateId];
       return [
-        container.barcode,
+        specimen.barcode,
         specimen.typeId,
         container.typeId,
         specimen.quantity+' '+options.specimen.units[specimen.unitId].label,
@@ -198,13 +198,13 @@ class SpecimenTab extends Component {
         specimen.candidatePSCID,
         candidate?.sex || null,
         specimen.candidateAge,
-        candidate?.diagnosis || null,
+        candidate?.diagnosisIds || null,
         options.sessions[specimen.sessionId].label,
         specimen.poolId ? (data.pools[specimen.poolId]||{}).label : null,
         container.statusId,
         specimen.projectIds,
-        container.centerId,
-        options.sessionCenters[specimen.sessionId].centerId,
+        specimen.centerId,
+        options.sessionCenters[specimen.sessionId]?.centerId,
         specimen.collection.date,
         specimen.collection.time,
         (specimen.preparation||{}).time,

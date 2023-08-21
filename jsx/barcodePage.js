@@ -217,10 +217,8 @@ class BarcodePage extends Component {
    * @param {string} value - the error message
    */
   setErrors(name, value) {
-    console.log(name+': '+value);
     const errors = clone(this.state.errors);
     errors[name] = value;
-    console.log(errors);
     this.setState({errors});
   }
 

@@ -105,6 +105,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                      bc.ContainerStatusID,
                      GROUP_CONCAT(DISTINCT(s.Barcode)) as ShipmentBarcodes,
                      bc.Temperature,
+                     GROUP_CONCAT(DISTINCT(bspr.ProjectID)) as ProjectIDs,
                      bc.CenterID,
                      bcp.ParentContainerID,
                      bc2.Barcode as ParentContainerBarcode,
@@ -129,7 +130,9 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                   LEFT JOIN shipment s
                     ON bcsr.ShipmentID=s.ShipmentID
                   LEFT JOIN biobank_specimen bs
-                    ON bc.ContainerID=bs.ContainerID';
+                    ON bc.ContainerID=bs.ContainerID
+                  LEFT JOIN biobank_specimen_project_rel bspr
+                    ON bs.SpecimenID=bspr.SpecimenID';
         if (!empty($conditions)) {
             $whereClause = [];
             foreach ($conditions as $condition) {
@@ -145,11 +148,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
 
         $containers = [];
         foreach ($containerRows as $id => $containerRow) {
-            $containers[$id] = $this->_getInstanceFromSQL(
-                $containerRow,
-                explode(',', $containerRow['ChildContainerIDs'] ?? ''),
-                explode(',', $containerRow['ShipmentBarcodes'] ?? '')
-            );
+            $containers[$id] = $this->_getInstanceFromSQL($containerRow);
         }
         return $containers;
     }
@@ -574,8 +573,6 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
      */
     private function _getInstanceFromSQL(
         array $data,
-        ?array $childContainerIds,
-        ?array $shipmentBarcodes
     ) : Container {
         $container = $this->getInstance();
 
@@ -600,8 +597,18 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['ContainerStatusID'])) {
             $container->setStatusId((int) $data['ContainerStatusID']);
         }
-        if (isset($shipmentBarcodes)) {
+        if (isset($data['ShipmentBarcodes'])) {
+            $shipmentBarcodes = explode(',', $data['ShipmentBarcodes']);
             $container->setShipmentBarcodes($shipmentBarcodes);
+        } else {
+            $container->setShipmentBarcodes([]);
+        }
+        if (isset($data['ProjectIDs'])) {                                       
+            $projectIds = array_map(fn($id) => new \ProjectID($id),             
+                explode(',', $data['ProjectIDs']));                             
+            $container->setProjectIds($projectIds);                              
+        } else {
+            $container->setProjectIds([]);                              
         }
         if (isset($data['CenterID'])) {
             $container->setCenterId(new \CenterID(strval($data['CenterID'])));
@@ -612,8 +619,11 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['ParentContainerBarcode'])) {
             $container->setParentContainerBarcode((string) $data['ParentContainerBarcode']);
         }
-        if (isset($childContainerIds)) {
+        if (isset($data['ChildContainerIDs'])) {
+            $childContainerIds = explode(',', $data['ChildContainerIDs']);
             $container->setChildContainerIds($childContainerIds);
+        } else {
+            $container->setChildContainerIds([]);
         }
         if (isset($data['Coordinate'])) {
             $container->setCoordinate((int) $data['Coordinate']);

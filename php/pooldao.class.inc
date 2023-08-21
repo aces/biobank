@@ -64,7 +64,7 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
      */
     public function getInstanceFromId(int $id) : Pool
     {
-        return $this->selectInstances([['column' => 'PoolID', 'value'=>$id]])[$id];
+        return $this->selectInstances([['column' => 'bp.PoolID', 'value'=>$id]])[$id];
     }
 
     // XXX: Currently this function is never used with any conditions passed as
@@ -88,11 +88,16 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
                          bp.Quantity,
                          bp.UnitID,
                          GROUP_CONCAT(bspr.SpecimenID) as SpecimenIDs,
+                         GROUP_CONCAT(bc.Barcode) as SpecimenBarcodes,
                          bp.Date,
                          DATE_FORMAT(bp.Time, '%H:%i') as Time
                   FROM   biobank_pool bp
-                  LEFT JOIN biobank_specimen_pool_rel bspr
-                    USING (PoolID)";
+                  LEFT JOIN
+                    biobank_specimen_pool_rel bspr ON bspr.PoolID=bp.PoolID
+                  LEFT JOIN
+                      biobank_specimen bs ON bs.SpecimenID=bspr.SpecimenID
+                  LEFT JOIN
+                      biobank_container bc ON bc.ContainerID=bs.ContainerID";
         if (!empty($conditions)) {
             $whereClause = [];
             foreach ($conditions as $condition) {
@@ -112,11 +117,7 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         
         foreach ($poolRows as $id => $poolRow) {
             $specimenIds = explode(',', $poolRow['SpecimenIDs']);
-            $specimenBarcodes = [];
-            foreach ($specimenIds as $specimenId) {
-              $specimen = $specimenDAO->getInstanceFromId((int) $specimenId);
-              $specimenBarcodes[] = $specimen->getBarcode();
-            }
+            $specimenBarcodes = explode(',', $poolRow['SpecimenBarcodes']);
 
             // set global pool properties based on first specimen of pool
             $specimenId  = (int) $specimenIds[0];

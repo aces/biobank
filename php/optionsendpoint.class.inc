@@ -134,7 +134,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
 
         $userCenters = implode(',',$user->getCenterIDs());
         $userProjects = implode(',', $user->getProjectIDs());
-        // XXX: This should eventually be replaced by a call directly to a
+        // TODO: This should eventually be replaced by a call directly to a
         // Candidate endpoint or Candidate controller that will be able to
         // provide Candidate Objects.
         $query      = "SELECT c.CandID as id,
@@ -143,8 +143,6 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                             GROUP_CONCAT(DISTINCT DiagnosisID) as diagnosisIds
                        FROM candidate c
                             LEFT JOIN session s USING (CandID)
-                            LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
-                            LEFT JOIN biobank_container bc USING (ContainerID)
                             LEFT JOIN candidate_diagnosis_rel USING (CandID)
                        WHERE s.CenterID IN ($userCenters) OR s.ProjectID IN ($userProjects)
                        GROUP BY
@@ -185,11 +183,11 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         // Center Endpoint or Center Controller that will be able to provide
         // Center Objects.
         $centers = \Utility::getSiteList();
-        foreach ($centers as $id => $center) {
-            if ($user->hasCenter(new \CenterID(strval($id))) === false) {
-                unset($centers[$id]);
-            }
-        }
+        // foreach ($centers as $id => $center) {
+        //     if ($user->hasCenter(new \CenterID(strval($id))) === false) {
+        //         unset($centers[$id]);
+        //     }
+        // }
 
         // XXX: This should eventually be replaced by a call directly to a
         // Session Controller or Session Options endpoint that will be able to
@@ -205,8 +203,8 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                   LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
                   LEFT JOIN biobank_container bc USING (ContainerID)
                   WHERE
-                      s.CenterID IN ($userCenters) OR
-                      bc.CenterID IN ($userCenters)";
+                      s.CenterID IN ($userCenters)
+                      OR s.ProjectID IN ($userProjects)";
         $result = $db->pselect($query, array());
         $candidateSessions = [];
         $sessionCenters    = [];
