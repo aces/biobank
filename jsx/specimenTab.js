@@ -91,9 +91,9 @@ class SpecimenTab extends Component {
   formatSpecimenColumns(column, value, row) {
     const {options} = this.props;
     value = this.mapSpecimenColumns(column, value);
-    const candId = Object.values(options.candidates)
-      .find((cand) => cand.pscid == row['PSCID']).id;
-    const candidatePermission = candId !== undefined;
+    const candidate = Object.values(options.candidates)
+      .find((cand) => cand.pscid == row['PSCID']);
+    const candidatePermission = candidate !== undefined;
     switch (column) {
       case 'Barcode':
         return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
@@ -105,15 +105,15 @@ class SpecimenTab extends Component {
         return <td>{barcodes}</td>;
       case 'PSCID':
         if (candidatePermission) {
-          return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+          return <td><a href={loris.BaseURL + '/' + candidate.id}>{value}</a></td>;
         }
         return <td>{value}</td>;
       case 'Visit Label':
         if (candidatePermission) {
-          const ses = Object.values(options.candidateSessions[candId]).find(
+          const ses = Object.values(options.candidateSessions[candidate.id]).find(
             (sess) => sess.label == value
           ).id;
-          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
+          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candidate.id+
             '&sessionID='+ses;
           return <td><a href={visitLabelURL}>{value}</a></td>;
         }
