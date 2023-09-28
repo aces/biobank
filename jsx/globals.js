@@ -290,12 +290,11 @@ function Globals(props) {
     if (loris.userHasPermission('biobank_container_view')) {
       // Set Parent Container Barcode Value if it exists
       const parentContainerBarcodeValue = () => {
-        if (container.parentContainerBarcode) {
-          const barcode = container.parentContainerBarcode
+        if (container.parentContainerId) {
           if (data.containers[container.parentContainerId]) {
-            return <Link to={`/barcode=${barcode}`}>{barcode}</Link>;
+            return <Link to={`/barcode=${barcode}`}>{container.parentContainerBarcode}</Link>;
           }
-          return <div>{barcode}</div>;
+          return <div>{container.parentContainerBarcode}</div>;
         }
       };
 
