@@ -63,7 +63,7 @@ class BatchProcessForm extends React.PureComponent {
    *
    */
   addListItem(containerId) {
-    let {list, current, preparation, count} = clone(this.state);
+    let {list, current, count} = clone(this.state);
 
     // Increase count.
     count++;
@@ -74,16 +74,12 @@ class BatchProcessForm extends React.PureComponent {
 
     // Set current global values.
     current.typeId = specimen.typeId;
-    current.centerId = container.centerId;
 
     // Set list values.
     list[count] = {specimen, container};
 
-    // Set current preparation values.
-    preparation.centerId = container.centerId;
-
     this.setState(
-      {preparation, list, current, count, containerId},
+      {list, current, count, containerId},
       this.setState({containerId: null})
     );
   }
@@ -138,16 +134,7 @@ class BatchProcessForm extends React.PureComponent {
       Swal.fire('Oops!', 'Specimens must be of the same Type', 'warning');
       return Promise.reject();
     }
-    // XXX: This is what the validation used to be. Removed because CBIGR requires
-    // process from two different sites that are semantically the same. When
-    // project-level permissions are enabled, this should be restored.
-    // if (!isEmpty(list) &&
-    //   (specimen.typeId !== current.typeId ||
-    //   container.centerId !== current.centerId)
-    // ) {
-    //   swal.fire('Oops!', 'Specimens must be of the same Type and Center', 'warning');
-    //   return Promise.reject();
-    // }
+
     return Promise.resolve();
   }
 
@@ -271,17 +258,13 @@ class BatchProcessForm extends React.PureComponent {
             <StaticElement
               label='Processing Note'
               text="Select or Scan the specimens to be prepared. Specimens must
-                    have a Status of 'Available', and share the same Type and
-                    Site. Any previous value associated with a Specimen will be
+                    have a Status of 'Available', and share the same Type.
+                    Any previous value associated with a Specimen will be
                     overwritten if one is added on this form."
             />
             <StaticElement
               label='Specimen Type'
               text={(options.specimen.types[current.typeId]||{}).label || '—'}
-            />
-            <StaticElement
-              label='Site'
-              text={options.centers[current.centerId] || '—'}
             />
             <div className='row'>
               <div className='col-xs-6'>
@@ -321,9 +304,11 @@ class BatchProcessForm extends React.PureComponent {
     const handleSubmit = () => {
       const prepList = Object.values(list).map((item) => {
         const specimen = clone(item.specimen);
-        specimen.preparation = preparation;
+        specimen.preparation = clone(preparation);
+        specimen.preparation.centerId = item.container.centerId;
         return specimen;
       });
+      console.log(prepList);
 
       return new Promise((resolve, reject) => {
         this.validateList(list)

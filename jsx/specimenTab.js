@@ -89,11 +89,11 @@ class SpecimenTab extends Component {
    * @return {ReactDOM}
    */
   formatSpecimenColumns(column, value, row) {
-    const {options} = this.props;
+    const {data, options} = this.props;
     value = this.mapSpecimenColumns(column, value);
-    const candId = Object.values(options.candidates)
-      .find((cand) => cand.pscid == row['PSCID']).id;
-    const candidatePermission = candId !== undefined;
+    const candidate = Object.values(options.candidates)
+      .find((cand) => cand.pscid == row['PSCID']);
+    const candidatePermission = candidate !== undefined;
     switch (column) {
       case 'Barcode':
         return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
@@ -105,15 +105,15 @@ class SpecimenTab extends Component {
         return <td>{barcodes}</td>;
       case 'PSCID':
         if (candidatePermission) {
-          return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+          return <td><a href={loris.BaseURL + '/' + candidate.id}>{value}</a></td>;
         }
         return <td>{value}</td>;
       case 'Visit Label':
         if (candidatePermission) {
-          const ses = Object.values(options.candidateSessions[candId]).find(
+          const ses = Object.values(options.candidateSessions[candidate.id]).find(
             (sess) => sess.label == value
           ).id;
-          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
+          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candidate.id+
             '&sessionID='+ses;
           return <td><a href={visitLabelURL}>{value}</a></td>;
         }
@@ -138,7 +138,11 @@ class SpecimenTab extends Component {
       case 'Projects':
         return <td>{value.join(', ')}</td>;
       case 'Container Barcode':
-        return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
+        // check if container has be queried
+        if (Object.values(data.containers).find(container => container.barcode == value)) {
+          return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
+        }
+        return <td>{value}</td>;
       default:
         return <td>{value}</td>;
      }

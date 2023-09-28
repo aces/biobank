@@ -98,26 +98,29 @@ class BarcodePage extends Component {
     const optcontainer = this.props.options.container;
     const datacontainers = this.props.data.containers;
     const parentContainer = datacontainers[container.parentContainerId];
-    const dimensions = optcontainer.dimensions[parentContainer.dimensionId];
-    let coordinate;
-    let j = 1;
-    outerloop:
-    for (let y=1; y<=dimensions.y; y++) {
-      for (let x=1; x<=dimensions.x; x++) {
-        if (j == container.coordinate) {
-          if (dimensions.xNum == 1 && dimensions.yNum == 1) {
-            coordinate = x + (dimensions.x * (y-1));
-          } else {
-            const xVal = dimensions.xNum == 1 ? x : String.fromCharCode(64+x);
-            const yVal = dimensions.yNum == 1 ? y : String.fromCharCode(64+y);
-            coordinate = yVal+''+xVal;
+    // if parentContainer is not accessible, this means the user doesn't have access
+    if (parentContainer) {
+      const dimensions = optcontainer.dimensions[parentContainer.dimensionId];
+      let coordinate;
+      let j = 1;
+      outerloop:
+      for (let y=1; y<=dimensions.y; y++) {
+        for (let x=1; x<=dimensions.x; x++) {
+          if (j == container.coordinate) {
+            if (dimensions.xNum == 1 && dimensions.yNum == 1) {
+              coordinate = x + (dimensions.x * (y-1));
+            } else {
+              const xVal = dimensions.xNum == 1 ? x : String.fromCharCode(64+x);
+              const yVal = dimensions.yNum == 1 ? y : String.fromCharCode(64+y);
+              coordinate = yVal+''+xVal;
+            }
+            break outerloop;
           }
-          break outerloop;
+          j++;
         }
-        j++;
       }
+      return coordinate;
     }
-    return coordinate;
   }
 
   /**

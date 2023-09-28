@@ -71,7 +71,6 @@ class SpecimenController
         foreach ($specimenIt as $id => $specimen) {
             $specimens[$id] = $specimen;
         }
-
         return $specimens;
     }
 
@@ -177,12 +176,7 @@ class SpecimenController
      */
     private function _getDataProvisioner() : SpecimenDAO
     {
-        $dao = new SpecimenDAO($this->loris);
-
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
-        return $dao;
+        return new SpecimenDAO($this->loris);
     }
 
     /**
