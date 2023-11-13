@@ -1,47 +1,56 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import {Link} from 'react-router-dom';
-
-import {mapFormOptions} from './helpers.js';
+import { Link } from 'react-router-dom';
+import { mapFormOptions } from './helpers.js';
 import ContainerDisplay from './containerDisplay';
 
-/**
- * Biobank Container
- *
- * Fetches data corresponding to a given Container from Loris backend and
- * displays a page allowing viewing of meta information of the container
- *
- * @author Henri Rabalais
- * @version 1.0.0
- *
- * */
-class BiobankContainer extends Component {
-  /**
-   * Constructor
-   */
-  constructor() {
-    super();
-    this.drag = this.drag.bind(this);
-  }
 
-  /**
-   * Handle dragging of a container
-   *
-   * @param {Event} e - the drag event
-   */
-  drag(e) {
-    const container = JSON.stringify(this.props.data.containers[e.target.id]);
+type ContainerProps = {
+  current = object,
+  data = object,
+  editable = object,
+  options = object,
+  container = object,
+  getParentContainerBarcodes = Function,
+  getBarcodePathDisplay = Function,
+  history = string,
+  edit = Function,
+  clearAll = Function,
+  setCurrent = Function,
+  setCheckoutList = Function,
+  editContainer = Function,
+  updateContainer = Function,
+}
+
+/**                                                                             
+ * Container Component for displaying container information and actions.            
+ *                                                                              
+ * @component                                                                   
+ * @param {ContainerProps} props - The properties passed to the component.         
+ * @returns {ReactElement} React element representing the Container.
+ */   
+const BiobankContainer = ({
+  current,
+  data,
+  editable,
+  options,
+  container,
+  getParentContainerBarcodes,
+  getBarcodePathDisplay,
+  history,
+  edit,
+  clearAll,
+  setCurrent,
+  setCheckoutList,
+  editContainer,
+  updateContainer,
+}) => {
+  const drag = useCallback((e) => {
+    const container = JSON.stringify(data.containers[e.target.id]);
     e.dataTransfer.setData('text/plain', container);
-  }
+  }, [data.containers]);
 
-  /**
-   * Render React component
-   *
-   * @return {JSX}
-   */
   render() {
-    const {current, data, editable, options, container} = this.props;
-
     const checkoutButton = () => {
       if (!(loris.userHasPermission('biobank_container_update')) ||
           (data.containers[container.id].childContainerIds.length == 0)) {
@@ -54,9 +63,7 @@ class BiobankContainer extends Component {
             className={!editable.containerCheckout && !editable.loadContainer ?
               'action-button update open' : 'action-button update closed'}
             title='Checkout Child Containers'
-            onClick={()=>{
-              this.props.edit('containerCheckout');
-            }}
+            onClick={() => edit('containerCheckout'};
           >
             <span className='glyphicon glyphicon-share'/>
           </div>
@@ -64,7 +71,7 @@ class BiobankContainer extends Component {
       );
     };
 
-    const parentBarcodes = this.props.getParentContainerBarcodes(container);
+    const parentBarcodes = getParentContainerBarcodes(container);
     const barcodes = mapFormOptions(data.containers, 'barcode');
     // delete values that are parents of the container
     Object.keys(parentBarcodes)
@@ -75,7 +82,7 @@ class BiobankContainer extends Component {
         )
     );
 
-    const barcodePathDisplay = this.props.getBarcodePathDisplay(parentBarcodes);
+    const barcodePathDisplay = getBarcodePathDisplay(parentBarcodes);
     const coordinates = data.containers[container.id].childContainerIds
       .reduce((result, id) => {
         const container = data.containers[id];
@@ -89,7 +96,7 @@ class BiobankContainer extends Component {
       <div className='display-container'>
         {checkoutButton()}
         <ContainerDisplay
-          history={this.props.history}
+          history={history}
           data={data}
           container={container}
           barcodes={barcodes}
@@ -98,12 +105,12 @@ class BiobankContainer extends Component {
           dimensions={options.container.dimensions[container.dimensionId]}
           coordinates={coordinates}
           editable={editable}
-          edit={this.props.edit}
-          clearAll={this.props.clearAll}
-          setCurrent={this.props.setCurrent}
-          setCheckoutList={this.props.setCheckoutList}
-          editContainer={this.props.editContainer}
-          updateContainer={this.props.updateContainer}
+          edit={edit}
+          clearAll={clearAll}
+          setCurrent={setCurrent}
+          setCheckoutList={setCheckoutList}
+          editContainer={editContainer}
+          updateContainer={updateContainer}
         />
         <div style={{display: 'inline'}}>
           {barcodePathDisplay}
@@ -136,7 +143,7 @@ class BiobankContainer extends Component {
                </Link>
             </div>
           );
-          const coordinate = this.props.getCoordinateLabel(child);
+          const coordinate = getCoordinateLabel(child);
           coordinateList.push(<div>at {coordinate}</div>);
         } else {
           listUnassigned.push(
@@ -184,9 +191,5 @@ class BiobankContainer extends Component {
     );
   }
 }
-
-BiobankContainer.propTypes = {
-  containerPageDataURL: PropTypes.string.isRequired,
-};
 
 export default BiobankContainer;

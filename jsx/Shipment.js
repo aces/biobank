@@ -1,13 +1,11 @@
-import {useState} from 'react';
-import {get, post} from './helpers.js';
+import React, { useState } from 'react';
+import { get, post } from './helpers.js';
 
 /**
- * React effect for creating a request to create a new
- * shipment
+ * Custom hook for managing shipment data.
  *
- * @param {object} initShipment - the initial value for the shipment
- *
- * @return {Shipment}
+ * @param {Shipment} initShipment - Initial shipment data.
+ * @returns {Object} - Shipment state and functions to modify it.
  */
 export function UseShipment(initShipment = {}) {
   const [init, setInit] = useState(initShipment);
@@ -49,33 +47,28 @@ export function UseShipment(initShipment = {}) {
 }
 
 /**
- * A Shipment of a container
+ * Represents a shipment of containers.
  */
+interface ShipmentData {
+  id?: string;
+  barcode?: string;
+  type?: string;
+  destinationCenterId?: number;
+  logs?: LogData[];
+  containerIds?: string[];
+}
+
 class Shipment {
   /**
-   * Constructor
-   *
-   * @param {string} id - shipment id
-   * @param {string} barcode - shipment barcode
-   * @param {string} type - shipment type
-   * @param {int} destinationCenterId - shipment destination
-   * @param {array} logs - logs for this shipment
-   * @param {array} containerIds - containers in this shipment
+   * @param {ShipmentData} data
    */
-  constructor({
-    id = null,
-    barcode = null,
-    type = null,
-    destinationCenterId = null,
-    logs = [],
-    containerIds = [],
-  }) {
-    this.id = id;
-    this.barcode = barcode;
-    this.type = type;
-    this.destinationCenterId = destinationCenterId;
-    this.logs = logs.map((log) => new Log(log));
-    this.containerIds = containerIds;
+  constructor(data: ShipmentData = {}) {
+    this.id = data.id || null;
+    this.barcode = data.barcode || null;
+    this.type = data.type || null;
+    this.destinationCenterId = data.destinationCenterId || null;
+    this.logs = data.logs ? data.logs.map(log => new Log(log)) : [];
+    this.containerIds = data.containerIds || [];
   }
 
   /**
@@ -144,35 +137,52 @@ class Shipment {
 }
 
 /**
- * A log of shipments
+ * Represents a shipment log
  */
+interface LogData {
+  barcode?: string;
+  centerId?: string;
+  status?: string;
+  user?: string;
+  temperature?: number;
+  date?: string;
+  time?: string;
+  comments?: string;
+}
+
 class Log {
+  barcode: string | null;
+  centerId: string | null;
+  status: string | null;
+  user: string | null;
+  temperature: number | null;
+  date: string | null;
+  time: string | null;
+  comments: string | null;
+
   /**
-   * Constructor
-   *
-   * @param {object} props - React props
+   * @param {LogData} data
    */
-  constructor(props = {}) {
-    this.barcode = props.barcode || null;
-    this.centerId = props.centerId || null;
-    this.status = props.status || null;
-    this.user = props.user || null;
-    this.temperature = props.temperature || null;
-    this.date = props.date || null;
-    this.time = props.time || null;
-    this.comments = props.comments || null;
+  constructor(data: LogData = {}) {
+    this.barcode = data.barcode || null;
+    this.centerId = data.centerId || null;
+    this.status = data.status || null;
+    this.user = data.user || null;
+    this.temperature = data.temperature || null;
+    this.date = data.date || null;
+    this.time = data.time || null;
+    this.comments = data.comments || null;
   }
 
   /**
-   * Set a value
-   *
-   * @param {string} name - the key
-   * @param {?} value - the value
-   *
-   * @return {Log} - A new log object with the key set to value
+   * Sets name to value in this shipment.
+   * 
+   * @param {string} name - The key.
+   * @param {any} value - The value.
+   * @returns {Log} - Updated shipment.
    */
-  set(name, value) {
-    return new Log({...this, [name]: value});
+  set(name: keyof LogData, value: string | number | null): Log {
+    return new Log({ ...this, [name]: value });
   }
 }
 

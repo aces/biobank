@@ -1,39 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, ReactElement } from 'react';
 import Modal from 'Modal';
+import {FormElement, TextboxElement} from 'Form';
+
+/**
+ * Props for the Search component.
+ */
+interface SearchProps {
+  title: string;
+  show: boolean;
+  onClose: () => void;
+  barcodes?: {[key: string]: string};
+  history: any; // TODO: Replace 'any' with appropriate type for history object
+}
 
 /**
  * Provides a modal window that can be used to search barcodes.
  *
  * @component
- * @param {Object} props - The component's props.
- * @param {string} props.title - The title for the modal.
- * @param {boolean} props.show - A flag to control the visibility of the modal.
- * @param {Function} props.onClose - A callback function to close the modal.
- * @param {Object} props.barcodes - An object containing barcode data.
- * @param {Object} props.history - React Router history object for navigation.
- * @returns {JSX.Element} The rendered component.
+ * @param {SearchProps} props - The component's props.
+ * @returns {ReactElement} The rendered component.
  */
-function Search({
+const Search = ({
   title,
   show,
   onClose,
   barcodes = {},
   history,
-}) {
+}: SearchProps): ReactElement  => {
   /**
    * State for storing the barcode value.
    *
    * @type {string | null}
    */
-  const [barcode, setBarcode] = useState(null);
+  const [barcode, setBarcode] = useState<string | null>(null);
 
   /**
    * Handles user input in the barcode textbox.
    *
+   * @function
    * @param {string} name - The name of the input element.
    * @param {string} value - The new value of the barcode.
+   * @returns {void}
    */
-  const onInput = (name, value) => {
+  const onInput = (name: string, value: string) : void => {
     setBarcode(value);
     if (Object.values(barcodes).find((barcode) => barcode === value)) {
       history.push(`/barcode=${value}`);

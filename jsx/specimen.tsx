@@ -1,28 +1,60 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import SpecimenProcessForm from './processForm';
-
 import {clone} from './helpers.js';
 
-/**
- * Biobank Specimen
- *
- * @param {object} props the props!
- * @return {*}
- */
-function BiobankSpecimen(props) {
-  const {current, editable, errors, options, specimen, container} = props;
 
+// TODO: Replace 'any' and 'Function' with appropriate declarations
+type SpecimenProps = {
+  current = any,
+  editable = any,
+  errors = any,
+  options = any,
+  specimen = any,
+  container = any,
+  editSpecimen = Function,
+  edit = Function,
+  clearAll = Function,
+  editable = boolean,
+  process = 'collection' | 'preparation' | 'analysis',
+  setCurrent = Function,
+  setSpecimen = Function,
+  updateSpecimen = Function,
+}
+
+/**                                                                             
+ * Specimen Component for displaying specimen information and actions.            
+ *                                                                              
+ * @component                                                                   
+ * @param {SpecimenProps} props - The properties passed to the component.         
+ * @returns {ReactElement} React element representing the Specimen.               
+ */  
+const BiobankSpecimen = ({
+  current,
+  editable,
+  errors,
+  options,
+  specimen,
+  container,
+  editSpecimen,
+  edit,
+  clearAll,
+  editable,
+  process,
+  setCurrent,
+  setSpecimen,
+  updateSpecimen,
+  }: SpecimenProps) => {
   const addProcess = async (process) => {
     const newSpecimen = clone(specimen);
     newSpecimen[process] = {centerId: container.centerId};
-    await props.editSpecimen(newSpecimen);
-    props.edit(process);
+    await editSpecimen(newSpecimen);
+    edit(process);
   };
 
   const alterProcess = (process) => {
-    props.editSpecimen(specimen)
-    .then(() => props.edit(process));
+    editSpecimen(specimen)
+    .then(() => edit(process));
   };
 
   return (
@@ -32,13 +64,13 @@ function BiobankSpecimen(props) {
         alterProcess={alterProcess}
         specimen={specimen}
         editable={editable}
-        clearAll={props.clearAll}
+        clearAll={clearAll}
         current={current}
         errors={errors}
         options={options}
-        setCurrent={props.setCurrent}
-        setSpecimen={props.setSpecimen}
-        updateSpecimen={props.updateSpecimen}
+        setCurrent={setCurrent}
+        setSpecimen={setSpecimen}
+        updateSpecimen={updateSpecimen}
       >
         <ProcessPanel process='collection'/>
         <ProcessPanel process='preparation'/>
@@ -48,16 +80,12 @@ function BiobankSpecimen(props) {
   );
 }
 
-BiobankSpecimen.propTypes = {
-  specimenPageDataURL: PropTypes.string.isRequired,
-};
-
 /**
  * React component to display processes
  *
+ * @component
  * @param {object} props - React props
- *
- * @return {ReactDOM[]}
+ * @returns {ReactElement} React element
  */
 function Processes(props) {
   return React.Children.map(props.children, (child) => {
@@ -65,22 +93,50 @@ function Processes(props) {
   });
 }
 
+// TODO: Replace 'any' and 'Function' with appropriate declarations
+type ProcessPanelProps = {
+  editable = any,
+  process = 'collection' | 'preparation' | 'analysis',
+  current = any,
+  specimen = any,
+  options = any,
+  alterProcess = Function,
+  clearAll = Function,
+  addProcess,
+  errors = any,
+  setCurrent = Function,
+  setSpecimen = Function,
+  updateSpecimen = Function,
+}
+
 /**
  * React component to display a panel of processes
  *
- * @param {object} props - React props
- *
- * @return {ReactDOM}
+ * @component
+ * @param {ProcessPanelProps}
+ * @return {ReactElement}
  */
-function ProcessPanel(props) {
-  const {editable, process, current, specimen, options} = props;
+const ProcessPanel({
+  editable,
+  process,
+  current,
+  specimen,
+  options,
+  alterProcess,
+  clearAll,
+  addProcess,
+  errors,
+  setCurrent,
+  setSpecimen,
+  updateSpecimen,
+  }: ProcessPanelProps) {
 
   const alterProcess = () => {
     if (loris.userHasPermission('biobank_specimen_alter')) {
       return (
         <span
           className={editable[process] ? null : 'glyphicon glyphicon-pencil'}
-          onClick={editable[process] ? null : () => props.alterProcess(process)}
+          onClick={editable[process] ? null : () => alterProcess(process)}
         />
       );
     }
@@ -92,7 +148,7 @@ function ProcessPanel(props) {
         <a
           className="pull-right"
           style={{cursor: 'pointer'}}
-          onClick={props.clearAll}
+          onClick={clearAll}
         >
           Cancel
         </a>
@@ -113,10 +169,9 @@ function ProcessPanel(props) {
       !specimen[process] &&
       !editable[process] &&
       loris.userHasPermission('biobank_specimen_update')) {
-    const addProcess = () => props.addProcess(process);
     panel = (
       <div className='panel specimen-panel inactive'>
-        <div className='add-process' onClick={addProcess}>
+        <div className='add-process' onClick={() => addProcess(process)}>
           <span className='glyphicon glyphicon-plus'/>
         </div>
         <div>ADD {process.toUpperCase()}</div>
@@ -128,7 +183,7 @@ function ProcessPanel(props) {
     <FormElement>
       <SpecimenProcessForm
         current={current}
-        errors={props.errors.specimen[process]}
+        errors={errors.specimen[process]}
         edit={editable[process]}
         specimen={current.specimen}
         options={options}
@@ -138,10 +193,10 @@ function ProcessPanel(props) {
           specimen[process]
         }
         processStage={process}
-        setCurrent={props.setCurrent}
-        setParent={props.setSpecimen}
+        setCurrent={setCurrent}
+        setParent={setSpecimen}
         typeId={editable[process] ? current.specimen.typeId : specimen.typeId}
-        updateSpecimen={props.updateSpecimen}
+        updateSpecimen={updateSpecimen}
       />
     </FormElement>
   );
