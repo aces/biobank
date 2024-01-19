@@ -48,86 +48,87 @@ class Module extends \Module
     }
 
 
-    /**
-     * The default handler for a module routes to a page of the first component of
-     * the URL's name, or the same name as the module if serving the root of the
-     * module.
-     *
-     * Modules extend PrefixRouter, so that the parent handler knows that the
-     * css, static, and js routes should be routed through the file system to
-     * retrieve the files before trying to load any specific pages.
-     *
-     * @param ServerRequestInterface $request The incoming PSR7 request
-     *
-     * @return ResponseInterface the outgoing PSR7 response
-     */
-    public function handle(ServerRequestInterface $request) : ResponseInterface
-    {
-        $this->logger->debug("Module handle function called");
-        $resp = parent::handle($request);
-        if ($resp->getStatusCode() != 404) {
-            $path = $request->getURI()->getPath();
-            if (preg_match('/(\.css)$/', $path) == 1) {
-                $resp = $resp->withHeader(
-                    "Content-Type",
-                    "text/css"
-                );
-            }
-            if (preg_match('/(\.js)$/', $path) == 1) {
-                $resp = $resp->withHeader(
-                    "Content-Type",
-                    "application/javascript"
-                );
-            }
-            return $resp;
-        }
-
-        $this->lorisinstance = $request->getAttribute("loris");
-        $pagename            = $this->getName();
-        $path = trim($request->getURI()->getPath(), "/");
-        if ($path == 'optionsendpoint'
-            || $path == 'poolendpoint'
-            || $path == 'containerendpoint'
-            || $path == 'specimenendpoint'
-        ) {
-            // There is a subpage
-            $pagename = explode("/", $path)[0];
-        }
-
-        $user  = $request->getAttribute("user") ?? new \LORIS\AnonymousUser();
-        $loris = $request->getAttribute("loris");
-
-        try {
-            $page = $this->loadPage($loris, $pagename);
-        } catch (\NotFound $e) {
-            $this->logger->debug("Page $pagename not found");
-            return $resp->withStatus(404);
-        }
-        // FIXME: Hack required for breadcrumbs. This should be removed,
-        // but some tests depend on it.
-        if ($this->getName() === $pagename) {
-            $_REQUEST['test_name'] = $pagename;
-        } else {
-            $_REQUEST['subtest'] = $pagename;
-        }
-
-        $page->loadResources($user, $request);
-        if ($page->_hasAccess($user) !== true) {
-            return (new \LORIS\Middleware\PageDecorationMiddleware(
-                $user
-            ))->process(
-                $request,
-                new \LORIS\Router\NoopResponder(
-                    new \LORIS\Http\Error(
-                        $request,
-                        403,
-                        "You do not have access to this page."
-                    )
-                )
-            );
-        }
-        return $page->process($request, $page);
-    }
+//     /**
+//      * The default handler for a module routes to a page of the first component of
+//      * the URL's name, or the same name as the module if serving the root of the
+//      * module.
+//      *
+//      * Modules extend PrefixRouter, so that the parent handler knows that the
+//      * css, static, and js routes should be routed through the file system to
+//      * retrieve the files before trying to load any specific pages.
+//      *
+//      * @param ServerRequestInterface $request The incoming PSR7 request
+//      *
+//      * @return ResponseInterface the outgoing PSR7 response
+//      */
+//     public function handle(ServerRequestInterface $request) : ResponseInterface
+//     {
+//         $this->logger->debug("Module handle function called");
+//         $resp = parent::handle($request);
+//         if ($resp->getStatusCode() != 404) {
+//             $path = $request->getURI()->getPath();
+//             if (preg_match('/(\.css)$/', $path) == 1) {
+//                 $resp = $resp->withHeader(
+//                     "Content-Type",
+//                     "text/css"
+//                 );
+//             }
+//             if (preg_match('/(\.js)$/', $path) == 1) {
+//                 $resp = $resp->withHeader(
+//                     "Content-Type",
+//                     "application/javascript"
+//                 );
+//             }
+//             return $resp;
+//         }
+// 
+//         $this->lorisinstance = $request->getAttribute("loris");
+//         $pagename            = $this->getName();
+//         $path = trim($request->getURI()->getPath(), "/");
+//         error_log($path);
+//         if ($path == 'pools'
+//             || $path == 'containers'
+//             || $path == 'specimens'
+//         ) {
+//             // There is a subpage
+//             $pagename = explode("/", $path)[0];
+//         }
+//         console.log($pagename);
+// 
+//         $user  = $request->getAttribute("user") ?? new \LORIS\AnonymousUser();
+//         $loris = $request->getAttribute("loris");
+// 
+//         try {
+//             $page = $this->loadPage($loris, $pagename);
+//         } catch (\NotFound $e) {
+//             $this->logger->debug("Page $pagename not found");
+//             return $resp->withStatus(404);
+//         }
+//         // FIXME: Hack required for breadcrumbs. This should be removed,
+//         // but some tests depend on it.
+//         if ($this->getName() === $pagename) {
+//             $_REQUEST['test_name'] = $pagename;
+//         } else {
+//             $_REQUEST['subtest'] = $pagename;
+//         }
+// 
+//         $page->loadResources($user, $request);
+//         if ($page->_hasAccess($user) !== true) {
+//             return (new \LORIS\Middleware\PageDecorationMiddleware(
+//                 $user
+//             ))->process(
+//                 $request,
+//                 new \LORIS\Router\NoopResponder(
+//                     new \LORIS\Http\Error(
+//                         $request,
+//                         403,
+//                         "You do not have access to this page."
+//                     )
+//                 )
+//             );
+//         }
+//         return $page->process($request, $page);
+//     }
 
 //
 //    /**

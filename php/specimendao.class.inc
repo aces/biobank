@@ -113,7 +113,8 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
      */
     public function selectInstances(
         ?array $conditions = [],
-        string $operator = 'AND'
+        ?int $limit = 10,
+        int $offset = 0,
     ) : array {
         $query = "SELECT
                       bs.SpecimenID,
@@ -134,6 +135,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                         SELECT FLOOR(DATEDIFF(s.Date_visit, c.DoB)/365.25)
                       ) as CandidateAge,
                       bspor.PoolID,
+                      bp.Label
                       bsc.SpecimenProtocolID as CollectionProtocolID,
                       bsc.Quantity as CollectionQuantity,
                       bsc.UnitID as CollectionUnitID,
@@ -170,6 +172,8 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                  ON s.CandID=c.CandID
                LEFT JOIN biobank_specimen_pool_rel bspor
                  ON bs.SpecimenID=bspor.SpecimenID
+               LEFT JOIN biobank_pool bp
+                 ON bspor.PoolID=bp.PoolID
                LEFT JOIN biobank_specimen_collection bsc
                  ON bs.SpecimenID=bsc.SpecimenID
                LEFT JOIN biobank_specimen_preparation bsp
@@ -182,22 +186,33 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                  ON bspa.ParentSpecimenID=bs2.SpecimenID
                LEFT JOIN biobank_container bc2
                 ON bs2.ContainerID=bc2.ContainerID";
+        $queryParams = [];
         if (!empty($conditions)) {
-            $whereClause = [];
-            foreach ($conditions as $condition) {
-                $whereClause[] = $condition['column']
-                    . '='
-                    . '"'
-                    . $condition['value']
-                    . '"';
-            }
-            $query .= ' WHERE '.implode(" $operator ", $whereClause);
+            $whereData = DAOUtility::buildWhereClause($conditions);             
+            $query .= $whereData['clause'];                         
+            $queryParams = $whereData['params'];     
         }
+
         $query       .= " GROUP BY bs.SpecimenID";
-        $specimenRows = $this->db->pselectWithIndexKey($query, [], 'SpecimenID');
+
+        if ($limit !== null) {                                                  
+            $query .= " LIMIT $limit OFFSET $offset";                                      
+        }  
+
+        $specimenRows = $this->db->pselectWithIndexKey($query, $queryParams, 'SpecimenID');
         $specimens = [];
+        // XXX: join container to specimen. In the future for efficieny, this can
+        // potentially be added to the query. Balance between added code/increased speed.
+        $containerDAO = new ContainerDAO($this->db);
         foreach ($specimenRows as $id => $specimenRow) {
-            $specimens[$id] = $this->_getInstanceFromSQL($specimenRow);
+            $specimen = $this->_getInstanceFromSQL($specimenRow);
+            $container = array_values($containerDAO->selectInstances(
+                [                                                                   
+                    ['column' => 'bc.Barcode', 'value' => $specimen->getBarcode()],                    
+                ],                                                                  
+            ))[0];
+            $specimen->setContainer($container);
+            $specimens[$id] = $specimen;
         }
         
         return $specimens;
@@ -736,6 +751,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         }
         if (isset($data['PoolID'])) {
             $specimen->setPoolId((int) $data['PoolID']);
+        }
+        if (isset($data['PoolLabel'])) {
+            $specimen->setPoolLabel((string) $data['PoolLabel']);
         }
 
         $collection = new Collection();

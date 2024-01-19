@@ -71,7 +71,11 @@ class ContainerController
      *
      * @return array $containers All permissable Container Objects
      */
-    public function getInstances() : array
+    public function getInstances(
+        array $queryParams,
+        ?int $limit,
+        int $offset = 0
+    ) : array
     {
         $this->_validatePermission('view');
         $containers  = [];
@@ -83,6 +87,15 @@ class ContainerController
         }
 
         return $containers;
+    }
+
+    public function getInstanceByBarcode($barcode) : array
+    {
+        return array_values($this->dao->selectInstances(                                          
+            [                                                                   
+                ['column'=>'bc.Barcode', 'value'=>$barcode],                     
+            ],                                                                  
+        ));           
     }
 
     /**
@@ -125,7 +138,7 @@ class ContainerController
      *
      * @return array
      */
-    public function updateInstance(array $containerArray) : array
+    public function updateInstance(array $containerArray) : Container
     {
         $this->_validatePermission('update');
         $container = (new Container)->fromArray($containerArray);

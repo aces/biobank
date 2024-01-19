@@ -74,6 +74,15 @@ class SpecimenController
         return $specimens;
     }
 
+    public function getInstanceByBarcode($barcode) : array                      
+    {                                                                           
+        return array_values($this->dao->selectInstances(                        
+            [                                                                   
+                ['column'=>'bc.Barcode', 'value'=>$barcode],                    
+            ],                                                                  
+        ));                                                                     
+    }  
+
     /**
      * This method takes in a list of specimen and container arrays from the
      * front-end. The specimens are validated while the containers are

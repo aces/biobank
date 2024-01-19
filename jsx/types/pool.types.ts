@@ -1,0 +1,16 @@
+export type Pool = {                                                            
+  id: string,                                                                   
+  candidateId: string,                                                          
+  candidatePSCID: string,                                                       
+  centerID: string,                                                             
+  date: string,                                                                 
+  label: string,                                                                
+  projectIds: string[],                                                         
+  quantity: number,                                                             
+  sessionId: string,                                                            
+  specimenBarcodes: string[],                                                   
+  specimenIds: string[],                                                        
+  time: string,                                                                 
+  type: string,                                                                 
+  unitId: string,                                                               
+};  

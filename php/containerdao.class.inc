@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * Container Data Access Object (DAO) Class
  * This class contains all database handling that is needed to
@@ -94,7 +95,8 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
      */
     public function selectInstances(
         ?array $conditions = [],
-        string $operator = 'AND'
+        ?int $limit = null,
+        int $offset = 0,
     ) : array {
         $query = 'SELECT bc.ContainerID,
                      bc.Barcode,
@@ -133,18 +135,23 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                     ON bc.ContainerID=bs.ContainerID
                   LEFT JOIN biobank_specimen_project_rel bspr
                     ON bs.SpecimenID=bspr.SpecimenID';
+        $queryParams = [];
         if (!empty($conditions)) {
-            $whereClause = [];
-            foreach ($conditions as $condition) {
-                $whereClause[] = $condition['column']
-                    . '="'
-                    . $condition['value']
-                    . '"';
-            }
-            $query .= ' WHERE '.implode(" $operator ", $whereClause);
+            error_log(print_r($conditions, true));
+            $whereData = DAOUtility::buildWhereClause($conditions);
+            $query .= $whereData['clause'];
+            $queryParams = $whereData['params'];
         }
+
         $query        .= ' GROUP BY bc.ContainerID';
-        $containerRows = $this->db->pselectWithIndexKey($query, [], 'ContainerID');
+
+        if ($limit !== null) {
+            $query .= " LIMIT $limit OFFSET $offset";
+            // $queryParams[':limit'] = (int)$limit;
+            // $queryParams[':offset'] = (int)$offset;
+        }
+
+        $containerRows = $this->db->pselectWithIndexKey($query, $queryParams, 'ContainerID');
 
         $containers = [];
         foreach ($containerRows as $id => $containerRow) {
@@ -152,15 +159,42 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         }
         return $containers;
     }
+
+    // TODO: consider implementing this for creating conditions! (or make a conditiosn class)
     /**
-     * Instantiates an ArrayIterator class that is composed of all the Container
-     * Objects.
+     * Creates a condition array for the WHERE clause.
+     * 
+     * @param string $column The name of the column.
+     * @param mixed $value The value for comparison.
+     * @param string $comparison_operator The comparison operator (default is '=').
+     * @param string $logical_operator The logical operator (default is 'AND').
+     * @return array The condition array.
+     */
+    private function createCondition(
+        string $column,
+        $value,
+        string $comparison_operator = '=',
+        string $logical_operator = 'AND'): array
+    {
+        return [
+            'column' => $column,
+            'value' => $value,
+            'comparison_operator' => $comparison_operator,
+            'logical_operator' => $logical_operator
+        ];
+    }
+
+    /**
+     * Instantiates an ArrayIterator class that is composed of all the NON-PRIMARY
+     * Container Objects.
      *
      * @return \Traversable Iterator of Container Objects
      */
     protected function getAllInstances() : \Traversable
     {
-        return new \ArrayIterator($this->selectInstances());
+        return new \ArrayIterator($this->selectInstances([
+          ['column' => 'bct.Primary', 'value' => '0']
+        ]));
     }
 
     // XXX: The conditions parameter is only used to differentiate primary types
@@ -363,7 +397,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
      *
      * @return array
      */
-    public function updateInstance($container) : array
+    public function updateInstance(Container $container) : Container
     {
         // TODO: THIS IS DUPLICATED IN BOTH FUNCTIONS AND COULD PROBABLY BE
         // DEALT WITH EITHER FRONT END OR SOMEWHERE ELSE.
@@ -381,49 +415,84 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             $data['biobank_container']
         );
 
-        $updatedContainers = [$container];
+
+        // XXX EXPERIMENTING WITH ONLY RETURNING THE SENT CONTAINER
+        // $updatedContainers = [$container];
+        // $this->saveParentContainer($container, $data);
+
+        // //Cascade changes in temperature, status, and center to all child Containers
+        // if ($oldContainer->getParentContainerId()) {
+        //     $updatedContainers[] = $this->getInstanceFromId(
+        //         $oldContainer->getParentContainerId()
+        //     );
+        // }
+        // if ($container->getParentContainerId()) {
+        //     $updatedContainers[] = $this->getInstanceFromId(
+        //         $container->getParentContainerId()
+        //     );
+        // }
+        // if ($container->getTemperature() !== $oldContainer->getTemperature()) {
+        //     $updatedChildren   = $this->_cascadeToChildren(
+        //         $container,
+        //         'Temperature',
+        //         $container->getTemperature()
+        //     );
+        //     $updatedContainers = array_merge(
+        //         $updatedChildren,
+        //         $updatedContainers
+        //     );
+        // }
+        // if ($container->getStatusId() !== $oldContainer->getStatusId()) {
+        //     $updatedChildren   = $this->_cascadeToChildren(
+        //         $container,
+        //         'ContainerStatusID',
+        //         $container->getStatusId()
+        //     );
+        //     $updatedContainers = array_merge($updatedChildren, $updatedContainers);
+        // }
+        // if ($container->getCenterId() != $oldContainer->getCenterId()) {
+        //     $updatedChildren   = $this->_cascadeToChildren(
+        //         $container,
+        //         'CenterID',
+        //         $container->getCenterId()
+        //     );
+        //     $updatedContainers = array_merge($updatedChildren, $updatedContainers);
+        // }
+
+        // return $updatedContainers;
+
         $this->saveParentContainer($container, $data);
 
         //Cascade changes in temperature, status, and center to all child Containers
         if ($oldContainer->getParentContainerId()) {
-            $updatedContainers[] = $this->getInstanceFromId(
-                $oldContainer->getParentContainerId()
-            );
+           $this->getInstanceFromId($oldContainer->getParentContainerId());
         }
         if ($container->getParentContainerId()) {
-            $updatedContainers[] = $this->getInstanceFromId(
-                $container->getParentContainerId()
-            );
+            $this->getInstanceFromId($container->getParentContainerId());
         }
         if ($container->getTemperature() !== $oldContainer->getTemperature()) {
-            $updatedChildren   = $this->_cascadeToChildren(
+            $this->_cascadeToChildren(
                 $container,
                 'Temperature',
                 $container->getTemperature()
             );
-            $updatedContainers = array_merge(
-                $updatedChildren,
-                $updatedContainers
-            );
         }
         if ($container->getStatusId() !== $oldContainer->getStatusId()) {
-            $updatedChildren   = $this->_cascadeToChildren(
+            $this->_cascadeToChildren(
                 $container,
                 'ContainerStatusID',
                 $container->getStatusId()
             );
-            $updatedContainers = array_merge($updatedChildren, $updatedContainers);
         }
         if ($container->getCenterId() != $oldContainer->getCenterId()) {
-            $updatedChildren   = $this->_cascadeToChildren(
+            $this->_cascadeToChildren(
                 $container,
                 'CenterID',
                 $container->getCenterId()
             );
-            $updatedContainers = array_merge($updatedChildren, $updatedContainers);
         }
 
-        return $updatedContainers;
+        return $container;
     }
 
     /**

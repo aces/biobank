@@ -41,6 +41,7 @@ class Specimen implements
      *
      * @var int         $id
      * @var int         $containerId
+     * @var Container  $container
      * @var string      $barcode
      * @var int         $typeId
      * @var string      $quantity
@@ -61,6 +62,7 @@ class Specimen implements
      */
     private $id;
     private $containerId;
+    private Container $container;
     private string $barcode;
     private $typeId;
     private $quantity;
@@ -75,6 +77,7 @@ class Specimen implements
     private $candidateAge;
     private $sessionId;
     private $poolId;
+    private $poolLabel;
     private $collection;
     private $preparation;
     private $analysis;
@@ -125,6 +128,28 @@ class Specimen implements
     public function getContainerId() : ?int
     {
         return $this->containerId;
+    }
+
+    /**
+     * set the specimen's container
+     *
+     * @param \Container $container
+     *
+     * @return void
+     */
+    public function setContainer($container) : void
+    {
+        $this->container = $container;
+    }
+
+    /**
+     * Gets the specimen's container
+     *
+     * @return ?\Container
+     */
+    public function getContainer() : ?\Container
+    {
+        return $this->container;
     }
 
     /**
@@ -408,6 +433,27 @@ class Specimen implements
     }
 
     /**
+     *
+     * @param string $poolLabel
+     *
+     * @return void
+     */
+    public function setPoolString(string $poolLabel) : void
+    {
+        $this->poolLabel = $poolLabel;
+    }
+
+    /**
+     * 
+     *
+     * @return ?string
+     */
+    public function getPoolLabel() : ?string
+    {
+        return $this->poolString;
+    }
+
+    /**
      * Sets a Collection object for the Specimen.
      *
      * @param Collection $collection A collection instance
@@ -561,6 +607,9 @@ class Specimen implements
         if (isset($data['poolId'])) {
             $this->setPoolId((int) $data['poolId']);
         }
+        if (isset($data['poolLabel'])) {
+            $this->setPoolLabel((int) $data['poolLabel']);
+        }
 
         if (isset($data['collection'])) {
             $collection = (new Collection())->fromArray($data['collection']);
@@ -603,6 +652,7 @@ class Specimen implements
         $array = [
             'id'                     => $this->id,
             'containerId'            => $this->containerId,
+            'container'              => $this->container,
             'barcode'                => $this->barcode,
             'typeId'                 => $this->typeId,
             'quantity'               => $this->quantity,
@@ -617,6 +667,7 @@ class Specimen implements
             'candidateAge'           => $this->candidateAge,
             'sessionId'              => $this->sessionId,
             'poolId'                 => $this->poolId,
+            'poolLabel'              => $this->poolLabel,
             'collection'             => $this->collection->jsonSerialize(),
         ];
         if ($this->preparation) {
