@@ -86,7 +86,7 @@ class PoolTab extends Component {
     const {options} = this.props;
     value = this.mapPoolColumns(column, value);
     const candId = Object.values(options.candidates)
-      .find((cand) => cand.pscid == row['PSCID']).id;
+      .find((cand) => cand.pscid == row['PSCID'])?.id;
 
     // If candId is defined, then the user has access to the candidate and a
     // hyperlink can be established.
@@ -106,12 +106,15 @@ class PoolTab extends Component {
         return <td>{value}</td>;
       case 'Visit Label':
         if (candidatePermission) {
-          const ses = Object.values(options.candidateSessions[candId]).find(
+          const sessId = Object.values(options.candidateSessions[candId]).find(
             (sess) => sess.label == value
-          ).id;
-          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
-            '&sessionID='+ses;
-          return <td><a href={visitLabelURL}>{value}</a></td>;
+          )?.id;
+          const sessionPermission = sessId !== undefined;
+          if (sessionPermission) {
+            const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
+              '&sessionID='+sessId;
+            return <td><a href={visitLabelURL}>{value}</a></td>;
+          }
         }
         return <td>{value}</td>; 
       case 'Aliquot':
