@@ -292,7 +292,7 @@ function Globals(props) {
       const parentContainerBarcodeValue = () => {
         if (container.parentContainerId) {
           if (data.containers[container.parentContainerId]) {
-            return <Link to={`/barcode=${barcode}`}>{container.parentContainerBarcode}</Link>;
+            return <Link to={`/barcode=${container.parentContainerBarcode}`}>{container.parentContainerBarcode}</Link>;
           }
           return <div>{container.parentContainerBarcode}</div>;
         }
