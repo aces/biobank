@@ -204,12 +204,13 @@ class ContainerTab extends Component {
           barcodes={barcodesNonPrimary}
           history={this.props.history}
         />
+        {loris.userHasPermission('biobank_container_create') ?
         <ContainerForm
           options={this.props.options}
           show={editable.containerForm}
           onClose={this.clearEditable}
           onSubmit={this.props.createContainers}
-        />
+        /> : null}
       </div>
     );
   }
