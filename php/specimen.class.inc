@@ -54,6 +54,7 @@ class Specimen implements
      * @var string      $candidatePSCID
      * @var int         $candidateAge
      * @var int         $sessionId
+     * @var \CenterID   $sessionCenterId
      * @var int         $poolId
      * @var Collection  $collection
      * @var Preparation $preparation
@@ -74,6 +75,7 @@ class Specimen implements
     private $candidatePCSID;
     private $candidateAge;
     private $sessionId;
+    private $sessionCenterId;
     private $poolId;
     private $collection;
     private $preparation;
@@ -384,6 +386,30 @@ class Specimen implements
     }
 
     /**
+     * Sets the Centeer of the candidate's session/timepoint in which the specimen
+     * was collected.
+     *
+     * @param \CenterID $sessionsCenterId the Center of the specimen's session of collection
+     *
+     * @return void
+     */
+    public function setSessionCenterId(\CenterID $sessionCenterId) : void
+    {
+        $this->sessionCenterId = $sessionCenterId;
+    }
+
+    /**
+     * Gets the Center of the candidate's session/timepoint in which the specimen
+     * was collected.
+     *
+     * @return ?\CenterID
+     */
+    public function getSessionCenterId() : ?\CenterID
+    {
+        return $this->sessionCenterId;
+    }
+
+    /**
      * Sets the ID of the specimen's pool group, if it exists.
      *
      * @param int $poolId the ID of the specimen's pool group
@@ -558,6 +584,9 @@ class Specimen implements
         if (isset($data['sessionId'])) {
             $this->setSessionId((int) $data['sessionId']);
         }
+        if (isset($data['sessionCenterId'])) {
+            $this->setSessionCenterId($data['sessionCenterId']);
+        }
         if (isset($data['poolId'])) {
             $this->setPoolId((int) $data['poolId']);
         }
@@ -616,6 +645,7 @@ class Specimen implements
             'candidatePSCID'         => $this->candidatePSCID,
             'candidateAge'           => $this->candidateAge,
             'sessionId'              => $this->sessionId,
+            'sessionCenterId'        => $this->sessionCenterId,
             'poolId'                 => $this->poolId,
             'collection'             => $this->collection->jsonSerialize(),
         ];

@@ -66,7 +66,7 @@ class SpecimenController
         $this->_validatePermission('view');
         $specimens  = [];
         $this->dao = $this->dao
-          ->filter(new \LORIS\Data\Filters\UserProjectOrSiteMatch());
+            ->filter(new \LORIS\Data\Filters\SpecimenFilter());
         $specimenIt = $this->dao->execute($this->user);
         foreach ($specimenIt as $id => $specimen) {
             $specimens[$id] = $specimen;

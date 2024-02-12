@@ -130,6 +130,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       s.CandID as CandidateID,
                       c.PSCID as CandidatePSCID,
                       bs.SessionID,
+                      s.CenterID as SessionCenterID,
                       (
                         SELECT FLOOR(DATEDIFF(s.Date_visit, c.DoB)/365.25)
                       ) as CandidateAge,
@@ -733,6 +734,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         }
         if (isset($data['SessionID'])) {
             $specimen->setSessionId((int) $data['SessionID']);
+        }
+        if (isset($data['SessionID'])) {
+            $specimen->setSessionCenterId(new \CenterID($data['SessionCenterID']));
         }
         if (isset($data['PoolID'])) {
             $specimen->setPoolId((int) $data['PoolID']);
