@@ -65,11 +65,13 @@ class SpecimenController
     {
         $this->_validatePermission('view');
         $specimens  = [];
+        $this->dao = $this->dao
+                          ->filter(new \LORIS\Data\Filters\UserSiteMatch())
+                          ->filter(new \LORIS\Data\Filters\UserProjectMatch());
         $specimenIt = $this->dao->execute($this->user);
         foreach ($specimenIt as $id => $specimen) {
             $specimens[$id] = $specimen;
         }
-
         return $specimens;
     }
 
@@ -175,12 +177,7 @@ class SpecimenController
      */
     private function _getDataProvisioner() : SpecimenDAO
     {
-        $dao = new SpecimenDAO($this->loris);
-
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
-        return $dao;
+        return new SpecimenDAO($this->loris);
     }
 
     /**

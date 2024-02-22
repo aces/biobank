@@ -85,17 +85,6 @@ class ContainerForm extends Component {
           <div className="row">
             <div className="col-xs-11">
               <SelectElement
-                name="projectIds"
-                label="Project"
-                options={options.projects}
-                onUserInput={this.setCurrent}
-                required={true}
-                multiple={true}
-                emptyOption={false}
-                value={current.projectIds}
-                errorMessage={(errors.container||{}).projectIds}
-              />
-              <SelectElement
                 name="centerId"
                 label="Site"
                 options={options.centers}

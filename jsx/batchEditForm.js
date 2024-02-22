@@ -309,12 +309,12 @@ class BatchEditForm extends React.PureComponent {
         <SelectElement
           name='projectIds'
           label='Project'
-          value={this.state.container.projectIds}
+          value={this.state.specimen.projectIds}
           options={options.projects}
           multiple={true}
           emptyOption={false}
-          errorMessage={errors.container.projectIds}
-          onUserInput={this.setContainer}
+          errorMessage={errors.specimen.projectIds}
+          onUserInput={this.setSpecimen}
         />
       </EditForm>
     ) : null;

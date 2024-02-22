@@ -29,26 +29,31 @@ namespace LORIS\biobank;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
+class Shipment implements
+    \JsonSerializable,
+    \LORIS\Data\DataInstance,
+    \LORIS\StudyEntities\MultiSiteHaver
 {
     /**
      * Persistent Instance variables.
      *
      * These properties describe a shipment entity.
      *
-     * @var string  $id
-     * @var string  $barcode
-     * @var string  $type
-     * @var string  $destinationCenterId
-     * @var array   $containerIds
-     * @var array   $logs
+     * @var string     $id
+     * @var string     $barcode
+     * @var string     $type
+     * @var \CenterID  $destinationCenterId
+     * @var array      $containerIds
+     * @var array      $containerBarcodes
+     * @var array      $logs
      */
-    public ?string $id;
-    public ?string $barcode;
-    public ?string $type;
-    public ?string $destinationCenterId;
-    public ?array $containerIds;
-    public ?array $logs;
+    public ?string    $id;
+    public ?string    $barcode;
+    public ?string    $type;
+    public ?\CenterID $destinationCenterId;
+    public ?array     $containerIds;
+    public ?array     $containerBarcodes;
+    public ?array     $logs;
 
     /**
      * Initiliazes a new instance of the Shipment Class
@@ -60,8 +65,9 @@ class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
         $this->id      = $data['id'] ?? null;
         $this->barcode = $data['barcode'] ?? null;
         $this->type    = $data['type'] ?? null;
-        $this->destinationCenterId = $data['destinationCenterId'] ?? null;
+        $this->destinationCenterId = new \CenterID($data['destinationCenterId'] ?? null);
         $this->containerIds        = $data['containerIds'] ?? null;
+        $this->containerBarcodes   = $data['containerBarcodes'] ?? null;
         $this->_setLogs($data['logs']) ?? null;
     }
 
@@ -110,9 +116,9 @@ class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Gets the origin center of the shipment
      *
-     * @return ?string
+     * @return \CenterID
      */
-    public function getOriginCenterId() : ?string
+    public function getOriginCenterId() : \CenterID
     {
         if (!empty($this->getLogs())) {
             return $this->getLogs()[0]->centerId;
@@ -122,9 +128,9 @@ class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Gets the destination center of the shipment
      *
-     * @return ?string
+     * @return \CenterID
      */
-    public function getDestinationCenterId() : ?string
+    public function getDestinationCenterId() : \CenterID
     {
         return $this->destinationCenterId;
     }
@@ -163,6 +169,16 @@ class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
     }
 
     /**
+     * Gets the container barcodes associated with the shipment
+     *
+     * @return ?array
+     */
+    public function getContainerBarcodes() : ?array
+    {
+        return $this->containerBarcodes;
+    }
+
+    /**
      * Sets the logs for the shipment
      *
      * @param array $logs the shipment's logs
@@ -171,7 +187,6 @@ class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
      */
     private function _setLogs(array $logs) : void
     {
-        // TODO: THis should maybe go in the SHipment Handler.
         foreach ($logs as $i => $log) {
             $this->logs[$i] = new Log($log);
         }
@@ -190,15 +205,22 @@ class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
     /**
      * Return Center ID of affiliated specimen container.
      *
-     * @return int
+     * @return array
      */
-    // NOTE: this function was added for reasons relating to permissions. I do
-    // find this an ideal solution, given that the centerId and the
-    // destinationCenterId should not be equated. Rather, this should
-    // ideally return a value dependent on the current status of the shipment
-    public function getCenterId()
+    public function getCenterIds() : array
     {
-        return $this->getDestinationCenterId();
+       switch ($this->getStatus()) {
+       // TODO: Instead of checking for strings, this ideally would check for
+       // boolean values from functions such as getActive(). This way, the
+       // strings will be relegated to singular functions that then serve
+       // functional purposes.
+       case 'received':
+           return [$this->getDestinationCenterId()];
+       case 'shipped':
+           return [$this->getOriginCenterId(), $this->getDestinationCenterId];
+       default:
+           return [$this->getOriginCenterId()];
+       }
     }
 
     /**
@@ -226,6 +248,7 @@ class Shipment implements \JsonSerializable, \LORIS\Data\DataInstance
             'originCenterId'      => $this->getOriginCenterId(),
             'destinationCenterId' => $this->destinationCenterId,
             'containerIds'        => $this->containerIds,
+            'containerBarcodes'   => $this->containerBarcodes,
             'status'              => $this->getStatus(),
             'active'              => $this->getActive(),
             'logs'                => $this->logs,

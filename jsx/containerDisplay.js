@@ -234,46 +234,41 @@ function ContainerDisplay(props) {
 
         if (!select) {
           if ((coordinates||{})[coordinate]) {
-            if (!loris.userHasPermission('biobank_specimen_view') &&
-                children[coordinates[coordinate]] === undefined) {
-              nodeClass = 'node forbidden';
+            onClick = redirectURL;
+            if (coordinate in current.list) {
+              nodeClass = 'node checkout';
+            } else if (coordinate == current.prevCoordinate) {
+              nodeClass = 'node new';
             } else {
-              onClick = redirectURL;
-              if (coordinate in current.list) {
-                nodeClass = 'node checkout';
-              } else if (coordinate == current.prevCoordinate) {
-                nodeClass = 'node new';
-              } else {
-                nodeClass = 'node occupied';
-              }
+              nodeClass = 'node occupied';
+            }
 
-              dataHtml = 'true';
-              dataToggle = 'tooltip';
-              dataPlacement = 'top';
-              // This is to avoid a console error
-              if (children[coordinates[coordinate]]) {
-                const coord = coordinates[coordinate];
-                tooltipTitle =
-                  '<h5>'+children[coord].barcode+'</h5>' +
-                  '<h5>'+optcon.types[children[coord].typeId].label+'</h5>' +
-                  '<h5>'+optcon.stati[children[coord].statusId].label+'</h5>';
-              }
-              draggable = !loris.userHasPermission(
-                 'biobank_container_update') ||
-                          editable.loadContainer ||
-                          editable.containerCheckout
-                          ? 'false' : 'true';
-              onDragStart = drag;
+            dataHtml = 'true';
+            dataToggle = 'tooltip';
+            dataPlacement = 'top';
+            // This is to avoid a console error
+            if (children[coordinates[coordinate]]) {
+              const coord = coordinates[coordinate];
+              tooltipTitle =
+                '<h5>'+children[coord].barcode+'</h5>' +
+                '<h5>'+optcon.types[children[coord].typeId].label+'</h5>' +
+                '<h5>'+optcon.stati[children[coord].statusId].label+'</h5>';
+            }
+            draggable = !loris.userHasPermission(
+               'biobank_container_update') ||
+                        editable.loadContainer ||
+                        editable.containerCheckout
+                        ? 'false' : 'true';
+            onDragStart = drag;
 
-              if (editable.containerCheckout) {
-                onClick = (e) => {
-                  let container = data.containers[coordinates[e.target.id]];
-                  setCheckoutList(container);
-                };
-              }
-              if (editable.loadContainer) {
-                onClick = null;
-              }
+            if (editable.containerCheckout) {
+              onClick = (e) => {
+                let container = data.containers[coordinates[e.target.id]];
+                setCheckoutList(container);
+              };
+            }
+            if (editable.loadContainer) {
+              onClick = null;
             }
             onDragOver = null;
             onDrop = null;

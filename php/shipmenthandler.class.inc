@@ -55,7 +55,7 @@ class ShipmentHandler
     {
         $this->db       = $db;
         $this->user     = $user;
-        $this->dao      = $this->_getDataProvisioner();
+        $this->dao      = new ShipmentDAO($this->db);
         $this->shipment = new Shipment($data);
         $this->_validate($this->shipment);
     }
@@ -84,22 +84,6 @@ class ShipmentHandler
     {
         $this->_validatePermission('update');
         return $this->dao->saveInstance($this->shipment);
-    }
-
-    /**
-     * Treats the Shipment DAO as a Provisioner that can be iteratated
-     * through to provide the permissable Shipment Objects for the current User.
-     *
-     * @return \LORIS\Data\Provisioner
-     */
-    private function _getDataProvisioner() : \LORIS\Data\Provisioner
-    {
-        $dao = new ShipmentDAO($this->db);
-
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
-        return $dao;
     }
 
     /**
@@ -160,7 +144,7 @@ class ShipmentHandler
         $errors       = [];
         $errors       = $this->_validateBarcode($shipment, $errors);
         $errors       = $this->_validateType($shipment, $errors);
-        $errors       = $this->_validateDestinationCenterId($shipment, $errors);
+        $errors       = $this->_validateDestinationCenter($shipment, $errors);
         $errors       = $this->_validateLogs($shipment, $errors);
         $errors       = $this->_validateContainers($shipment, $errors);
         $this->errors = $errors;
@@ -221,7 +205,7 @@ class ShipmentHandler
      *
      * @return array
      */
-    private function _validateDestinationCenterId(
+    private function _validateDestinationCenter(
         Shipment $shipment,
         array $errors
     ) : array {
@@ -233,7 +217,7 @@ class ShipmentHandler
         // TODO: Check that Destination Center is an actual center.
 
         if (!empty($error)) {
-            $errors['destinationCenterId'] = $error;
+            $errors['destinationCenter'] = $error;
         }
         return $errors;
     }

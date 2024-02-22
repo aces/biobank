@@ -97,7 +97,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
         ini_set('memory_limit', '-1');
-        $db   = $this->loris->getDatabaseConnection();
+        $db   = \NDB_Factory::singleton()->database();
         $user = $request->getAttribute('user');
 
         try {
@@ -111,6 +111,10 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
             }
         } catch (Forbidden $e) {
             return new \LORIS\Http\Response\JSON\Forbidden($e->getMessage());
+        } catch (\Exception $e) {
+           return new \LORIS\Http\Response\JSON\InternalServerError(
+               $e->getMessage()
+           );
         }
     }
 
@@ -129,7 +133,8 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         $shipDAO  = new ShipmentDAO($db);
 
         $userCenters = implode(',',$user->getCenterIDs());
-        // XXX: This should eventually be replaced by a call directly to a
+        $userProjects = implode(',', $user->getProjectIDs());
+        // TODO: This should eventually be replaced by a call directly to a
         // Candidate endpoint or Candidate controller that will be able to
         // provide Candidate Objects.
         $query      = "SELECT c.CandID as id,
@@ -138,19 +143,11 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                             GROUP_CONCAT(DISTINCT DiagnosisID) as diagnosisIds
                        FROM candidate c
                             LEFT JOIN session s USING (CandID)
-                            LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
-                            LEFT JOIN biobank_container bc USING (ContainerID)
-                            LEFT JOIN biobank_specimen_pool_rel bspr USING (SpecimenID)
-                            LEFT JOIN biobank_pool bp USING (PoolID)
-                            LEFT JOIN candidate_diagnosis_rel USING (CandID)";
-        $where = ' ';
-        if (!$user->hasPermission('access_all_profiles')) {
-            $where = " WHERE s.CenterID IN ($userCenters)
-                            OR bc.CenterID IN ($userCenters)
-                            OR bp.CenterID IN ($userCenters)";
-        }
-        $group      =   " GROUP BY CandID";
-        $candidates = $db->pselectWithIndexKey($query.$where.$group, array(), 'id');
+                            LEFT JOIN candidate_diagnosis_rel USING (CandID)
+                       WHERE s.CenterID IN ($userCenters) AND s.ProjectID IN ($userProjects)
+                       GROUP BY
+                          CandID";
+        $candidates = $db->pselectWithIndexKey($query, array(), 'id');
         foreach ($candidates as $id => $candidate) {
             $candidate['diagnosisIds'] = $candidate['diagnosisIds']
                 ? explode(',', $candidate['diagnosisIds'])
@@ -186,32 +183,29 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         // Center Endpoint or Center Controller that will be able to provide
         // Center Objects.
         $centers = \Utility::getSiteList();
-        foreach ($centers as $id => $center) {
-            if ($user->hasCenter(new \CenterID(strval($id))) === false) {
-                unset($centers[$id]);
-            }
-        }
+        // foreach ($centers as $id => $center) {
+        //     if ($user->hasCenter(new \CenterID(strval($id))) === false) {
+        //         unset($centers[$id]);
+        //     }
+        // }
 
         // XXX: This should eventually be replaced by a call directly to a
         // Session Controller or Session Options endpoint that will be able to
         // provide these options.
-        $query  = "SELECT c.CandID as candidateId,
-                         s.ID sessionId,
-                         s.Visit_label as label,
-                         s.CenterID as centerId
-                 FROM candidate c
-                        LEFT JOIN session s USING(CandID)
-                        LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
-                        LEFT JOIN biobank_container bc USING (ContainerID)
-                        LEFT JOIN biobank_specimen_pool_rel bspr USING (SpecimenID)
-                        LEFT JOIN biobank_pool bp USING (PoolID)";
-        $where = ' ';
-        if (!$user->hasPermission('access_all_profiles')) {
-            $where = " WHERE s.CenterID IN ($userCenters)
-                            OR bc.CenterID IN ($userCenters)
-                            OR bp.CenterID IN ($userCenters)";
-        }
-        $result = $db->pselect($query.$where, array());
+        $query  = "SELECT
+                      c.CandID as candidateId,
+                      s.ID sessionId,
+                      s.Visit_label as label,
+                      s.CenterID as centerId
+                  FROM
+                      candidate c
+                  LEFT JOIN session s USING (CandID)
+                  LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
+                  LEFT JOIN biobank_container bc USING (ContainerID)
+                  WHERE
+                      s.CenterID IN ($userCenters)
+                      AND s.ProjectID IN ($userProjects)";
+        $result = $db->pselect($query, array());
         $candidateSessions = [];
         $sessionCenters    = [];
         foreach ($result as $row) {

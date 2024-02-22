@@ -345,7 +345,7 @@ class SpecimenForm extends React.Component {
                 required={true}
                 value={current.projectIds}
                 disabled={current.candidateId ? false : true}
-                errorMessage={errors.container.projectIds}
+                errorMessage={errors.specimen.projectIds}
               />
               {renderRemainingQuantityFields()}
             </div>

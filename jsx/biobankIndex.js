@@ -280,6 +280,7 @@ class BiobankIndex extends React.Component {
       const specimen = list[key];
       specimen.candidateId = current.candidateId;
       specimen.sessionId = current.sessionId;
+      specimen.projectIds = projectIds;
       specimen.quantity = specimen.collection.quantity;
       specimen.unitId = specimen.collection.unitId;
       specimen.collection.centerId = centerId;
@@ -292,7 +293,6 @@ class BiobankIndex extends React.Component {
       const container = specimen.container;
       container.statusId = availableId;
       container.temperature = 20;
-      container.projectIds = projectIds;
       container.centerId = centerId;
       container.originId = centerId;
 
@@ -398,7 +398,6 @@ class BiobankIndex extends React.Component {
     Object.entries(list).forEach(([key, container]) => {
       container.statusId = availableId;
       container.temperature = 20;
-      container.projectIds = current.projectIds;
       container.originId = current.centerId;
       container.centerId = current.centerId;
 
@@ -436,6 +435,9 @@ class BiobankIndex extends React.Component {
     .reduce((result, item) => {
       item.container.statusId = dispensedId;
       item.specimen.quantity = '0';
+      // XXX: By updating the container and specimen after, it's causing issues
+      // if they don't meet validation. The error is being thrown only after the
+      // pool has already been saved to the database! Not sure how to resolve this.
       return [...result,
               () => this.updateContainer(item.container, false),
               () => this.updateSpecimen(item.specimen, false),
@@ -493,6 +495,7 @@ class BiobankIndex extends React.Component {
       'unitId',
       'candidateId',
       'sessionId',
+      'projectIds',
       'collection',
     ];
     const float = ['quantity'];
@@ -692,7 +695,6 @@ class BiobankIndex extends React.Component {
       'typeId',
       'temperature',
       'statusId',
-      'projectIds',
       'centerId',
     ];
 
