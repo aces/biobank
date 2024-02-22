@@ -86,7 +86,7 @@ class PoolTab extends Component {
     const {options} = this.props;
     value = this.mapPoolColumns(column, value);
     const candId = Object.values(options.candidates)
-      .find((cand) => cand.pscid == row['PSCID'])?.id;
+      .find((cand) => cand?.pscid == row['PSCID'])?.id;
 
     // If candId is defined, then the user has access to the candidate and a
     // hyperlink can be established.

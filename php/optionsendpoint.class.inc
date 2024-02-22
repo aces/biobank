@@ -144,7 +144,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                        FROM candidate c
                             LEFT JOIN session s USING (CandID)
                             LEFT JOIN candidate_diagnosis_rel USING (CandID)
-                       WHERE s.CenterID IN ($userCenters) OR s.ProjectID IN ($userProjects)
+                       WHERE s.CenterID IN ($userCenters) AND s.ProjectID IN ($userProjects)
                        GROUP BY
                           CandID";
         $candidates = $db->pselectWithIndexKey($query, array(), 'id');
@@ -204,7 +204,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                   LEFT JOIN biobank_container bc USING (ContainerID)
                   WHERE
                       s.CenterID IN ($userCenters)
-                      OR s.ProjectID IN ($userProjects)";
+                      AND s.ProjectID IN ($userProjects)";
         $result = $db->pselect($query, array());
         $candidateSessions = [];
         $sessionCenters    = [];

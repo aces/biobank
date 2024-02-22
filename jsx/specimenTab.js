@@ -92,7 +92,7 @@ class SpecimenTab extends Component {
     const {data, options} = this.props;
     value = this.mapSpecimenColumns(column, value);
     const candidate = Object.values(options.candidates)
-      .find((cand) => cand.pscid == row['PSCID']);
+      .find((cand) => cand?.pscid == row['PSCID']);
     const candidatePermission = candidate !== undefined;
     switch (column) {
       case 'Barcode':

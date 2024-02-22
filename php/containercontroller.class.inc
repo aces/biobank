@@ -76,7 +76,7 @@ class ContainerController
         $this->_validatePermission('view');
         $containers  = [];
         $this->dao = $this->dao
-          ->filter(new \LORIS\Data\Filters\UserProjectOrSiteMatch());
+                          ->filter(new \LORIS\Data\Filters\UserSiteMatch());
         $containerIt = $this->dao->execute($this->user);
         foreach ($containerIt as $id => $container) {
             $containers[$id] = $container;
