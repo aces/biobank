@@ -11,7 +11,7 @@ interface ApiError {
     // Additional error details can be added here
 }
 
-export interface IAPI<T> {
+interface IAPI<T> {
     getAll(): Promise<T[]>,
     getById(id: string): Promise<T>,
     create(data: T): Promise<T>,
@@ -32,7 +32,7 @@ function handleHttpErrors(response: Response) {
   }
 }
 
-export class BaseAPI<T> implements IAPI<T> {
+export default class BaseAPI<T> implements IAPI<T> {
   protected baseUrl: string;
 
   constructor(baseUrl: string) {
@@ -44,6 +44,7 @@ export class BaseAPI<T> implements IAPI<T> {
       const response = await fetch(`${this.baseUrl}`);
       
       if (!response.ok) {
+        console.warn(`HTTP error! status: ${response.status}`, response);
         handleHttpErrors(response);
       }
   
@@ -62,7 +63,15 @@ export class BaseAPI<T> implements IAPI<T> {
         handleHttpErrors(response);
       }
 
-      return response.json();
+      const data = await response.json();
+
+      // XXX: not sure if this check is necessary
+      // Check if the data is not an array or it's an empty array
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("Expected non-empty array, but got either an empty array or a non-array response.");
+      }
+
+      return data[0]; // Ensure the data is awaited before accessing
     } catch (error) {
       console.error(`Error in getById for id ${id}:`, error);
       throw new Error(`An error occurred when fetching data for id ${id}`);
@@ -198,5 +207,3 @@ export class BaseAPI<T> implements IAPI<T> {
     return JSON.parse(result);
   }
 }
-
-export default BaseAPI;

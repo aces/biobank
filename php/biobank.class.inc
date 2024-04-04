@@ -80,7 +80,7 @@ class Biobank extends \NDB_Menu_Filter
         $deps    = parent::getJSDependencies();
         return array_merge(
             $deps,
-            [$baseURL . "/biobank/js/BiobankIndex.tsx"],
+            [$baseURL . "/biobank/js/components/BiobankIndex.tsx"],
         );
     }
 

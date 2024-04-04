@@ -1,10 +1,15 @@
-import { useGenericState } from '../hooks';
-import { ContainerHandler, Container } from '../types';
+import { useEntity } from '../hooks';
+import { Container } from '../types';
 import { ContainerAPI } from '../APIs';
+
+function isValidContainer(container: any): container is Container {
+  // Example validation: check if container has a specific property expected in a valid container
+  return typeof container === 'object' && container !== null && 'barcode' in container;
+}
 
 /**                                                                             
  * Custom hook for managing container data within a React component.            
- * This hook is built on top of the useGenericState hook, providing state management
+ * This hook is built on top of the useEntity hook, providing state management
  * specifically tailored for Container objects.                                 
  *                                                                              
  * @param {Container} initialContainer - Initial data for the container.        
@@ -15,9 +20,13 @@ import { ContainerAPI } from '../APIs';
  * set('volume', 100); // Sets the volume property to 100                       
  * remove('label'); // Removes the label property from the container state      
  */                                                                             
-function useContainer(                                                   
-  initialContainer: Container = {}                                              
-): [Container, ContainerHandler] {                                              
+export function useContainer(                                                   
+  initialContainer: Partial<Container> = {}                                              
+): Container {                                              
+  if (!isValidContainer(initialContainer)) {
+    console.error('useContainer: Received data is not a valid container object.', initialContainer);
+  }
+
   const validateContainer = (container: Container): Record<string, string> => { 
     let errors: Record<string, string> = {};                                    
                                                                                 
@@ -55,16 +64,7 @@ function useContainer(
   }                                                                             
                                                                                 
                                                                                 
-  const [                                                                       
-    container,                                                                  
-    {                                                                           
-     set,                                                                       
-     remove,                                                                    
-     reset,                                                                     
-     validate,                                                                  
-     errors,                                                                    
-    }                                                                           
-  ] = useGenericState<Container>(initialContainer, validateContainer);          
+  const container = useEntity<Container>(initialContainer, validateContainer);          
                                                                                 
   // const url = `${loris.BaseURL}/biobank/containers/${container.barcode}`;       
   // const containerPut = async (url: string): Promise<void> => {                  
@@ -95,17 +95,8 @@ function useContainer(
     return barcodes.reverse();                                                  
   }                                                                             
                                                                                 
-  return [                                                                      
-    container,                                                                  
-    {                                                                           
-      set,                                                                      
-      remove,                                                                   
-      reset,                                                                    
-      validate,                                                                 
-      errors,                                                                   
-      getParentContainerBarcodes                                                
-    }                                                                           
-  ];                                                                            
+  return {                                                                      
+    ...container,                                                                  
+    getParentContainerBarcodes                                                
+  }                                                                           
 }    
-
-export default useContainer;

@@ -1,22 +1,20 @@
-import { useContext, ReactElement } from 'react';
+import { ReactElement } from 'react';
 import Modal from 'Modal';
 import { SpecimenForm, LifeCycle } from '../components';
 import Swal from 'sweetalert2';
-import { FormElement, TextboxElement, DateElement } from 'Form';
-import { Options, Container, Specimen, ContainerHandler, SpecimenHandler } from '../types';
-import { BarcodePageContext }  from '../contexts';
+import Form from 'Form';
+const { FormElement, TextboxElement, DateElement } = Form;
+import { Options, Container, Specimen } from '../types';
+import { useBarcodePageContext, useBiobankContext } from '../hooks';
 import { LabelAPI, ContainerAPI } from '../APIs';
 
 declare const loris: any;
 
 interface HeaderProps {
-  options: Options,
   container: Container; 
-  contHandler: ContainerHandler,
-  specimen: Specimen; 
-  specHandler: SpecimenHandler,
-  clearAll: Function; // TODO: proper typing
-  render: any
+  specimen?: Specimen; 
+  clearAll: () => void,
+  render: any //TODO type declaration
 }
 
 /**
@@ -26,16 +24,14 @@ interface HeaderProps {
  * @returns {ReactElement} React element representing the header.
  */
 function Header({ 
-  options,
   container,
-  contHandler,
   specimen,
-  specHandler,
   clearAll,
   render,
 }: HeaderProps): ReactElement {
 
-  const { editable, edit } = useContext(BarcodePageContext);
+  const { editable, edit } = useBarcodePageContext();
+  const { options } = useBiobankContext();
   const status = options.container.stati[container.statusId]?.label; //TODO: remove ?
 
   /**
@@ -71,10 +67,9 @@ function Header({
           <SpecimenForm
             title='Add Aliquots'
             parent={[{ specimen: specimen, container: container }]}
-            options={options}
             show={editable.aliquotForm}
             onClose={clearAll}
-            setSpecimen={specHandler.set}
+            setSpecimen={specimen.set}
           />
         </div>
       );
@@ -130,12 +125,7 @@ function Header({
       onSuccess={() => edit('lotForm')}
     >
       <FormElement>
-        <TextboxElement
-          name='lotNumber'
-          label='Lot Number'
-          onUserInput={contHandler.set}
-          value={container.lotNumber}
-        />
+        <ContainerField property={'lotNumber'} container={container}/>
       </FormElement>
     </Modal>
   );
@@ -149,12 +139,7 @@ function Header({
       onSuccess={() => edit('expirationForm')}
     >
       <FormElement>
-        <DateElement
-          name='expirationDate'
-          label='Expiration Date'
-          onUserInput={contHandler.set}
-          value={container.expirationDate}
-        />
+        <ContainerField property={'expirationDate'} container={container}/>
       </FormElement>
     </Modal>
   );
@@ -194,8 +179,8 @@ function Header({
    * @returns {void}
    */
   const checkoutContainer = (): void => {
-      contHandler.set('parentContainerId', null);
-      contHandler.set('coordinate', null);
+      container.set('parentContainerId', null);
+      container.set('coordinate', null);
       // TODO: this function has to be created!
       //contHandler.put();
   };

@@ -1,38 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactElement, CSSProperties } from 'react';
 import { Link} from 'react-router-dom';
 import { Search, ContainerForm } from '../components';
 import FilterableDataTable from 'FilterableDataTable';
 import { mapFormOptions, clone} from '../utils';
-import { useBarcodeContext } from '../hooks';
+import { useBiobankContext, useEditable } from '../hooks';
+import { Container } from '../types';
 import { ContainerAPI } from '../APIs';
+declare const loris: any;
 
 /**
  * React component for the Container tab in the Biobank module
  */
-function ContainerTab() {
+export function ContainerTab() {
 
-  const { options, containers } = useBarcodeContext();
-  const [editable, setEditable] = useState({});                                 
-
-  /**                                                                           
-   * Make the form editable                                                     
-   *                                                                            
-   * @param {object} stateKey - the key holding the state                       
-   *                                                                            
-   * @return {Promise}                                                          
-   */                                                                           
-  function edit(stateKey) {                                                     
-    const newEditable = clone(editable);                                        
-    newEditable[stateKey] = true;                                               
-    setEditable(editable);                                                      
-  }                                                                             
-                                                                                
-  /**                                                                           
-   * Clear the editable state of this tab.                                      
-   */                                                                           
-  function clearEditable() {                                                    
-    setEditable({});                                                            
-  }       
+  const { options, containers } = useBiobankContext();
+  const { editable, edit, clear } = useEditable();
 
   /**
    * Map the columns for this container
@@ -42,7 +24,7 @@ function ContainerTab() {
    *
    * @return {string}
    */
-  function mapContainerColumns(column, value) {
+  function mapContainerColumns(column: string, value: string): string {
     switch (column) {
       case 'Type':
         return options.container.types[value].label;
@@ -62,15 +44,18 @@ function ContainerTab() {
    * @param {string} value - the value of the column
    * @param {object} row - the rest of the row
    *
-   * @return {JSX} a table cell
+   * @return {ReactElement} a table cell
    */
-  function formatContainerColumns(column, value, row) {
+  function formatContainerColumns(column: string, value: string | string[], row: any): ReactElement {
+
     value = mapContainerColumns(column, value);
+    const style: CSSProperties = {};
+
     switch (column) {
       case 'Barcode':
         return <td><Link to={`/containers/${value}`}>{value}</Link></td>;
+
       case 'Status':
-        const style = {};
         switch (value) {
           case 'Available':
             style.color = 'green';
@@ -86,16 +71,16 @@ function ContainerTab() {
             break;
         }
         return <td style={style}>{value}</td>;
+
       case 'Parent Barcode':
         return <td><Link to={`/containers/${value}`}>{value}</Link></td>;
+
       default:
         return <td>{value}</td>;
     }
   }
 
-  const stati = mapFormOptions(
-    options.container.stati, 'label'
-  );
+  const stati = mapFormOptions(options.container.stati, 'label');
   const containerTypesNonPrimary = mapFormOptions(
     options.container.typesNonPrimary, 'label'
   );
@@ -114,19 +99,17 @@ function ContainerTab() {
   //     }
   //   }, {});
 
-  const barcodesNonPrimary = mapFormOptions(
-    containers, 'barcode'
-  );
+  const barcodesNonPrimary = mapFormOptions(containers, 'barcode');
 
   const data = Object.values(containers).map(
-    (container) => {
+    (container: Container) => {
       return [
         container.barcode,
         container.typeId,
         container.statusId,
         container.centerId,
-        container.parentContainerId ?
-          containers[container.parentContainerId].barcode :
+        container.parentContainerBarcode ?
+          containers[container.parentContainerBarcode].barcode :
           null,
       ];
     }
@@ -186,18 +169,15 @@ function ContainerTab() {
       <Search
         title='Go To Container'
         show={editable.searchContainer}
-        onClose={clearEditable}
+        onClose={clear}
         barcodes={barcodesNonPrimary}
       />
       {loris.userHasPermission('biobank_container_create') ?
       <ContainerForm
         options={options}
         show={editable.containerForm}
-        onClose={clearEditable}
+        onClose={clear}
       /> : null}
     </div>
   );
-  
 }
-
-export default ContainerTab;

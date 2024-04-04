@@ -1,87 +1,100 @@
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { useState, useEffect} from 'react';
 import { Tabs, TabPane } from 'Tabs';
 import {
+  ContainerPage,
+  SpecimenPage,
   SpecimenTab, 
   ContainerTab, 
   PoolTab, 
-  ShipmentTab, 
-  SpecimenPage,
-  ContainerPage 
+  // ShipmentTab, 
 } from '../components';
-import { OptionAPI, SpecimenAPI, ContainerAPI, PoolAPI, ShipmentAPI} from '../APIs';
+import {
+  OptionAPI,
+  SpecimenAPI,
+  ContainerAPI,
+  PoolAPI,
+  ShipmentAPI
+} from '../APIs';
 import { BiobankProvider, BarcodePageProvider } from '../contexts';
+import { useHTTPRequest } from '../hooks';
+declare const loris: any;
 
 /**
  * The main React entrypoint for the biobank module. This component
  * renders the index page.
  */
 function BiobankIndex() {
-  const { options, isLoading: optWait, error } = useHTTPRequest( () => 
-    OptionAPI.getAll()
-  );
-  const { containers, isLoading: contWait } = useHTTPRequest( () => ContainerAPI.getAll());
-  const { specimens, isLoading: specWait } = useHTTPRequest( () => SpecimenAPI.getAll());
-  const { pools, isLoading: poolWait } = useHTTPRequest( () => PoolAPI.getAll());
-  const { shipments, isLoading: shipWait } = useHTTPRequest( () => ShipmentAPI.getAll());
+
+  const { data: options, isLoading: optWait, error: optionsError }
+    = useHTTPRequest(() => new OptionAPI().getAll());
+
+  const { data: containers, isLoading: contWait, error: containersError }
+    = useHTTPRequest(() => new ContainerAPI().getAll());
+
+  const { data: specimens, isLoading: specWait, error: specimensError }
+    = useHTTPRequest(() => new SpecimenAPI().getAll());
+
+  const { data: pools, isLoading: poolWait, error: poolsError }
+    = useHTTPRequest(() => new PoolAPI().getAll());
+
+  const { data: shipments, isLoading: shipWait, error: shipmentsError }
+    = useHTTPRequest(() => new ShipmentAPI().getAll());
+
+  if (contWait || specWait || poolWait || shipWait || optWait) {
+    return <div>Loading...</div>; // Render a loader
+  }
+
+  if (containersError || specimensError | poolsError || shipmentsError || optionsError) {
+    return <div>Error loading data</div>;
+  }
 
   const specimenPage = async (props) => {
     const barcode = props.match.params.barcode;
-    const specimen = await SpecimenAPI.getById(barcode);
+    const specimen = await new SpecimenAPI().getById(barcode);
     return (
       <BarcodePageProvider>
         <SpecimenPage
-          key={barcode}
-          history={props.history}
+          key={barcode} // Ensures component resets on barcode change
           specimen={specimen}
-          container={specimen.container}
           options={options}
         />
       </BarcodePageProvider>
     );
   };
 
-  const containerPage = async (props) => {
-    const barcode = props.match.params.barcode;
-    const container = await ContainerAPI.getById(barcode);
-    // Render the component with the resolved container data
+  const containerPage = (props) => {
     return (
       <BarcodePageProvider>
         <ContainerPage
-          key={barcode}
-          history={props.history}
-          container={container}
-          options={options}
+          key={props.match.params.barcode} // Ensures component resets on barcode change
+          barcode={props.match.params.barcode}
         />
       </BarcodePageProvider>
     );
   };
 
-  const specimenTab = <SpecimenTab/>;
-  const containerTab = <ContainerTab/>;
-  const poolTab = <PoolTab/>;
-  const shipmentTab = <ShipmentTab/>;              
-                                                                                
   const tabInfo = [];                                                           
   const tabList = [];                                                           
                                                                                 
   if (loris.userHasPermission('biobank_specimen_view')) {                       
-    tabInfo.push({ id: 'specimens', content: specimenTab });                    
+    tabInfo.push({ id: 'specimens', content: <SpecimenTab/> });                    
     tabList.push({ id: 'specimens', label: 'Specimens' });                      
   }                                                                             
                                                                                 
   if (loris.userHasPermission('biobank_container_view')) {                      
-    tabInfo.push({ id: 'containers', content: containerTab });                  
+    tabInfo.push({ id: 'containers', content: <ContainerTab/> });                  
     tabList.push({ id: 'containers', label: 'Containers' });                    
   }                                                                             
                                                                                 
   if (loris.userHasPermission('biobank_pool_view')) {                           
-    tabInfo.push({ id: 'pools', content: poolTab });                            
+    tabInfo.push({ id: 'pools', content: <PoolTab/> });                            
     tabList.push({ id: 'pools', label: 'Pools' });                              
   }                                                                             
                                                                                 
-  tabInfo.push({ id: 'shipments', content: shipmentTab });                      
-  tabList.push({ id: 'shipments', label: 'Shipments' });                        
+  // tabInfo.push({ id: 'shipments', content: <ShipmentTab/> });                      
+  // tabList.push({ id: 'shipments', label: 'Shipments' });                        
                                                                                 
   const tabContent = Object.keys(tabInfo).map((key) => (                        
     <TabPane key={key} TabId={tabInfo[key].id}>                                 
@@ -89,7 +102,7 @@ function BiobankIndex() {
     </TabPane>                                                                  
   ));                                                                           
                                                                                 
-  const filter = (props) => (
+  const filter = () => (
     <div id='biobank-page'>                                                     
       <Tabs tabs={tabList} defaultTab={tabList[0].id} updateURL={true}>         
         {tabContent}                                                            
@@ -97,28 +110,22 @@ function BiobankIndex() {
     </div>                                                                      
   );
 
-  if (contWait || specWait || poolWait || shipWait || optWait) {
-    return <div>Loading...</div>; // Render a loader
-  }
-
-  const biobankData = {
+  const data = {
     options: options,
     specimens: specimens,
-    container: containers,
+    containers: containers,
     pools: pools,
     shipments: shipments,
   };
 
   return (
-    <BiobankProvider value={biobankData}>
+    <BiobankProvider data={data}>
       <BrowserRouter basename='/biobank'>
-        <div>
-          <Switch>
-            <Route exact path='/' render={filter}/>
-            <Route exact path='/containers/:barcode' render={containerPage}/>
-            <Route exact path='/specimens/:barcode' render={specimenPage}/>
-          </Switch>
-        </div>
+        <Routes>
+          <Route path='/' element={filter}/>
+          <Route path='/containers/:barcode' element={containerPage}/>
+          <Route path='/specimens/:barcode' element={specimenPage}/>
+        </Routes>
       </BrowserRouter>
     </BiobankProvider>
   );

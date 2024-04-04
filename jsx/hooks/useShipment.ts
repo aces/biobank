@@ -1,32 +1,27 @@
-import { ShipmentHandler, Shipment, Log } from '../types';
-import { useGenericState, GenericStateHandler } from '../hooks';
+import { Shipment, Log } from '../types';
+import { useEntity, EntityHandler } from '../hooks';
 
-function useShipment(
-  initialShipment: Shipment = {}
-): [Shipment, ShipmentHandler] {
+// Overload signatures
+export function useShipment(): Partial<Shipment>;
+export function useShipment(initialShipment: Shipment): Shipment;
 
-  const validateShipment = (shipment: Shipment): Record<string, string> => {
+export function useShipment(
+  initialShipment: Partial<Shipment> = {}
+): Partial<Shipment> {
+
+  const validateShipment = (shipment: Partial<Shipment>): Record<string, string> => {
     let errors: Record<string, string> = {};
     return errors;
   }
 
-  const [
-    shipment,
-    {
-      set,
-      remove,
-      reset,
-      validate,
-      errors,
-    }
-  ] = useGenericState<Shipment>(initialShipment, validateShipment);
+  const shipment = useEntity<Partial<Shipment>>(initialShipment, validateShipment);
 
   const setLog = (
-    index: number,
     name: keyof Log,
-    value: any
+    value: any,
+    index: number,
   ) => {
-    set(
+    shipment.set(
       'logs',
       shipment.logs.map((log, i) => i === index ? {...log, [name]: value} : log)
     );
@@ -37,17 +32,8 @@ function useShipment(
   //   await put(url);
   // }
 
-  return [
-    shipment,
-    {
-      set,
-      setLog,
-      remove,
-      reset,
-      validate,
-      errors
-    }
-  ];
+  return {
+    ...shipment,
+    setLog,
+  };
 }
-
-export default useShipment;

@@ -6,4 +6,3 @@ export * from './specimen.types';
 export * from './shipment.types';
 export * from './handler.types';
 export * from './label.types';
-export * from './data.types';

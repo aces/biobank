@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { IAPI } from '../APIs';
 
-const useStreamData = <T>(api: IAPI<T>) => {
+export const useStreamData = <T>(api: IAPI<T>) => {
   const [data, setData] = useState(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
@@ -35,5 +35,3 @@ const useStreamData = <T>(api: IAPI<T>) => {
 
   return { data, progress, error };
 };
-
-export default useStreamData;

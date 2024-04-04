@@ -6,25 +6,32 @@ interface HTTPResponse<T> {
   error: Error | null;                                                          
 }                                                                               
                                                                                 
-const useHTTPRequest = <T>(                                                           
+export const useHTTPRequest = <T>(                                                           
   requestFunction: () => Promise<T>,                                            
   dependencies: any[] = []                                                      
 ): HTTPResponse<T> => {                                                        
   const [data, setData] = useState<T | null>(null);                             
-  const [isLoading, setIsLoading] = useState<boolean>(false);                   
+  const [isLoading, setIsLoading] = useState<boolean>(true);                   
   const [error, setError] = useState<Error | null>(null);                       
                                                                                 
   useEffect(() => {                                                             
+    // Validate that requestFunction is a function
+    if (typeof requestFunction !== 'function') {
+      console.error('Error in useHTTPRequest: requestFunction is not a function', requestFunction);
+      setError(new Error('requestFunction is not a function'));
+      setIsLoading(false);
+      return;
+    }
+
     const fetchData = async () => {                                             
-      setIsLoading(true);                                                       
       try {                                                                     
-        const result = await requestFunction();                                 
-        setData(result);                                                        
-        setIsLoading(false);                                                    
-      } catch (err) {                                                           
-        const error = err as Error;                                             
-        setError(error);                                                        
-        setIsLoading(false);                                                    
+        const result = await requestFunction();
+        setData(result);
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError(err as Error);
+        setIsLoading(false);
       }                                                                         
     };                                                                          
                                                                                 
@@ -33,5 +40,3 @@ const useHTTPRequest = <T>(
                                                                                 
   return { data, isLoading, error };                                            
 };                                                                              
-                                                                                
-export default useHTTPRequest;

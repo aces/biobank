@@ -1,5 +1,4 @@
 // index.js
-export { default as IAPI } from './BaseAPI';
 export { default as BaseAPI } from './BaseAPI';
 export { default as ContainerAPI } from './ContainerAPI';
 export { default as SpecimenAPI } from './SpecimenAPI';

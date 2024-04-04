@@ -1,6 +1,6 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { Options, Specimen, Container, Dimension } from '../types';
+import { Options, Specimen, ProcessType, Container, Dimension } from '../types';
 import { clone, isEmpty } from '../utils';
 import { useSpecimen, useContainer, useBarcodePageContext, useBiobankContext } from '../hooks';
 import { Globals, Header, ProcessPanel } from '../components';
@@ -10,7 +10,6 @@ import Loader from 'jsx/Loader';
 
 function BarcodePathDisplay({
   container,
-  contHandler
 }) {
   const [barcodeData, setBarcodeData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +18,7 @@ function BarcodePathDisplay({
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const parentBarcodes = await contHandler.getParentContainerBarcodes(container.barcode, []);
+        const parentBarcodes = await container.getParentContainerBarcodes(container.barcode, []);
         const displayData = parentBarcodes.map((barcode, index) => {
   //     const container = Object.values(data.containers)
   //       .find(
@@ -63,8 +62,6 @@ function BarcodePathDisplay({
 }
 
 type SpecimenPageProps = {
-  history: any, // Define a more specific type if possible
-  options: Options, // Define a more specific type if possible
   specimen: Specimen,
 };
 
@@ -75,16 +72,14 @@ type SpecimenPageProps = {
  * @returns {ReactElement} The rendered component.                              
  */    
 function SpecimenPage({
-  history,
-  options,
   specimen: initSpecimen,
 }: SpecimenPageProps): ReactElement {
 
   const [loading, setLoading] = useState(false);
-  const [specimen, specHandler] = useSpecimen(initSpecimen);
-  const [container, contHandler] = useContainer(initSpecimen.container);
+  const specimen = useSpecimen(initSpecimen);
+  const container = useContainer(initSpecimen.container);
   const { clear } = useBarcodePageContext();
-  const { containers } = useBiobankContext();
+  const { options, containers } = useBiobankContext();
 
   function clearAll() {
     setLoading(false);
@@ -133,45 +128,33 @@ function SpecimenPage({
         Return to Filter
       </Link>
       <Header
-        options={options}
         specimen={specimen}
-        specHandler={specHandler}
         container={container}
-        contHandler={contHandler}
         clearAll={clearAll}
-        render={() => <BarcodePathDisplay container={container} contHandler={contHandler}/>}
+        render={() => <BarcodePathDisplay container={container}/>}
       />
       <div className='summary'>
         <Globals
-          options={options}
           specimen={specimen}
-          specHandler={specHandler}
           container={container}
-          contHandler={contHandler}
           clearAll={clearAll}
           getCoordinateLabel={getCoordinateLabel}
         />
         <div className="processing">
           <ProcessPanel
-            process='collection'
+            process={ProcessType.Collection}
             specimen={specimen}
-            specHandler={specHandler}
             clearAll={clearAll}
-            options={options}
           />
           <ProcessPanel
-            process='preparation'
+            process={ProcessType.Preparation}
             specimen={specimen}
-            specHandler={specHandler}
             clearAll={clearAll}
-            options={options}
           />
           <ProcessPanel
-            process='analysis'
+            process={ProcessType.Analysis}
             specimen={specimen}
-            specHandler={specHandler}
             clearAll={clearAll}
-            options={options}
           />
         </div>
       </div>

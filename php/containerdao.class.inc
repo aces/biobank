@@ -66,18 +66,18 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
      * This will load all container persistence variables from the database
      * for a given $id into a Container object, and return the object.
      *
-     * @param int $id Value of the $id for the Container that will be
+     * @param string $barcode Value of the $barcode for the Container that will be
      *                instantiated.
      *
      * @return ?Container $container Container Instance.
      */
-    public function getInstanceFromId(int $id) : ?Container
+    public function getInstanceFromId(string $barcode) : ?Container
     {
         return $this->selectInstances(
             [
-                ['column'=>'bc.ContainerID', 'value'=>$id],
+                ['column'=>'bc.Barcode', 'value'=>$barcode],
             ],
-        )[$id] ?? null;
+        )[$barcode] ?? null;
     }
 
     // XXX: Currently this function is never used with any conditions passed as
@@ -112,6 +112,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                      bcp.ParentContainerID,
                      bc2.Barcode as ParentContainerBarcode,
                      GROUP_CONCAT(DISTINCT bcp2.ContainerID ORDER BY bcp2.ContainerID) as ChildContainerIDs,
+                     GROUP_CONCAT(DISTINCT CONCAT(bc3.Barcode, '|', bc3.Coordinate) ORDER BY bc3.Barcode) as ChildContainerBarcodes,
                      bcp.Coordinate as Coordinate,
                      bc.LotNumber,
                      bc.ExpirationDate,
@@ -125,6 +126,8 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                     ON bcp.ParentContainerID=bc2.ContainerID
                   LEFT JOIN biobank_container_parent bcp2
                     ON bc.ContainerID=bcp2.ParentContainerID
+                  LEFT JOIN biobank_container bc3
+                    ON bcp2.ContainerID=bc3.ContainerID
                   LEFT JOIN biobank_container_type bct
                     ON bc.ContainerTypeID=bct.ContainerTypeID
                   LEFT JOIN biobank_container_shipment_rel bcsr
@@ -151,7 +154,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             // $queryParams[':offset'] = (int)$offset;
         }
 
-        $containerRows = $this->db->pselectWithIndexKey($query, $queryParams, 'ContainerID');
+        $containerRows = $this->db->pselectWithIndexKey($query, $queryParams, 'Barcode');
 
         $containers = [];
         foreach ($containerRows as $id => $containerRow) {
@@ -693,6 +696,29 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             $container->setChildContainerIds($childContainerIds);
         } else {
             $container->setChildContainerIds([]);
+        }
+        if (isset($data['ChildContainerBarcodes'])) {
+            $childBarcodes = explode(',', $data['ChildContainerBarcodes']);
+            $childContainers = [];
+
+            foreach ($childBarcodes as $barcodeCoordinate) {
+                list($barcode, $coordinate) = array_pad(explode('|', $barcodeCoordinate, 2), 2, null);
+                // Check for a non-empty coordinate; treat empty or 'NULL' as unassigned
+                if (!empty($coodinate) && strtolower($coordinate) !== 'null') {
+                    // Child container is assigned a coordinate
+                    $childContainers[$coordinate] = $barcode;
+                } else {
+                    // Child container is unassigned a coordinate
+                    // Ensure 'unassigned' key exists as an array before appending
+                    if (!isset($childContainers['unassigned'])) {
+                        $childContainers['unassigned'] = [];
+                    }
+                    $childContainers['unassigned'][] = $barcode; // Add to unassigned array
+                }
+            }
+            $container->setChildContainerBarcodes($indexedBarcodes);
+        } else {
+            $container->setChildContainerBarcodes([]);
         }
         if (isset($data['Coordinate'])) {
             $container->setCoordinate((int) $data['Coordinate']);

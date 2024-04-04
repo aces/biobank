@@ -135,7 +135,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                         SELECT FLOOR(DATEDIFF(s.Date_visit, c.DoB)/365.25)
                       ) as CandidateAge,
                       bspor.PoolID,
-                      bp.Label
+                      bp.Label,
                       bsc.SpecimenProtocolID as CollectionProtocolID,
                       bsc.Quantity as CollectionQuantity,
                       bsc.UnitID as CollectionUnitID,

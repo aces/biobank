@@ -2,7 +2,7 @@ import React, { createContext, ReactNode } from 'react';
 import { Options, Specimen, Container, Pool, Shipment } from '../types';
 
 // TODO: bring context to another file:                                         
-interface BiobankContextType {                                              
+export interface BiobankContextType {                                              
   options?: Options,
   specimens?: Record<string, Specimen>,                                            
   containers?: Record<string, Container>,                                            
@@ -12,18 +12,14 @@ interface BiobankContextType {
                                                                                 
 const BiobankContext = React.createContext<BiobankContextType>({});
 
-interface BiobankProviderProps {
-  children: ReactNode;
-  biobankData: BiobankContextType
-}
-
-export const BiobankProvider: React.FC<BiobankProviderProps> = ({
+export const BiobankProvider: React.FC<{
+  context: BiobankContextType,
+}> = ({
   children,
-  biobankData,
+  context,
 }) => {
-
   return (
-    <BiobankContext.Provider value={{ editable, edit, clear }}>
+    <BiobankContext.Provider value={context}>
       {children}
     </BiobankContext.Provider>
   );

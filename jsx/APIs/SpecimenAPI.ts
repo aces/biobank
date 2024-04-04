@@ -1,10 +1,8 @@
 import BaseAPI from './BaseAPI';
 import { Specimen } from '../types';
 
-class SpecimenAPI extends BaseAPI<Specimen> {
+export default class SpecimenAPI extends BaseAPI<Specimen> {
   constructor() {
-    super('/biobank/specimens'); // Provide the base URL for specimen-related API
+    super('/biobank/specimens');
   }
 }
-
-export default SpecimenAPI;

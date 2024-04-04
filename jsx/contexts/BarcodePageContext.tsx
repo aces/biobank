@@ -11,8 +11,8 @@ interface BarcodePageContextType {
 // TODO: I really don't like this 'default value'                               
 const defaultValue: BarcodePageContextType = {                                  
   editable: {},                                                                 
-  edit: undefined,                                                              
-  clear: undefined,                                                             
+  edit: () => {},                                                              
+  clear: () => {},                                                             
 }                                                                               
 
 const BarcodePageContext = React.createContext<BarcodePageContextType>(defaultValue);

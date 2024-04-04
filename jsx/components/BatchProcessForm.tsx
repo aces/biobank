@@ -2,10 +2,12 @@ import React, { useState, ReactElement, useMemo } from 'react';
 import {VerticalTabs, TabPane} from 'Tabs';
 import Modal from 'Modal';
 import Loader from 'Loader';
-import { StaticElement, FormElement, SearchableDropdown } from 'Form';
+import Form from 'Form';
+const { StaticElement, FormElement, SearchableDropdown } = Form;
 import { ProcessForm } from '../components';
+import { useBiobankContext } from '../hooks';
 import {mapFormOptions, clone, isEmpty} from '../utils';
-import { Options, Data, Container, Process, Specimen, Status } from '../types';
+import { Options, Container, Process, Specimen, Status } from '../types';
 import Swal, { SweetAlertOptions, SweetAlertResult } from 'sweetalert2';
 
 type BatchProcessFormState = {
@@ -31,8 +33,6 @@ const initialState: BatchProcessFormState = {
 };
 
 type BatchProcessFormProps = {
-  data: Data,
-  options: Options,
   onClose: () => void,
   show: boolean,
 };
@@ -45,12 +45,11 @@ type BatchProcessFormProps = {
  * @returns {ReactElement} React element representing the header.               
  */   
 function BatchProcessForm({
-  data,
-  options,
   onClose,
   show,
 }: BatchProcessFormProps): ReactElement {
 
+  const { options, containers, specimens, pools } = useBiobankContext();
   const [state, setState] = useState<BatchProcessFormState>(initialState);
 
   /**
@@ -79,8 +78,8 @@ function BatchProcessForm({
     count++;
   
     // Set Specimen and Container
-    const container = data.containers[containerId];
-    const specimen = data.specimens[container.specimenId];
+    const container = containers[containerId];
+    const specimen = specimens[container.specimenId];
   
     // Set current global values
     current.typeId = specimen.typeId;
@@ -104,7 +103,7 @@ function BatchProcessForm({
    * @param {string} poolId - The ID of the pool to display.
    */
   const setPool = (name: string, poolId: string) => {
-    const pool = clone(data.pools[poolId]);
+    const pool = clone(pools[poolId]);
   
     // Set loading state to true
     setState(prevState => ({ ...prevState, loading: true }));
@@ -117,7 +116,7 @@ function BatchProcessForm({
       const listItemExists = Object.values(state.list)
                                    .some(item => item.specimen.id === specimenId);
       if (!listItemExists) {
-        addListItem(data.specimens[specimenId].containerId);
+        addListItem(specimens[specimenId].containerId);
       }
     });
   
@@ -161,8 +160,8 @@ function BatchProcessForm({
    * @returns {boolean} - Returns true if validation is successful, false otherwise.
    */
   const validateListItem = (containerId: string): boolean => {
-    const container = data.containers[containerId];
-    const specimen = data.specimens[container.specimenId];
+    const container = containers[containerId];
+    const specimen = specimens[container.specimenId];
   
     if (!isEmpty(state.list) && specimen.typeId !== state.current.typeId) {
       Swal.fire('Oops!', 'Specimens must be of the same Type', 'warning');
@@ -235,7 +234,6 @@ function BatchProcessForm({
     <ProcessForm
       edit={true}
       errors={state.errors.specimen.preparation || {}}
-      options={options}
       process={state.preparation}
       processStage='preparation'
       setParent={setProcess}
@@ -245,7 +243,7 @@ function BatchProcessForm({
 
   // TODO: This should likely be filtered so that only pools that match the
   // proper criteria are left in the list.
-  const pools = mapFormOptions(data.pools, 'label');
+  const poolsOptions = mapFormOptions(pools, 'label');
   const glyphStyle = {
     color: '#DDDDDD',
     marginLeft: 10,
@@ -308,7 +306,6 @@ function BatchProcessForm({
               <h4>Barcode Input</h4>
               <div className='form-top'/>
               <BarcodeInput
-                data={data}
                 options={options}
                 list={state.list}
                 containerId={state.containerId}
@@ -319,7 +316,7 @@ function BatchProcessForm({
                 name={'poolId'}
                 label={'Pool'}
                 onUserInput={handlePoolInput}
-                options={pools}
+                options={poolsOptions}
                 value={state.current.poolId}
               />
             </div>
@@ -367,7 +364,6 @@ function BatchProcessForm({
 }
 
 type BarcodeInputProps = {                                                  
-  data: Data,
   options: Options, // TODO: type
   list: {container: Container, specimen: Specimen}[],
   containerId?: string,
@@ -385,33 +381,34 @@ type BarcodeInputProps = {
  * @returns {ReactElement} React element representing the header.               
  */      
 function BarcodeInput({
-  data,
-  options,
   list,
   containerId = null,
   addListItem,
   validateListItem,
 }: BarcodeInputProps): ReactElement {
+  const { options, containers, specimens } = useBiobankContext();
+
   // Create options for barcodes based on match typeId
   // TODO: this can later be replaced with a simple fetch call.
   const barcodesPrimary = useMemo(() => {
-    return Object.values(data.containers).reduce((result, container) => {
-      const isPrimaryType = options?.container?.types[container.typeId]?.primary === 1;
-      const specimen = data.specimens[container.specimenId];
+    return Object.values(containers).reduce((result: Record<string, string>, container: Container) => {
+      const isPrimaryType = options.container.types[container.typeId]?.primary === 1;
+      const specimen = specimens[container.specimenId];
       const isSpecimenValid = specimen?.typeId && 
         specimen.typeId === options?.specimen?.protocols[specimen.typeId]?.typeId;
-      const availableId = Object.values(options.container.stati)
-        .find(status => status.label === 'Available')?.id;
+      // TODO: replace with something else, not availability.
+      // const availableId = Object.values(options.container.stati)
+      //   .find(status => status.label === 'Available')?.id;
       const isInList = list.some(item => item.container.id === container.id);
   
-      if (isPrimaryType && isSpecimenValid && 
-          container.statusId === availableId && !isInList) {
+      // previously this check also included availableId
+      if (isPrimaryType && isSpecimenValid && !isInList) {
         result[container.id] = container.barcode;
       }
   
       return result;
     }, {});
-  }, [data, options, list]);
+  }, [specimens, containers, options, list]);
 
   /**
    * Handles input for container IDs. Validates the container before adding it to the list.

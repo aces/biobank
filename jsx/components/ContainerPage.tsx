@@ -1,8 +1,15 @@
 import React, { useState, useCallback, useEffect, useContext, ReactElement }  from 'react';
 import { Link } from 'react-router-dom';
-import { Data, Options, Specimen, Container, Dimension } from '../types';
-import { clone } from '../utils';
-import { useBiobankContext, useSpecimen, useContainer, useEditable, useBarcodePageContext} from '../hooks';
+import { Options, Specimen, Container, Dimension } from '../types';
+import { clone, mapFormOptions } from '../utils';
+import {
+  useBiobankContext,
+  useSpecimen,
+  useContainer,
+  useContainerById,
+  useEditable,
+  useBarcodePageContext
+} from '../hooks';
 import { Globals, Header, ContainerDisplay } from '../components';
 import { ContainerAPI } from '../APIs';
 import { BarcodePageProvider } from '../contexts';
@@ -11,8 +18,7 @@ declare const loris: any;
 
 function BarcodePathDisplay({
   container,
-  contHandler
-}) {
+}): ReactElement {
   const [barcodeData, setBarcodeData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -20,7 +26,7 @@ function BarcodePathDisplay({
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const parentBarcodes = await contHandler.getParentContainerBarcodes(container.barcode, []);
+        const parentBarcodes = await container.getParentContainerBarcodes(container.barcode, []);
         const displayData = parentBarcodes.map((barcode, index) => {
   //     const container = Object.values(data.containers)
   //       .find(
@@ -53,7 +59,7 @@ function BarcodePathDisplay({
   }, [container.parentContainerBarcode]); //XXX: currently this is re-rendering even if the parent doesn't change.
 
   if (isLoading) {
-    return <Loader size={20}/>; // Replace with your actual loader component
+    return <Loader size={20}/>;
   }
 
   return (
@@ -64,18 +70,20 @@ function BarcodePathDisplay({
 }
 
 const initCurrent = {                                                           
-  files: {},                                                                    
   list: {},                                                                     
-  coordinate: null,                                                             
-  sequential: false,                                                            
-  count: null,                                                                  
-  multiplier: 1,                                                                
 };                                                                              
 
+export type Current = {
+  list?: Record<string, any>,
+  prevCoordinate?: number,
+  coordinate?: number,
+  barcode?: string,
+  sequential?: boolean,
+  containerId?: string
+}
+
 interface ContainerPageProps {
-  history: any, // Define a more specific type if possible
-  options: Options, // Define a more specific type if possible
-  container: Container,
+  barcode: string,
 };
 
 /**                                                                             
@@ -84,16 +92,15 @@ interface ContainerPageProps {
  * @param {ContainerPageProps} props - The props for the component.             
  * @returns {ReactElement} The rendered component.                              
  */    
-function ContainerPage({
-  history,
-  container: initContainer,
+export default function ContainerPage({
+  barcode
 }: ContainerPageProps): ReactElement {
 
+  const [current, setCurrent] = useState<Current>(initCurrent);                          
   const { editable, edit, clear } = useBarcodePageContext();
-  const { options, data } = useBiobankContext();
-  const { container, contHandler } = useContainer(initContainer);
-  const [current, setCurrent] = useState(initCurrent);                          
-  
+  const { options, containers } = useBiobankContext();
+  const container = useContainer(containers[barcode]);
+
   /**
    * Get the label for a coordinate in a container
    *
@@ -101,7 +108,11 @@ function ContainerPage({
    * @return {ReactElement | null}
    */
   function getCoordinateLabel(container: Container): ReactElement | null {
-    const parentContainer = data.containers[container.parentContainerId];
+    const parentContainer = containers[container.parentContainerBarcode];
+    if (!parentContainer) return null;
+
+    const dimensions = options.container.dimensions[parentContainer.dimensionId];
+    if (!dimensions) return null;
 
     const formatCoordinate = (x: number, y: number, dimensions: Dimension): string => {
       const xVal = dimensions.xNum === 1 ? x : String.fromCharCode(64 + x);
@@ -111,27 +122,22 @@ function ContainerPage({
         : `${yVal}${xVal}`;
     }
 
-    if (parentContainer) {
-      const dimensions = options.container.dimensions[parentContainer.dimensionId];
-      let coordinateCount = 1;
-  
-      for (let y = 1; y <= dimensions.y; y++) {
-        for (let x = 1; x <= dimensions.x; x++, coordinateCount++) {
-          if (coordinateCount === container.coordinate) {
-            return <span>{formatCoordinate(x, y, dimensions)}</span>;
-          }
+    let coordinateCount = 1;
+    for (let y = 1; y <= dimensions.y; y++) {
+      for (let x = 1; x <= dimensions.x; x++, coordinateCount++) {
+        if (coordinateCount === container.coordinate) {
+          return <span>{formatCoordinate(x, y, dimensions)}</span>;
         }
       }
     }
-  
+
     return null;
   }
 
   const drag = useCallback((e) => {                                             
-    const container = JSON.stringify(data.containers[e.target.id]);             
-    e.dataTransfer.setData('text/plain', container);                            
-  }, [data.containers]);                                                        
-                                                                                
+    const cont = JSON.stringify(containers[e.target.id]);             
+    e.dataTransfer.setData('text/plain', cont);                            
+  }, [containers]);                                                        
                                                                                 
   const updateCurrent = (name: string, value: any) =>  {                        
     setCurrent(prevCurr => ({                                                   
@@ -139,20 +145,20 @@ function ContainerPage({
       [name]: value                                                             
     }));                                                                        
   }                                                                             
-                                                                                
-  function setCheckoutList(container: Container): void {                        
+
+  function setCheckoutList(selectedContainer: Container): void {                        
     // Clear current container field.                                           
     updateCurrent('containerId', 1)                                             
     updateCurrent('containerId', null);                                         
     const list = clone(current.list);                                           
-    list[container.coordinate] = container;                                     
+    list[container.coordinate] = selectedContainer;                                     
     updateCurrent('list', list);                                                
   }                                                                             
-                                                                                
+
   const checkoutButton = () => {                                                
     if (                                                                        
       !loris.userHasPermission('biobank_container_update') ||                   
-      data.containers[container.id].childContainerIds.length == 0               
+      containers[container.barcode].childContainerBarcodes.length == 0               
     ) {                                                                         
       return;                                                                   
     }                                                                           
@@ -173,8 +179,10 @@ function ContainerPage({
       </div>                                                                    
     );                                                                          
   };                                                                            
-                                                                                
-  const barcodes = mapFormOptions(data.containers, 'barcode');                  
+
+  const barcodes = mapFormOptions(containers, 'barcode');                  
+
+  // XXX: KEEP COMMENTED OUT
   // delete values that are parents of the container                            
                                                                                 
   //TODO re-instate this in some form!                                          
@@ -184,87 +192,75 @@ function ContainerPage({
   //        parentBarcodes[key] == barcodes[i] && delete barcodes[i]            
   //    )                                                                       
   //  );                                                                        
-                                                                                
-  const coordinates = data.containers[container.id].childContainerIds.reduce(   
-    (result, id) => {                                                           
-      const container = data.containers[id];                                    
-      if (container.coordinate) {                                               
-        result[container.coordinate] = id;                                      
-      }                                                                         
-      return result;                                                            
-    },                                                                          
-    {}                                                                          
-  );                                                                            
-                                                                                
+  // UP UNTIL HERE
+
+
   const containerDisplay = (                                                    
     <div className='display-container'>                                         
       {checkoutButton()}                                                        
       <ContainerDisplay                                                         
-        history={history}                                                       
         container={container}                                                   
         barcodes={barcodes}                                                     
         current={current}                                                       
-        options={options}                                                       
         dimensions={options.container.dimensions[container.dimensionId]}        
-        coordinates={coordinates}                                               
         editable={editable}                                                     
         edit={edit}                                                             
         clearAll={clear}                                                     
-        setCurrent={setCurrent}                                                 
+        updateCurrent={updateCurrent}                                                 
         setCheckoutList={setCheckoutList}                                       
       />                                                                        
       <div style={{ display: 'inline' }}>
         <BarcodePathDisplay
           container={container}
-          contHandler={contHandler}
         />
       </div>             
     </div>                                                                      
   );                                                                            
-                                                                                
+
   const containerList = () => {                                                 
-    if (!container.childContainerIds) {                                         
+    if (!container.childContainerBarcodes) {                                         
       return <div className='title'>This Container is Empty!</div>;             
     }                                                                           
                                                                                 
-    const childIds = container.childContainerIds;                               
     let listAssigned = [];                                                      
     let coordinateList = [];                                                    
     let listUnassigned = [];                                                    
                                                                                 
-    childIds.forEach((childId) => {                                             
+    container.childContainerBarcodes.forEach(([coordinate, barcode]) => {                                          
       if (!loris.userHasPermission('biobank_specimen_view')) {                  
         return; // This is the correct place for the return statement           
       }                                                                         
-                                                                                
-      const child = data.containers[childId];                                   
-                                                                                
-      if (child.coordinate) {                                                   
-        listAssigned.push(                                                      
-          <div key={childId}>                                                   
-            <Link to={`/barcode=${child.barcode}`}>                             
-              {child.barcode}                                                   
-            </Link>                                                             
-          </div>                                                                
-        );                                                                      
-        const coordinate = getCoordinateLabel(child);                           
-        coordinateList.push(<div key={coordinate}>at {coordinate}</div>);       
-      } else {                                                                  
-        listUnassigned.push(                                                    
-          <div key={childId}>                                                   
-            <Link                                                               
-              to={'/barcode='+child.barcode}                                    
-              id={child.id}                                                     
-              draggable={true}                                                  
-              onDragStart={drag}                                                
-            >                                                                   
-              {child.barcode}                                                   
-            </Link>                                                             
-            <br />                                                              
-          </div>                                                                
-        );                                                                      
-      }                                                                         
-    });                                                                         
+
+      // Check if the current entry is for 'unassigned' containers
+      if (coordinate === 'unassigned') {
+        container.childContainerBarcodes.unassigned.forEach(barcode => {
+          listUnassigned.push(
+            <div key={barcode}>
+              <Link
+                to={'/barcode=' + barcode}
+                id={barcode}
+                draggable={true}
+                onDragStart={drag}
+              >
+                {barcode}
+              </Link>
+              <br />
+            </div>
+          );
+        });
+      } else {
+        // Process assigned containers
+        listAssigned.push(
+          <div key={barcode}>
+            <Link to={`/barcode=${barcode}`}>
+              {barcode}
+            </Link>
+          </div>
+        );
+        const coordinateLabel = getCoordinateLabel(containers.barcodes);
+        coordinateList.push(<div key={barcode}>at {coordinateLabel}</div>);
+      }
+    });
                                                                                 
     return (                                                                    
       <div>                                                                     
@@ -283,34 +279,29 @@ function ContainerPage({
       </div>                                                                    
     );                                                                          
   };                                                                            
-                                                                                
+
   return (
-      <BarcodePageProvider>
-        <Link to={`/`}>
-          <span className='glyphicon glyphicon-chevron-left'/>
-          Return to Filter
-        </Link>
-        <Header
-          options={options}
+    <>
+      <Link to={`/`}>
+        <span className='glyphicon glyphicon-chevron-left'/>
+        Return to Filter
+      </Link>
+      <Header
+        container={container}
+        clearAll={clear}
+        render={() => <BarcodePathDisplay container={container}/>}
+      />
+      <div className='summary'>
+        <Globals
+          container={container}
           clearAll={clear}
-          render={() => <BarcodePathDisplay container={container}/>}
+          getCoordinateLabel={getCoordinateLabel}
         />
-        <div className='summary'>
-          <Globals
-            data={data}
-            options={options}
-            container={container}
-            contHandler={contHandler}
-            clearAll={clear}
-            getCoordinateLabel={getCoordinateLabel}
-          />
-          <div className='container-display'>                                         
-            {containerDisplay}                                                        
-            <div className='container-list'>{containerList()}</div>                   
-          </div>                                                                      
-        </div>
-      </BarcodePageProvider>
+        <div className='container-display'>                                         
+          {containerDisplay}                                                        
+          <div className='container-list'>{containerList()}</div>                   
+        </div>                                                                      
+      </div>
+    </>
   );
 }
-
-export default ContainerPage;

@@ -1,8 +1,11 @@
-export type Container = {                                                       
+import { ContainerHandler } from '../types';
+
+export type Container = ContainerHandler & {                                                       
   id?: string,                                                                  
   barcode?: string,                                                             
   centerId?: string,                                                            
   childContainerIds?: string[],                                                 
+  childContainerBarcodes?: Record<string, string> & { unassigned: string[] },           
   comments?: string,                                                            
   coordinate?: number,                                                          
   dimensionId?: string,                                                         

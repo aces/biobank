@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import BarcodePageContext from '../contexts/BarcodePageContext'; // Adjust the path as necessary
+import { BarcodePageContext } from '../contexts'; // Adjust the path as necessary
 
 export const useBarcodePageContext = () => {
   const context = useContext(BarcodePageContext);

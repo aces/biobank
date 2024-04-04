@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
+import { Candidate, Specimen, Session} from '../types';
 import { clone, mapFormOptions } from '../utils';
 import FilterableDataTable from 'FilterableDataTable';
-import { useBiobankContext } from '../hooks';
+import { useBiobankContext, useEditable } from '../hooks';
 import {
   SpecimenForm,
   PoolSpecimenForm,
@@ -11,41 +12,15 @@ import {
   Search,
 } from '../components';
 
+declare const loris: any;
+
 /**
  * JSX Component representing the specimen tab of the biobank
  * module.
  */
-function SpecimenTab () {
+export const SpecimenTab: React.FC = () => {
   const { options, specimens } = useBiobankContext();
-  const [editable, setEditable] = useState({});
-
-  function saveBatchEdit(list) {                                                         
-    const saveList = list                                                       
-    .map((specimen) => () => specimen.put());    
-                                                                                
-    return Promise.all(saveList.map((item) => item()))
-    .then(() => Swal.fire('Batch Preparation Successful!', '', 'success'));    
-  }    
-
-  /**
-   * Make the form editable
-   *
-   * @param {object} stateKey - the key holding the state
-   *
-   * @return {Promise}
-   */
-  function edit(stateKey) {
-    const newEditable = clone(editable);
-    newEditable[stateKey] = true;
-    setEditable(editable);
-  }
-
-  /**
-   * Clear the editable state of this tab.
-   */
-  function clearEditable() {
-    setEditable({});
-  }
+  const { editable, edit, clear } = useEditable();
 
   /**
    * Map a specimen id to a string value for display.
@@ -55,7 +30,10 @@ function SpecimenTab () {
    *
    * @return {string}
    */
-  function mapSpecimenColumns(column, value) {
+  function mapSpecimenColumns(
+    column: string,
+    value: any
+  ): any {
     switch (column) {
       case 'Type':
         return options.specimen.types[value].label;
@@ -88,19 +66,34 @@ function SpecimenTab () {
    *
    * @return {ReactDOM}
    */
-  function formatSpecimenColumns(column, value, row) {
+  function formatSpecimenColumns(
+    column: string,
+    value: string | string[],
+    row: Record<string, string>,
+  ): ReactElement {
     value = mapSpecimenColumns(column, value);
     const candidate = Object.values(options.candidates)
-      .find((cand) => cand.pscid == row['PSCID']);
+      .find((cand: Candidate) => cand.pscid == row['PSCID']) as Candidate;
     const candidatePermission = candidate !== undefined;
+    const statusColorMap: Record<string, string> = {
+      Available: 'green',
+      Reserved: 'orange',
+      Dispensed: 'red',
+      Discarded: 'red',
+    };
     switch (column) {
       case 'Barcode':
         return <td><Link to={`/specimens/${value}`}>{value}</Link></td>;
       case 'Parent Specimens':
-        // TODO: if the user doesn't have access then these shouldn't be hyperlinked
-        const barcodes = value && value.map((id, key) => {
-          return <Link key={key} to={`/specimens/${value}`}>{value}</Link>;
-        }).reduce((prev, curr) => [prev, ', ', curr]);
+        // Check if 'value' is an array and map over it to produce Link elements
+        const barcodes = Array.isArray(value) ? value.map((barcode, index) => (
+          // Use React.Fragment to wrap each Link and comma
+          <React.Fragment key={barcode}>
+            <Link to={'/specimens/'+barcode}>{barcode}</Link>
+            {index < value.length - 1 ? ', ' : ''}
+          </React.Fragment>
+        )) : null; // Handle case where 'value' is not an array
+
         return <td>{barcodes}</td>;
       case 'PSCID':
         if (candidatePermission) {
@@ -110,32 +103,18 @@ function SpecimenTab () {
       case 'Visit Label':
         if (candidatePermission) {
           const ses = Object.values(options.candidateSessions[candidate.id]).find(
-            (sess) => sess.label == value
-          ).id;
+            (sess: Session) => sess.label == value
+          ) as Session;
           const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candidate.id+
-            '&sessionID='+ses;
+            '&sessionID='+ses.id;
           return <td><a href={visitLabelURL}>{value}</a></td>;
         }
         return <td>{value}</td>;
       case 'Status':
-        const style = {};
-        switch (value) {
-          case 'Available':
-            style.color = 'green';
-            break;
-          case 'Reserved':
-            style.color = 'orange';
-            break;
-         case 'Dispensed':
-            style.color = 'red';
-            break;
-          case 'Discarded':
-            style.color = 'red';
-            break;
-        }
-        return <td style={style}>{value}</td>;
+        const color = typeof value === 'string' ? statusColorMap[value] || '' : ''; // Fallback to empty string if status is not found
+        return <td style={{color: color}}>{value}</td>;
       case 'Projects':
-        return <td>{value.join(', ')}</td>;
+        return <td>{Array.isArray(value) && value.join(', ')}</td>;
       case 'Container Barcode':
         // TODO: this should not be a link when user doesn't have permission to view
         return <td><Link to={`/containers/${value}`}>{value}</Link></td>;
@@ -145,17 +124,20 @@ function SpecimenTab () {
   }
 
   const barcodesPrimary = Object.values(specimens)
-    .reduce((result, specimen) => {
-      result[specimen.barcode] = specimen.barcode;
+    .reduce<{ [key: string]: string }>((result, specimen: Specimen) => {
+      if (specimen.barcode) {
+        result[specimen.barcode] = specimen.barcode;
+      }
       return result;
     }, {});
+
   const specimenTypes = mapFormOptions(options.specimen.types, 'label');
   const containerTypesPrimary = mapFormOptions(
       options.container.typesPrimary, 'label'
   );
   const stati = mapFormOptions(options.container.stati, 'label');
   const diagnoses = mapFormOptions(options.diagnoses, 'label');
-  const specimenData = Object.values(specimens).map((specimen) => {
+  const specimenData = Object.values(specimens).map((specimen: Specimen) => {
     let specimenAttributeData = [];
     Object.keys(options.specimen.processAttributes)
       .forEach((processId) => {
@@ -176,6 +158,7 @@ function SpecimenTab () {
             }
           });
       });
+
     const candidate = options.candidates[specimen.candidateId];
     return [
       specimen.barcode,
@@ -216,6 +199,7 @@ function SpecimenTab () {
           );
         });
     });
+
   const fields = [
     {label: 'Barcode', show: true, filter: {
       name: 'barcode',
@@ -309,29 +293,24 @@ function SpecimenTab () {
     ...specimenAttributeFields,
   ];
 
-  const openSearchSpecimen = () => edit('searchSpecimen');
-  const openSpecimenForm = () => edit('specimenForm');
-  const openPoolForm = () => edit('poolSpecimenForm');
-  const openBatchProcessForm = () => edit('batchProcessForm');
-  const openBatchEditForm = () => edit('batchEditForm');
   const actions = [
     {
       name: 'goToSpecimen',
       label: 'Go To Specimen',
-      action: openSearchSpecimen,
+      action: () => edit('searchSpecimen'),
     },
-    {name: 'addSpecimen', label: 'Add Specimen', action: openSpecimenForm},
-    {name: 'poolSpecimen', label: 'Pool Specimens', action: openPoolForm},
+    {name: 'addSpecimen', label: 'Add Specimen', action: () => edit('specimenForm')},
+    {name: 'poolSpecimen', label: 'Pool Specimens', action: () => edit('poolSpecimenForm')},
     {
       name: 'batchProcess',
       label: 'Process Specimens',
-      action: openBatchProcessForm,
+      action: () => edit('batchProcessForm'),
     },
-    {name: 'batchEdit', label: 'Edit Specimens', action: openBatchEditForm},
+    {name: 'batchEdit', label: 'Edit Specimens', action: () => edit('batchEditForm')},
   ];
 
   return (
-    <div>
+    <>
       <FilterableDataTable
         name='specimen'
         data={specimenData}
@@ -343,41 +322,29 @@ function SpecimenTab () {
       <Search
         title='Go To Specimen'
         show={editable.searchSpecimen}
-        onClose={clearEditable}
+        onClose={clear}
         barcodes={barcodesPrimary}
       />
       {loris.userHasPermission('biobank_specimen_create') ?
       <SpecimenForm
         title='Add New Specimen'
-        options={options}
         show={editable.specimenForm}
-        onClose={clearEditable}
+        onClose={clear}
       /> : null}
       {loris.userHasPermission('biobank_pool_create') ?
-      <PoolSpecimenForm
-        options={options}
-        show={editable.poolSpecimenForm}
-        onClose={clearEditable}
-      /> : null}
-      {/*
-        {loris.userHasPermission('biobank_specimen_update') &&
-          <BatchProcessForm
-            show={editable.batchProcessForm}
-            onClose={clearEditable}
-            options={options}
-          />
-        }
-        {loris.userHasPermission('biobank_specimen_update') &&
-          <BatchEditForm
-            show={editable.batchEditForm}
-            onClose={clearEditable}
-            onSubmit={saveBatchEdit}
-            options={options}
-          />
-        }
-      */}
-    </div>
+      <PoolSpecimenForm show={editable.poolSpecimenForm} onClose={clear} /> : null}
+      {loris.userHasPermission('biobank_specimen_update') &&
+        <BatchProcessForm
+          show={editable.batchProcessForm}
+          onClose={clear}
+        />
+      }
+      {loris.userHasPermission('biobank_specimen_update') &&
+        <BatchEditForm
+          show={editable.batchEditForm}
+          onClose={clear}
+        />
+      }
+    </>
   );
 }
-
-export default SpecimenTab;

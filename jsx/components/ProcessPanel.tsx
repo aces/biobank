@@ -1,31 +1,29 @@
-import { ReactElement } from 'react;
-import { FormElement } from 'Form'; // Replace with actual import path
-import { ProcessForm } from '../components'; // Replace with actual import path
-import { Specimen, SpecimenHandler, Options, ProcessType } from '../types';
-import { useBarcodePageContext } from '../hooks';
+import { ReactElement } from 'react';
+import Form from 'Form';
+const { FormElement } = Form;
+import { ProcessForm } from '../components';
+import { Protocol, Specimen, Options, ProcessType } from '../types';
+import { useBarcodePageContext, useBiobankContext } from '../hooks';
 declare const loris: any;
 
 // Define the type for your props
 type ProcessPanelProps = {
   process: ProcessType;
   specimen: Specimen; // Define a more specific type if possible
-  specHandler: SpecimenHandler,
   clearAll: () => void,
-  options: Options, // Define a more specific type if possible
 };
 
 function ProcessPanel({
   process,
   specimen,
-  specHandler,
   clearAll,
-  options,
 }: ProcessPanelProps): ReactElement {
 
   const { edit, editable } = useBarcodePageContext();
+  const { options } = useBiobankContext();
 
   const addProcess = async () => {
-    specHandler.setProcess(process, 'centerId', specimen.container.centerId);
+    specimen.setProcess(process, 'centerId', specimen.container.centerId);
     edit(process);
   };
 
@@ -55,7 +53,7 @@ function ProcessPanel({
   };
 
   const protocolExists = Object.values(options.specimen.protocols).find(
-    (protocol) => {
+    (protocol: Protocol) => {
       return protocol.typeId == specimen.typeId &&
       options.specimen.processes[protocol.processId].label ==
       process.replace(/^\w/, (c) => c.toUpperCase());
@@ -82,12 +80,10 @@ function ProcessPanel({
       <ProcessForm
         edit={editable[process]}
         specimen={specimen}
-        options={options}
         process={specimen[process]}
         processStage={process}
-        setParent={specHandler.set}
+        setParent={specimen.set}
         typeId={editable[process] ? specimen.typeId : specimen.typeId}
-        updateSpecimen={specHandler.put}
       />
     </FormElement>
   );

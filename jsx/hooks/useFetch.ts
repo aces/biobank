@@ -7,7 +7,7 @@ interface FetchResponse<T> {
   error: Error | null;
 }
 
-const useFetch = <T>(
+export const useFetch = <T>(
   api: BaseAPI<T>, 
   id: string,
   dependencies: any[] = []
@@ -65,5 +65,3 @@ const useFetch = <T>(
 // 
 //   return { data, isLoading, error };
 // };
-
-export default useFetch;

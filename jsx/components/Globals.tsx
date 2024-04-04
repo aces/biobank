@@ -1,28 +1,26 @@
-import React, { useState, ReactElement, ReactNode, useContext } from 'react';
+import React, { useState, ReactElement, ReactNode} from 'react';
 import { Link } from 'react-router-dom';
 import { mapFormOptions, isEmpty } from '../utils';
 import Modal from 'Modal';
 import Loader from 'Loader';
 import { ContainerParentForm } from '../components';
-import {
+import Form from 'Form';
+const {
   Button,
   TextboxElement,
   TextareaElement,
   SelectElement,
   NumericElement
-} from 'Form';
-import { Options, Container, Specimen, ContainerHandler, SpecimenHandler } from '../types';
-import { BarcodePageContext } from '../contexts';
+} = Form;
+import { Container, Specimen } from '../types';
+import { useBarcodePageContext, useBiobankContext } from '../hooks';
 import { ContainerAPI, SpecimenAPI } from '../APIs';
 
 declare const loris: any;
 
 type GlobalsType = {
-  options: Options,
-  specimen: Specimen,
-  specHandler: SpecimenHandler,
+  specimen?: Specimen,
   container: Container,
-  contHandler: ContainerHandler,
   clearAll: () => void,
   getCoordinateLabel: Function, //TODO: type declaration
 };
@@ -34,15 +32,13 @@ type GlobalsType = {
  * @returns {ReactElement} React element representing the header.               
  */       
 function Globals({
-  options,
   specimen,
-  specHandler,
   container,
-  contHandler,
   clearAll,
   getCoordinateLabel,
 }: GlobalsType): ReactElement {
-  const { editable, edit } = useContext(BarcodePageContext);
+  const { editable, edit } = useBarcodePageContext();
+  const { options } = useBiobankContext();
 
   const specimenTypeField = !isEmpty(specimen) && (
     <InlineField
@@ -57,10 +53,6 @@ function Globals({
       edit('containerType');
     }
   );
-  const containerTypes = mapFormOptions(
-    options.container.typesPrimary,
-    'label'
-  );
   const containerTypeField = (
     <InlineField
       label={'Container Type'}
@@ -71,13 +63,7 @@ function Globals({
       edit={editContainerType}
       editable={editable.containerType}
     >
-      <SelectElement
-        name='typeId'
-        onUserInput={contHandler.set}
-        options={containerTypes}
-        value={container?.typeId}
-        errorMessage={contHandler.errors.typeId}
-      />
+      <ContainerField property={'typeId'} container={container}/> //TODO: this will have to be modified to type primary
     </InlineField>
   );
 
@@ -86,10 +72,6 @@ function Globals({
       label='Pool'
       value={specimen.poolLabel}
     />
-  ) : null;
-
-  const units = !isEmpty(specimen) ? mapFormOptions(
-    options.specimen.typeUnits[specimen.typeId], 'label'
   ) : null;
 
   const quantityField = !isEmpty(specimen) ? (
@@ -102,19 +84,8 @@ function Globals({
       ' '+options.specimen.units[specimen.unitId].label}
       editable={editable.quantity}
     >
-      <TextboxElement
-        name='quantity'
-        onUserInput={specHandler.set}
-        value={specimen.quantity}
-        errorMessage={specHandler.errors.quantity}
-      />
-      <SelectElement
-        name='unitId'
-        options={units}
-        onUserInput={specHandler.set}
-        value={specimen.unitId}
-        errorMessage={specHandler.errors.unitId}
-      />
+      <SpecimenField property={'quantity'} specimen={specimen}/>
+      <SpecimenField property={'unitId'} specimen={specimen}/>
     </InlineField>
   ) : null;
 
@@ -162,12 +133,7 @@ function Globals({
           value={specimen.fTCycle || 0}
           editable={editable.fTCycle}
         >
-          <NumericElement
-            name='fTCycle'
-            onUserInput={specHandler.set}
-            value={specimen.fTCycle}
-            errorMessage={specHandler.errors.fTCycle}
-          />
+          <SpecimenField property={'fTCycle'} specimen={specimen}/>
         </InlineField>
       );
     }
@@ -183,16 +149,10 @@ function Globals({
       value={container.temperature + '°'}
       editable={editable.temperature}
     >
-      <TextboxElement
-        name='temperature'
-        onUserInput={contHandler.set}
-        value={container.temperature}
-        errorMessage={contHandler.errors.temperature}
-      />
+      <SpecimenField property={'temperature'} specimen={specimen}/>
     </InlineField>
   );
 
-  const stati = mapFormOptions(options.container.stati, 'label');
   const renderCommentsField = () => {
     if (stati[container.statusId] !== 'Discarded' &&
         stati[container.statusId] !== 'Dispensed' &&
@@ -200,14 +160,10 @@ function Globals({
       return [];
     }
     return (
-      <TextareaElement
-        name='comments'
-        onUserInput={contHandler.set}
-        value={container.comments}
-        required={true}
-      />
+      <ContainerField property={'comments'} container={container}/>
     );
   };
+
   const statusField = (
     <InlineField
       label={'Status'}
@@ -218,13 +174,7 @@ function Globals({
       subValue={container.comments}
       editable={editable.status}
     >
-      <SelectElement
-        name='statusId'
-        options={stati}
-        onUserInput={contHandler.set}
-        value={container.statusId}
-        errorMessage={contHandler.errors.statusId}
-      />
+      <ContainerField property={'statusId'} container={container}/>
       {renderCommentsField()}
     </InlineField>
   );
@@ -241,15 +191,7 @@ function Globals({
          .join(', ') : 'None'}
       editable={editable.project}
     >
-      <SelectElement
-        name='projectIds'
-        options={options.projects}
-        onUserInput={specHandler.set}
-        multiple={true}
-        emptyOption={false}
-        value={specimen.projectIds}
-        errorMessage={specHandler.errors.projectIds}
-      />
+      <ContainerField property={'projectIds'} specimen={specimen}/>
     </InlineField>
   );
 
@@ -337,13 +279,11 @@ function Globals({
                   title='Update Parent Container'
                   onClose={clearAll}
                   show={editable.containerParentForm}
-                  onSubmit={() => ContainerAPI(container)}
+                  onSubmit={() => ContainerAPI.update(container)}
                 >
                   <ContainerParentForm
                     display={true}
                     container={container}
-                    contHandler={contHandler}
-                    options={options}
                   />
                 </Modal>
               </div>
@@ -422,7 +362,7 @@ function Globals({
  **/
 function Item({
   children,
-}): ReactElement {
+}): React.FC {
   return <div className="item">{children}</div>;
 }
 

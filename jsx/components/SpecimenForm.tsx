@@ -1,10 +1,11 @@
 import React, { useState, useEffect, ReactElement, useRef} from 'react';
-import { ContainerParentForm, ProcessForm, ListForm, ListItem } from '../components';
+import { ContainerParentForm, SpecimenField, ContainerField, ProcessForm, ListForm2 } from '../components';
 import Modal from 'Modal';
 import { mapFormOptions, clone, padBarcode } from '../utils';
-import { useSpecimen, useContainer } from '../hooks';
-import { Data, Container, Specimen, Options, Process } from '../types';
-import {
+import { useSpecimen, useContainer, useBiobankContext, useEntities} from '../hooks';
+import { Container, Specimen, Options, Process } from '../types';
+import Form from 'Form';
+const {
   CheckboxElement,
   SelectElement,
   StaticElement,
@@ -13,7 +14,7 @@ import {
   ButtonElement,
   DateElement,
   SearchableDropdown,
-} from 'Form';
+} = Form;
 import dict from '../i18n/en.json';
 declare const loris: any;
 
@@ -27,30 +28,27 @@ const usePrevious = (value) => {
 };
 
 type SpecimenFormProps = {
-  parent: [{ specimen: Specimen, container: Container }], // Replace ParentType with the correct type
-  options: Options,
-  data: Data, 
+  parent?: [{ specimen: Specimen, container: Container }], // Replace ParentType with the correct type
   show: boolean,
-  onClose: Function,
-  setSpecimen: Function, //TODO: type
+  onClose: () => void,
+  setSpecimen?: Function, //TODO: type
   title: string,
 };
 
 function SpecimenForm({
   parent,
-  options,
-  data,
   show,
   onClose,
   setSpecimen,
   title,
 }: SpecimenFormProps): ReactElement {
 
-  const [specimen, specHandler] = useSpecimen({});
-  const [container, contHandler] = useContainer({});
-  const [list, setList] = useState<Record<string, Specimen>>({}); //TODO: LIST SHOULD LIKELY BE AN ARRAY
+  const { options, containers } = useBiobankContext();
+
+  const specimen = useSpecimen({});
+  const container = useContainer({});
+  const specimens = useEntities<Specimen>();
   const [printBarcodes, setPrintBarcodes] = useState<boolean>(false);
-  const [errors, setErrors] = useState({list: {}}); //TODO: type
 
   const prevParent = usePrevious(parent);
 
@@ -60,16 +58,16 @@ function SpecimenForm({
       const parentSpecimen = parent[0].specimen;
       const parentContainer = parent[0].container;
       
-      specHandler.set('parentSpecimenIds', Object.values(parent).map((item) =>
+      specimen.set('parentSpecimenIds', Object.values(parent).map((item) =>
 item.specimen.id));
-      specHandler.set('candidateId', parentSpecimen.candidateId);
-      specHandler.set('sessionId', parentSpecimen.sessionId);
-      specHandler.set('typeId', parentSpecimen.typeId);
-      contHandler.set('centerId', parentContainer.centerId);
+      specimen.set('candidateId', parentSpecimen.candidateId);
+      specimen.set('sessionId', parentSpecimen.sessionId);
+      specimen.set('typeId', parentSpecimen.typeId);
+      container.set('centerId', parentContainer.centerId);
 
 
       if (parent.length > 1) {
-        specHandler.set('quantity', 0)
+        specimen.set('quantity', 0)
       }
     }
   }, [parent]); // Dependency array, effect runs when `parent` changes
@@ -81,8 +79,8 @@ item.specimen.id));
    * @param {string} sessionId
    */
   const setSession = (session, sessionId) => {
-    contHandler.set('centerId', options.sessionCenters[sessionId].centerId); 
-    specHandler.set('sessionId', sessionId);
+    container.set('centerId', options.sessionCenters[sessionId].centerId); 
+    specimen.set('sessionId', sessionId);
   }
 
   /**
@@ -94,38 +92,45 @@ item.specimen.id));
    * @return {number}
    */
   const incrementBarcode = (pscid: string, increment: number = 0): number => {
-    increment++;
-    const barcode = padBarcode(pscid, increment);
-    if (Object.values(data.containers)
-         .some((container) => container.barcode === barcode)) {
-      increment = incrementBarcode(pscid, increment);
-    }
-    if (Object.values(list)
-         .some((specimen) => specimen.container.barcode === barcode)) {
-      increment = incrementBarcode(pscid, increment);
-    }
-    return increment;
+    // const tryIncrement = increment + 1;
+    // const barcode = padBarcode(pscid, tryIncrement);
+
+    // // TODO: remove 'as Record<string, Container>'
+    // // This should already be defined in BiobankContext
+    // // I'm not sure where it doesn't understand that containers is typed that
+    // // way.
+    // const barcodeExists = Object.values(containers as Record<string, Container>)
+    // .some(container => container.barcode === barcode) ||
+    //                       Object.values(specimens).some(specimen => specimen.container.barcode === barcode);
+
+    // if (barcodeExists) {
+    //   return incrementBarcode(pscid, tryIncrement);
+    // }
+
+    // return tryIncrement;
+    return 0;
   };
 
   /**
    * Generate barcodes and store in the component state.
    */
   const generateBarcodes = () => {
-    const pscid = options.candidates[specimen.candidateId].pscid;
-    let increment = 0; // Initialize increment to 0
-  
-    const newList = Object.keys(list).reduce((result, key) => {
-      const specimenItem = list[key];
-      if (!specimenItem.container.barcode) {
-        increment = incrementBarcode(pscid, increment); // Update increment
-        const barcode = padBarcode(pscid, increment);
-        specimenItem.container = { ...specimenItem.container, barcode };
-      }
-      result[key] = specimenItem;
-      return result;
-    }, {});
-  
-    setList(newList);
+    // const pscid = options.candidates[specimen.candidateId].pscid;
+    // let increment = 0; // Initialize increment to 0
+
+    // // Create a new Map from the existing list to avoid mutating the state directly
+    // const newList = new Map(specimens); // Assuming 'list' is already a Map
+
+    // newList.forEach((specimenItem, key) => {
+    //   if (!specimenItem.container.barcode) {
+    //     increment = incrementBarcode(pscid, increment); // Update increment
+    //     const barcode = padBarcode(pscid, increment);
+    //     // Update the container barcode for this specimenItem
+    //     newList.set(key, { ...specimenItem, container: { ...specimenItem.container, barcode } });
+    //   }
+    // });
+
+    // setList(newList); // Update state with the new Map
   };
 
   const increaseCoordinate = (coordinate, parentContainerId) => {               
@@ -151,7 +156,7 @@ item.specimen.id));
     return increment(coordinate);                                               
   }   
 
-  const onSubmit = (list, specimen, container, print) => {               
+  const onSubmit = (specimens, specimen, container, print) => {               
   //   const labelParams = [];                                                  
   //   const availableId = Object.keys(options.container.stati).find(           
   //     (key) => options.container.stati[key].label === 'Available'            
@@ -271,7 +276,7 @@ item.specimen.id));
   */
   // TODO: THIS WILL LIKELY NEED TO BE COMPLETELY REDONE
   const handleSubmit = () => {
-    onSubmit(list, specimen, container, printBarcodes);
+    onSubmit(specimens, specimen, container, printBarcodes);
   }
 
   const renderGlobalFields = () => {
@@ -307,11 +312,11 @@ item.specimen.id));
             name="candidateId"
             label="PSCID"
             options={candidates}
-            onUserInput={specHandler.set}
+            onUserInput={specimen.set}
             required={true}
             value={specimen.candidateId}
             placeHolder='Search for a PSCID'
-            errorMessage={specHandler.errors.candidateId}
+            errorMessage={specimen.errors.candidateId}
           />
           <SelectElement
             name='sessionId'
@@ -321,7 +326,7 @@ item.specimen.id));
             required={true}
             value={specimen.sessionId}
             disabled={specimen.candidateId ? false : true}
-            errorMessage={specHandler.errors.sessionId}
+            errorMessage={specimen.errors.sessionId}
             autoSelect={true}
           />
         </div>
@@ -333,29 +338,11 @@ item.specimen.id));
     if (parent) {
       if (loris.userHasPermission('biobank_specimen_update')
            && parent.length === 1) {
-        const specimenUnits = mapFormOptions(
-          options.specimen.units,
-          'label'
-        );
         return (
-          <div>
-            <TextboxElement
-              name="quantity"
-              label="Remaining Quantity"
-              onUserInput={setSpecimen}
-              required={true}
-              value={specimen.quantity}
-            />
-            <SelectElement
-              name="unitId"
-              label="Unit"
-              options={specimenUnits}
-              onUserInput={setSpecimen}
-              required={true}
-              value={specimen.unitId}
-              autoSelect={true}
-            />
-          </div>
+          <>
+            <SpecimenField field={'quantity'} specimen={specimen}/>
+            <SpecimenField field={'unitId'} specimen={specimen}/>
+          </>
         );
       }
     }
@@ -366,7 +353,7 @@ item.specimen.id));
       let initialCoord = 0; // Initial coordinate value
       let coordinates = []; // Local array to accumulate coordinates
   
-      for (const key of Object.keys(list)) {
+      for (const key of Object.keys(specimens)) {
           initialCoord = increaseCoordinate(
               initialCoord,
               container.parentContainerId,
@@ -379,7 +366,7 @@ item.specimen.id));
       // Now, update the state with the new coordinates array
       // Assuming contHandler.set is your state update function
       // TODO: see if this is necessary
-      contHandler.set('coordinate', coordinates);
+      container.set('coordinate', coordinates);
   }
 
   const handleClose = () => {
@@ -408,34 +395,23 @@ item.specimen.id));
               name='projectIds'
               label='Project'
               options={options.projects}
-              onUserInput={specHandler.set}
+              onUserInput={specimen.set}
               required={true}
               value={specimen.projectIds}
               disabled={specimen.candidateId ? false : true}
-              errorMessage={specHandler.errors.projectIds}
+              errorMessage={specimen.errors.projectIds}
             />
             {renderRemainingQuantityFields()}
           </div>
         </div>
-        <ListForm
-          list={list}
-          errors={errors.list}
-          setList={setList}
-          listItem={{container: {}, collection: {}}}
-        >
-          <SpecimenBarcodeForm
-            typeId={specimen.typeId}
-            options={options}
-          />
-        </ListForm>
+        <ListForm2 list={specimens}>
+          <SpecimenBarcodeForm/>
+        </ListForm2>
         <br/>
         <div className='form-top'/>
         <ContainerParentForm
-          display={true}
-          data={data}
           container={container}
-          contHandler={contHandler}
-          options={options}
+          display={true}
         />
         <div className='form-top'/>
         <ButtonElement
@@ -456,68 +432,27 @@ item.specimen.id));
   );
 }
 
-type SpecimenBarcodeFormProps = {
-  item?: {
-    container: Container,
-    typeId: string,
-    collection: Process,
-    [key: string]: any, // Include other keys as needed
-  },
-  itemKey?: string,
-  setListItem?: (field: string, value: any, key: string) => void, // Replace 'any' with more specific types if possible
-  options: Options,
-  errors?: {
-    container: { [key: string]: string }, // Include the error structure for container
-    specimen: { [key: string]: string }, // Include the error structure for specimen
-    [key: string]: any, // Include other error structures as needed
-  },
-  typeId: string,
-}
+const SpecimenBarcodeForm: React.FC<{
+  entity: Specimen,
+}> = ({
+  entity: specimen,
+}) => {
 
-function SpecimenBarcodeForm({
-  item,
-  itemKey,
-  setListItem,
-  options,
-  errors,
-  typeId,
-  ...props
-}: SpecimenBarcodeFormProps): ReactElement {
-  /**
-   * Set the current container.
-   *
-   * @param {string} name - the name
-   * @param {string} value - the value
-   */
-  const setContainer = (name, value) => {
-    let container = item.container;
-    container[name] = value;
-    setListItem('container', container, itemKey);
-  }
-
-  /**
-   * Set the specimen
-   *
-   * @param {string} name - a name
-   * @param {string} value - a value
-   */
-  const setSpecimen = (name, value) => {
-    setListItem(name, value, itemKey);
-  }
+  const { options } = useBiobankContext();
 
   // XXX: Only allow the selection of child types
   const renderSpecimenTypes = () => {
     let specimenTypes;
-    if (typeId) {
+    if (specimen.typeId) {
       specimenTypes = Object.entries(options.specimen.types).reduce(
         (result, [id, type]) => {
-          if (id == typeId) {
+          if (id == specimen.typeId) {
             result[id] = type;
           }
 
           if (type.parentTypeIds) {
             type.parentTypeIds.forEach((i) => {
-              if (i == typeId) {
+              if (i == specimen.typeId) {
                 result[id] = type;
               }
             });
@@ -539,9 +474,9 @@ function SpecimenBarcodeForm({
   );
 
   const validContainers = {};
-  if (item.typeId && options.specimen.typeContainerTypes[item.typeId]) {
+  if (specimen.typeId && options.specimen.typeContainerTypes[specimen.typeId]) {
     Object.keys(containerTypesPrimary).forEach((id) => {
-      options.specimen.typeContainerTypes[item.typeId].forEach((i) => {
+      options.specimen.typeContainerTypes[specimen.typeId].forEach((i) => {
         if (id == i) {
           validContainers[id] = containerTypesPrimary[id];
         }
@@ -550,58 +485,37 @@ function SpecimenBarcodeForm({
   }
 
   return (
-    <ListItem {...props}>
-      <TextboxElement
-        name='barcode'
-        label='Barcode'
-        onUserInput={setContainer}
-        required={true}
-        value={item.container.barcode}
-        errorMessage={(errors.container||{}).barcode}
-      />
+    <>
+      <ContainerField property={'barcode'} container={specimen.container}/>
       <SelectElement
         name="typeId"
         label="Specimen Type"
         options={renderSpecimenTypes()}
-        onUserInput={setSpecimen}
+        onUserInput={specimen.set}
         required={true}
-        value={item.typeId}
-        errorMessage={(errors.specimen||{}).typeId}
+        value={specimen.typeId}
+        errorMessage={(specimen.errors.specimen||{}).typeId}
       />
       <SelectElement
         name="typeId"
         label="Container Type"
-        options={item.typeId ? validContainers : containerTypesPrimary}
-        onUserInput={setContainer}
+        options={specimen.typeId ? validContainers : containerTypesPrimary}
+        onUserInput={specimen.container.set}
         required={true}
-        value={item.container.typeId}
-        errorMessage={errors.container?.typeId}
+        value={specimen.container.typeId}
+        errorMessage={specimen.errors.container?.typeId}
         autoSelect={true}
       />
-      <TextboxElement
-        name='lotNumber'
-        label='Lot Number'
-        onUserInput={setContainer}
-        value={item.container.lotNumber}
-        errorMessage={errors.container?.lotNumber}
-      />
-      <DateElement
-        name='expirationDate'
-        label='Expiration Date'
-        onUserInput={setContainer}
-        value={item.container.expirationDate}
-        errorMessage={errors.container?.expirationDate}
-      />
+      <ContainerField property={'lotNumber'} container={specimen.container}/>
+      <ContainerField property={'expirationDate'} container={specimen.container}/>
       <ProcessForm
         edit={true}
         errors={errors}
-        options={options}
-        process={item.collection}
+        process={specimen.collection}
         processStage='collection'
-        setParent={setSpecimen}
-        typeId={item.typeId}
+        typeId={specimen.typeId}
       />
-    </ListItem>
+    </>
   );
 }
 

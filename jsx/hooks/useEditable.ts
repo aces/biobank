@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const useEditable = () => {                                              
+export const useEditable = () => {                                              
   const [editable, setEditable] = useState<Record<string, boolean>>({});        
                                                                                 
   const edit = (name: string) => {                                              
@@ -15,5 +15,3 @@ const useEditable = () => {
   // TODO: turn into tuple                                                      
   return { editable, edit, clear};                                              
 }
-
-export default useEditable;

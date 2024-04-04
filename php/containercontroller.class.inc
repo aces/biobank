@@ -89,7 +89,7 @@ class ContainerController
         return $containers;
     }
 
-    public function getInstanceByBarcode($barcode) : array
+    public function getInstanceById($barcode) : array
     {
         return array_values($this->dao->selectInstances(                                          
             [                                                                   

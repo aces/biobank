@@ -53,6 +53,7 @@ class Container implements
      * @var int          $parentContainerId
      * @var ?string      $parentContainerBarcode
      * @var array        $childContainerIds
+     * @var array        $childContainerBarcodes
      * @var int          $coordinate
      * @var string       $lotNumber
      * @var \DateTime    $expirationDate
@@ -73,6 +74,7 @@ class Container implements
     private $parentContainerId;
     private ?string $parentContainerBarcode = null;
     private $childContainerIds;
+    private $childContainerBarcodes;
     private $coordinate;
     private $lotNumber;
     private $expirationDate;
@@ -380,6 +382,28 @@ class Container implements
     }
 
     /**
+     * Sets the Barcodes of the children containers
+     *
+     * @param array $childContainerBarcodes array of IDs of children container
+     *
+     * @return void
+     */
+    public function setChildContainerBarcodes(array $childContainerBarcodes) : void
+    {
+        $this->childContainerBarcodes = $childContainerBarcodes;
+    }
+
+    /**
+     * Gets the Barcodes of the children containers
+     *
+     * @return ?array
+     */
+    public function getChildContainerBarcodes() : ?array
+    {
+        return $this->childContainerBarcodes;
+    }
+
+    /**
      * Sets the container's current coordinate in storage
      *
      * @param ?int $coordinate the container's current coordinate
@@ -517,6 +541,9 @@ class Container implements
         if (isset($data['childContainerIds'])) {
             $this->setChildContainerIds($data['childContainerIds']);
         }
+        if (isset($data['childContainerBarcodes'])) {
+            $this->setChildContainerBarcodes($data['childContainerBarcodes']);
+        }
         if (isset($data['coordinate'])) {
             $this->setCoordinate((int) $data['coordinate']);
         }
@@ -570,6 +597,7 @@ class Container implements
             'parentContainerId'      => $this->parentContainerId,
             'parentContainerBarcode' => $this->parentContainerBarcode,
             'childContainerIds'      => $this->childContainerIds,
+            'childContainerBarcodes' => $this->childContainerBarcodes,
             'coordinate'             => $this->coordinate,
             'lotNumber'              => $this->lotNumber,
             'expirationDate'         => $expirationDate,

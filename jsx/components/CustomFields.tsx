@@ -1,13 +1,14 @@
 import { ReactElement } from 'react';
-import {
+import Form from 'Form';
+const {
   FormElement,
   TextboxElement,
   DateElement,
   TimeElement,
   CheckboxElement,
   FileElement
-} from 'Form';
-import { Options } from '../types';
+} = Form;
+import { useBiobankContext } from '../hooks'; 
 
 type CustomFieldsProps = {
   fields: {
@@ -17,7 +18,6 @@ type CustomFieldsProps = {
       datatypeId: string,
     },
   },
-  options: Options,
   data: any //TODO: type,
   setData: (attribute: string, value: any) => void, // Replace 'any' with a more specific type if possible
   errors: any //TODO: type,
@@ -30,12 +30,13 @@ type CustomFieldsProps = {
  * @returns {ReactElement} JSX Element corresponding to each field.
  */
 const CustomFields = ({
-  options,
   errors,
   fields,
   data,
   setData,
 }: CustomFieldsProps): ReactElement => {
+  const { options } = useBiobankContext();
+
   return (
     <>
       {Object.keys(fields).map((attribute, key) => {

@@ -1,9 +1,13 @@
-// hooks index.js
-export { default as useContainer } from './useContainer';                       
-export { default as useEditable } from './useEditable';                         
-export { default as useGenericState } from './useGenericState';                 
-export { default as useHTTPRequest } from './useHTTPRequest';                   
-export { default as useShipment } from './useShipment';                         
-export { default as useSpecimen } from './useSpecimen';                         
-export { default as useStreamData } from './useStreamData';
-export { default as useBarcodePageContext } from './useBarcodePageContext';
+// hooks/index.js
+export { useEntities } from './useEntities';
+export { useContainer } from './useContainer';
+export { useContainerById } from './useContainerById';
+export { useEditable } from './useEditable';
+export { useGenericState } from './useGenericState';
+export { useHTTPRequest } from './useHTTPRequest';
+export { useShipment } from './useShipment';
+export { useSpecimen } from './useSpecimen';
+export { usePool } from './usePool';
+export { useStreamData } from './useStreamData';
+export { useBiobankContext } from './useBiobankContext';
+export { useBarcodePageContext } from './useBarcodePageContext';

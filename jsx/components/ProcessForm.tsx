@@ -1,8 +1,11 @@
 import { ReactElement } from 'react';
 import { mapFormOptions, clone } from '../utils';
 import { CustomFields } from '../components';
-import { Options, Process, Specimen, SpecimenHandler } from '../types';
-import {
+import { Protocol, Process, Specimen, SpecimenHandler } from '../types';
+import { SpecimenAPI } from '../APIs';
+import { useBiobankContext } from '../hooks';
+import Form from 'Form';
+const {
   ButtonElement,
   TextboxElement,
   SelectElement,
@@ -10,74 +13,46 @@ import {
   TimeElement,
   TextareaElement,
   StaticElement,
-} from 'Form';
+} = Form;
 
 type ProcessFormProps = {
   specimen?: Specimen,
   process: Process,
   processStage: string,
   typeId: string,
-  options: Options,
-  errors: any, //TODO: type
+  errors?: any, //TODO: type + figure out if mandatory
   edit?: boolean,
-  setParent: (processStage: string, process: Process) => void,
   hideProtocol?: boolean,
-  updateSpecimen?: (url: string) => Promise<void>,
 };
 
 function ProcessForm({
   specimen,
-  updateSpecimen,
   process,
   processStage,
   typeId,
-  options,
   errors,
   edit,
-  setParent,
   hideProtocol,
 }: ProcessFormProps): ReactElement {
-  const setProcess = (name, value) => {
-    let processClone = clone(process);
-    processClone[name] = value;
-    setParent(processStage, processClone);
-  };
-
-  const setProtocol = (name, value) => {
-    let processClone = clone(process);
-    processClone[name] = value;
-    processClone.data = {};
-    setParent(processStage, processClone);
-  };
-
-  const setData = (name, value) => {
-    const data = clone(process.data);
-    // TODO: will have to rejig file saving — likely to be turned into a state
-    if (value instanceof File) {
-      data[name] = value.name;
-      // setFiles(prevFiles => { ...prevFiles, [value.name]: value});
-    } else {
-      data[name] = value;
-    }
-    setProcess('data', data);
-  };
+  const { options } = useBiobankContext();
 
   const updateButton = specimen && (
     <ButtonElement
       label="Update"
-      onUserInput={updateSpecimen}
+      onUserInput={ () => new SpecimenAPI().update(specimen)}
     />
   );
 
-  let specimenProtocols = {};
+
+  // XXX: THIS IS A DYNAMICALLY GENERATED CONFIG — FIND A WAY TO PULL THIS INTO
+  // ANOTHER COMPONENT NOW!!!
   let specimenProtocolAttributes = {};
-  Object.entries(options.specimen?.protocols).forEach(([id, protocol]) => {
+  Object.entries(options.specimen?.protocols as { [key: string]: Protocol }).forEach(([id, protocol]) => {
     // FIXME: I really don't like 'toLowerCase()' function, but it's the
     // only way I can get it to work at the moment.
     if (typeId == protocol.typeId &&
         options.specimen.processes[protocol.processId].label.toLowerCase() ==
         processStage) {
-      specimenProtocols[id] = protocol.label;
       specimenProtocolAttributes[id] = options.specimen.protocolAttributes[id];
     }
   });
@@ -87,11 +62,8 @@ function ProcessForm({
       if (process.data) {
         return (
           <CustomFields
-            options={options}
-            errors={errors.data || {}}
             fields={specimenProtocolAttributes[process.protocolId]}
             data={process.data}
-            setData={setData} 
            />
         );
       } else {
@@ -100,86 +72,25 @@ function ProcessForm({
     }
   };
 
-  const specimenTypeUnits = Object.keys(options.specimen.typeUnits[typeId]||{})
-  .reduce((result, id) => {
-    result[id] = options.specimen.typeUnits[typeId][id].label;
-    return result;
-  }, {});
-  const collectionFields = processStage === 'collection' && [
-    <TextboxElement
-      name="quantity"
-      label="Quantity"
-      onUserInput={setProcess}
-      required={true}
-      value={process.quantity}
-      errorMessage={errors.quantity}
-    />,
-    <SelectElement
-      name="unitId"
-      label="Unit"
-      options={specimenTypeUnits}
-      onUserInput={setProcess}
-      required={true}
-      value={process.unitId}
-      errorMessage={errors.unitId}
-      autoSelect={true}
-    />,
-  ];
-
-  const protocolField = !hideProtocol && (
-    <SelectElement
-      name="protocolId"
-      label="Protocol"
-      options={specimenProtocols}
-      onUserInput={setProtocol}
-      required={true}
-      value={process.protocolId}
-      errorMessage={errors.protocolId}
-      autoSelect={true}
-    />
-  );
-
-  const examiners = mapFormOptions(options.examiners, 'label');
   if (typeId && edit === true) {
     return (
       <>
-        {protocolField}
-        <SelectElement
-          name="examinerId"
-          label="Done By"
-          options={examiners}
-          onUserInput={setProcess}
-          required={true}
-          value={process.examinerId}
-          errorMessage={errors.examinerId}
-          autoSelect={true}
-        />
-        <DateElement
-          name="date"
-          label="Date"
-          onUserInput={setProcess}
-          required={true}
-          value={process.date}
-          errorMessage={errors.date}
-        />
-        <TimeElement
-          name="time"
-          label="Time"
-          onUserInput={setProcess}
-          required={true}
-          value={process.time}
-          errorMessage={errors.time}
-        />
+        {!hideProtocol && (
+          <ProcessField property={'protocolId'} process={process}/>
+        )}
+        <ProcessField property={'examinerId'} process={process}/>
+        <ProcessField property={'date'} process={process}/>
+        <ProcessField property={'time'} process={process}/>
         {collectionFields}
+        {processState === 'collection' && (
+          <>
+            <ProcessField property={'quantity'} process={process}/>
+            <ProcessField property={'unitId'} process={process}/>
+          </>
+        )
         <div className='form-top'/>
         {renderProtocolFields()}
-        <TextareaElement
-          name="comments"
-          label="Comments"
-          onUserInput={setProcess}
-          value={process.comments}
-          errorMessage={errors.comments}
-        />
+        <ProcessField property={'comments'} process={process}/>
         {updateButton}
       </>
     );
@@ -207,40 +118,19 @@ function ProcessForm({
       });
 
     const collectionStaticFields = (processStage === 'collection') && (
-      <StaticElement
-        label='Quantity'
-        text={process.quantity+' '+options.specimen.units[process.unitId].label}
-      />
+      <StaticElement label='Quantity' text={process.quantity+' '+options.specimen.units[process.unitId].label}/>
     );
 
     return (
       <>
-        <StaticElement
-          label='Protocol'
-          text={options.specimen.protocols[process.protocolId].label}
-        />
-        <StaticElement
-          label='Site'
-          text={options.centers[process.centerId]}
-        />
-        <StaticElement
-          label='Done By'
-          text={options.examiners[process.examinerId].label}
-        />
-        <StaticElement
-          label='Date'
-          text={process.date}
-        />
-        <StaticElement
-          label='Time'
-          text={process.time}
-        />
+        <StaticElement label='Protocol' text={options.specimen.protocols[process.protocolId].label}/>
+        <StaticElement label='Site' text={options.centers[process.centerId]}/>
+        <StaticElement label='Done By' text={options.examiners[process.examinerId].label}/>
+        <StaticElement label='Date' text={process.date} />
+        <StaticElement label='Time' text={process.time} />
         {collectionStaticFields}
         {protocolStaticFields}
-        <StaticElement
-          label='Comments'
-          text={process.comments}
-        />
+        <StaticElement label='Comments' text={process.comments} />
       </>
     );
   }

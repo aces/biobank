@@ -1,8 +1,10 @@
-export type Pool = {                                                            
+import { PoolHandler } from '../types;
+
+export type Pool = PoolHandler & {                                                            
   id: string,                                                                   
   candidateId: string,                                                          
   candidatePSCID: string,                                                       
-  centerID: string,                                                             
+  centerId: string,                                                             
   date: string,                                                                 
   label: string,                                                                
   projectIds: string[],                                                         
@@ -11,6 +13,6 @@ export type Pool = {
   specimenBarcodes: string[],                                                   
   specimenIds: string[],                                                        
   time: string,                                                                 
-  type: string,                                                                 
+  typeId: string,                                                                 
   unitId: string,                                                               
-};  
+}; 

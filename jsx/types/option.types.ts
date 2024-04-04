@@ -14,43 +14,63 @@ export type Dimension = {
   zNum: number,
 };
 
-type Protocol = {
+export type Protocol = {
+   label: string,
    typeId: string,
    processId: string,
-   // Include other properties that a protocol might have
  };
 
+export type Candidate = {
+   id: string,
+   pscid: string,
+   sex: string,
+   diagnosisIds: string[],
+};
+
+export type Center = {
+  centerId: string,
+};
+
+export type User ={
+  label: string,
+}
+
+export type Session = {
+  id: string,
+  label: string,
+}
+
 export type Options = {
-  candidates: {[key: string]: any},
-  diagnoses: {[key: string]: any},
-  sessions: {[key: string]: any},
-  projects: {[key: string]: any},
-  centers: {[key: string]: any},
-  examiners: {[key: string]: any},
-  users: {[key: string]: any},
-  candidateSessions: {[key: string]: any},
-  sessionCenters: {[key: string]: any},
+  candidates: Record<string, Candidate>,
+  diagnoses: Record<string, any>,
+  sessions: Record<string, any>,
+  projects: Record<string, any>,
+  centers: Record<string, Center>,
+  examiners: Record<string, any>,
+  users: Record<string, User>,
+  candidateSessions: Record<string, any>,
+  sessionCenters: Record<string, any>,
   container: {
-   types: {[key: string]: any},
-   typesPrimary: {[key: string]: any},
-   typesNonPrimary: {[key: string]: any},
-   dimensions: { [key: string]: Dimension },
-   stati: { [key: string]: Status },
+    types: Record<string, any>,
+    typesPrimary: Record<string, any>,
+    typesNonPrimary: Record<string, any>,
+    dimensions: Record<string, Dimension>,
+    stati: Record<string, Status>,
   },
   specimen: {
-    types: {[key: string]: any},
-    typeUnits: {[key: string]: any},
-    typeContainerTypes: {[key: string]: any},
-    protocols: {[key: string]: Protocol},
-    processes: {[key: string]: any},
-    protocolAttributes: {[key: string]: any},
-    processAttributes: {[key: string]: any},
-    units: {[key: string]: any},
-    attributes: {[key: string]: any},
-    attributeDatatypes: {[key: string]: any},
+    types: Record<string, any>,
+    typeUnits: Record<string, any>,
+    typeContainerTypes: Record<string, any>,
+    protocols: Record<string, Protocol>,
+    processes: Record<string, any>,
+    protocolAttributes: Record<string, any>,
+    processAttributes: Record<string, any>,
+    units: Record<string, any>,
+    attributes: Record<string, any>,
+    attributeDatatypes: Record<string, any>,
   },
   shipment: {
-    statuses: {[key: string]: any},
-    types: {[key: string]: any},
-  },       
+    statuses: Record<string, any>,
+    types: Record<string, any>,
+  },
 };

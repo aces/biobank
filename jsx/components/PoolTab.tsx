@@ -1,30 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactElement} from 'react';
 import { Link } from 'react-router-dom';
 import { SpecimenForm } from '../components';
+import { Candidate, Pool, Session } from '../types';
 import { mapFormOptions, clone } from '../utils';
 import FilterableDataTable from 'FilterableDataTable';
-import { useBiobankContext } from '../hooks';
+import { useBiobankContext, useEditable } from '../hooks';
+import Form from 'Form';
+const {
+  CTA,
+} = Form;
+declare const loris: any;
 
 /**
  * React component for the Pool tab of the Biobank module.
  */
-function PoolTab() {
-  const { pools, options } = useBiobankContext;
-  const [editable, setEditable] = useState({});
-  const [poolId, setPoolId] = useState(null);
+export function PoolTab() {
+  const { pools, options } = useBiobankContext();
+  const { editable, edit, clear } = useEditable();
                                                                                 
-  const edit = (stateKey) => {
-    const newEditable = clone(editable);
-    newEditable[stateKey] = true;
-    setEditable(newEditable);
-  }
-
-  const clearEditable = () => {
-    setEditable({});
-  }
-
   const openAliquotForm = (poolId) => {
-    setPoolId(poolId);
     edit('aliquotForm');
   }
 
@@ -36,7 +30,7 @@ function PoolTab() {
    *
    * @return {string}
    */
-  const mapPoolColumns = (column, value) => {
+  function mapPoolColumns(column: string, value: string): string {
     switch (column) {
       case 'Type':
         return options.specimen.types[value].label;
@@ -56,14 +50,22 @@ function PoolTab() {
    *
    * @return {JSX}
    */
-  const formatPoolColumns = (column, value, row) => {
+  function formatPoolColumns(
+    column: string,
+    value: string | string[],
+    row: any
+  ): ReactElement {
     value = mapPoolColumns(column, value);
-    const candId = Object.values(options.candidates)
-      .find((cand) => cand.pscid == row['PSCID']).id;
+    // Attempt to find the candidate
+    const candidate = Object.values(options.candidates)
+    .find((cand: Candidate) => cand.pscid == row['PSCID']);
+
+    // Check if a candidate was found before accessing the id
+    const candId = candidate ? candidate.id : null;
 
     // If candId is defined, then the user has access to the candidate and a
     // hyperlink can be established.
-    const candidatePermission = candId !== undefined;
+    const candidatePermission = candId != null;
     switch (column) {
       case 'Pooled Specimens':
         const barcodes = value
@@ -80,7 +82,7 @@ function PoolTab() {
       case 'Visit Label':
         if (candidatePermission) {
           const ses = Object.values(options.candidateSessions[candId]).find(
-            (sess) => sess.label == value
+            (sess: Session) => sess.label == value
           ).id;
           const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
             '&sessionID='+ses;
@@ -98,18 +100,17 @@ function PoolTab() {
   const renderAliquotForm = () => {
     // TODO: This should be fixed. A lot of hacks are being used to initialize
     // this form and there's definitely better ways to be doing it.
-    if (!(loris.userHasPermission('biobank_specimen_create')
-        && poolId)
-    ) {
-      return;
-    }
+    // if (!(loris.userHasPermission('biobank_specimen_create')
+    //     && poolId)
+    // ) {
+    //   return;
+    // }
 
     return (
       <SpecimenForm
         title='Aliquot Pool'
-        options={options}
         show={editable.aliquotForm}
-        onClose={clearEditable}
+        onClose={clear}
       />
     );
   }
@@ -117,7 +118,7 @@ function PoolTab() {
   const specimenTypes = mapFormOptions(
     options.specimen.types, 'label'
   );
-  const poolData = Object.values(pools).map((pool) => {
+  const poolData = Object.values(pools).map((pool: Pool) => {
     return [
       pool.id,
       pool.label,
@@ -178,5 +179,3 @@ function PoolTab() {
     </div>
   );
 }
-
-export default PoolTab;

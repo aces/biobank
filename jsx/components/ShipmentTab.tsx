@@ -1,10 +1,22 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import FilterableDataTable from 'FilterableDataTable';
 import { useShipment, useBiobankContext } from '../hooks';
 // import Container from './Container';
+import { Shipment, Log, Center, User } from '../types';
 import TriggerableModal from 'TriggerableModal';
 import { ShipmentAPI } from '../APIs';
+import Form from 'Form';
+const {
+  InputList,
+  SelectElement,
+  StaticElement,
+  TextboxElement,
+  TextareaElement,
+  HorizontalRule,
+  DateElement,
+  TimeElement,
+} = Form;
 
 // TODO:
 // - Make sure all subcontainers are loaded into shipment
@@ -12,35 +24,31 @@ import { ShipmentAPI } from '../APIs';
 // - Make sure to block all
 
 /**
- * Returns a JSX component for the shipment tab of the module
- *
- * @param {object} data - the data to display
- * @param {object} options - values for select options?
+ * Returns a component for the shipment tab of the module
  *
  * @return {ReactDOM}
  */
-function ShipmentTab() {
+export const ShipmentTab: React.FC = () => {
 
-  const { options } = useBiobankContext();
-  const [shipments, setShipments] = useState({});
+  const { options, shipments } = useBiobankContext();
+  const users = Object.fromEntries(Object.values(options.users)
+                                   .map((user: User) => [user.label, user.label]));
 
-  const users = {};
-
-  // TODO: There has to be a better way to query this!!!
-  Object.values(options.users).forEach((user) => {
-    users[user.label] = user.label;
-  });
-
-  const updateShipments = (updatedShipments) => {
+  // TODO it will generally be good to have the context objects be updatable.
+  // so this should be implemented again
+  const updateShipments = (updatedShipments: Shipment[]) => {
     updatedShipments.forEach((shipment) => {
-      setShipments({
-        ...shipments,
-        [shipment.barcode]: shipment,
-      });
+      // setShipments({
+      //   ...shipments,
+      //   [shipment.barcode]: shipment,
+      // });
     });
   };
 
-  const mapShipmentColumns = (column, value) => {
+  const mapShipmentColumns = (
+    column: string,
+    value: string,
+  ): string => {
     switch (column) {
       case 'Origin Center':
         return options.centers[value];
@@ -51,7 +59,11 @@ function ShipmentTab() {
     }
   };
 
-  const formatShipmentColumns = (column, value, row) => {
+  const formatShipmentColumns = (
+    column: string,
+    value: string,
+    row: Record<string, string>
+  ) => {
     value = mapShipmentColumns(column, value);
     switch (column) {
       case 'Barcode':
@@ -85,7 +97,7 @@ function ShipmentTab() {
     }
   };
 
-  const shipmentData = Object.values(shipments).map((shipment) => {
+  const shipmentData = Object.values(shipments).map((shipment: Shipment) => {
     return [
       shipment.id,
       shipment.barcode,
@@ -145,19 +157,13 @@ function ShipmentTab() {
   );
 }
 
-/**
- * Returns some dom elements with information about a shipment
- *
- * @param {Shipment} shipment - the shipment
- * @param {object} containers - containers
- * @param {object} centers - centers
- *
- * @return {ReactDOM[]}
- */
-function ShipmentInformation({
+const ShipmentInformation: React.FC<{
+  shipment: Shipment,
+  centers: Center[],
+}> = ({
   shipment,
-  centers,
-}) {
+  centers
+}) => {
   const logs = shipment.logs.map((log, i) => {
     return (
     <>
@@ -195,16 +201,15 @@ function ShipmentInformation({
     );
   });
 
-  const containerBarcodes = shipment.containerBarcodes.map((barcode, i) => {
-    return (
-      <Link
-        key={i}
-        to={`/containers/${barcode}`}
-      >
+  const containerBarcodes = shipment.containerBarcodes.map((barcode, i) => (
+    <React.Fragment key={i}>
+      {i > 0 && ', '}
+      <Link to={'/containers/'+barcode}>
         {barcode}
       </Link>
-    );
-  }).reduce((prev, curr) => [prev, ', ', curr]);
+    </React.Fragment>
+  ))
+
   return (
     <>
       <StaticElement
@@ -232,25 +237,20 @@ function ShipmentInformation({
   );
 }
 
-/**
- * Modal form to create a shipment
- *
- * @param {object} centers - the centers
- * @param {object} types - the types of shipments
- * @param {object} users - a list of selectable users
- * @param {callback} updateShipments - an update callback
- *
- * @return {ReactDOM}
- */
-function CreateShipment({
+const CreateShipment: React.FC<{
+  centers: Center[],
+  types: Record<string, string>
+  users: Record<string, string>,
+  updateShipments: (updatedShipments: Shipment[]) => void,
+}> = ({
   centers,
   types,
   users,
   updateShipments,
-}) {
+}) => {
+  const { containers } = useBiobankContext();
   const logIndex = 0;
-  const handler = new UseShipment();
-  const shipment = handler.getShipment();
+  const { shipment, handler } = new useShipment();
   const errors = handler.getErrors();
   const onSubmit = async () => {
     const entities = await handler.post();
@@ -263,7 +263,7 @@ function CreateShipment({
   // If the associated shipments containers change, update the site of the log.
   useEffect(() => {
     if (shipment.containerIds.length === 1) {
-      const container = getContainer(shipment.containerBarcodes[0]);
+      const container = containers(shipment.containerBarcodes[0]);
       handler.setLog('centerId', container.centerId, logIndex);
     }
   }, [shipment.containerIds]);
@@ -328,19 +328,17 @@ function CreateShipment({
 
 /**
  * React Component for a received shipment
- *
- * @param {Shipment} shipment - the shipment
- * @param {object} users - the users for the dropdown
- * @param {callback} updateShipments - an update callback
- *
- * @return {ReceiveShipment}
  */
-function ReceiveShipment({
-  shipment,
+const ReceiveShipment: React.FC<{
+  shipment: Shipment,
+  users: Record<string, string>,
+  updateShipments: (updateShipments: Shipment[]) => void,
+}> = ({
+  shipment: initShipment,
   users,
   updateShipments,
-}) {
-  const handler = new UseShipment(shipment);
+}) => {
+  const [ shipment, handler ] = new useShipment(initShipment);
   const logIndex = handler.getShipment().logs.length-1;
   const onSuccess = ({shipments, containers}) => {
     updateShipments(shipments);
@@ -383,12 +381,17 @@ function ReceiveShipment({
  *
  * @return {ReactDOM[]}
  */
-function ShipmentLogForm({
+const ShipmentLogForm: React.FC<{
+  log: Log,
+  setLog: (name: string, value: any) => void,
+  errors: Record<string, string>,
+  users: Record<string, string>,
+}> = ({
   log,
   setLog,
   errors = {},
   users,
-}) {
+}) => {
   return (
     <>
       <TextboxElement
@@ -434,5 +437,3 @@ function ShipmentLogForm({
     </>
   );
 }
-
-export default ShipmentTab;
