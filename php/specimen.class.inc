@@ -585,7 +585,7 @@ class Specimen implements
             $this->setSessionId((int) $data['sessionId']);
         }
         if (isset($data['sessionCenterId'])) {
-            $this->setSessionCenterId($data['sessionCenterId']);
+            $this->setSessionCenterId(new \CenterId(strval($data['sessionCenterId'])));
         }
         if (isset($data['poolId'])) {
             $this->setPoolId((int) $data['poolId']);
