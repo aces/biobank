@@ -1,7 +1,8 @@
 import { ReactElement } from 'react';
 import { mapFormOptions, clone } from '../utils';
-import { CustomFields } from '../components';
-import { Protocol, Process, Specimen, SpecimenHandler } from '../types';
+import { CustomFields, ProcessField } from '../components';
+import { Protocol } from '../types';
+import { ProcessHook, SpecimenHook } from '../entities';
 import { SpecimenAPI } from '../APIs';
 import { useBiobankContext } from '../hooks';
 import Form from 'Form';
@@ -16,11 +17,10 @@ const {
 } = Form;
 
 type ProcessFormProps = {
-  specimen?: Specimen,
-  process: Process,
+  specimen?: SpecimenHook,
+  process: ProcessHook,
   processStage: string,
-  typeId: string,
-  errors?: any, //TODO: type + figure out if mandatory
+  type: string,
   edit?: boolean,
   hideProtocol?: boolean,
 };
@@ -29,8 +29,7 @@ function ProcessForm({
   specimen,
   process,
   processStage,
-  typeId,
-  errors,
+  type,
   edit,
   hideProtocol,
 }: ProcessFormProps): ReactElement {
@@ -50,44 +49,43 @@ function ProcessForm({
   Object.entries(options.specimen?.protocols as { [key: string]: Protocol }).forEach(([id, protocol]) => {
     // FIXME: I really don't like 'toLowerCase()' function, but it's the
     // only way I can get it to work at the moment.
-    if (typeId == protocol.typeId &&
-        options.specimen.processes[protocol.processId].label.toLowerCase() ==
+    if (type == protocol.type &&
+        protocol.process.toLowerCase() ==
         processStage) {
       specimenProtocolAttributes[id] = options.specimen.protocolAttributes[id];
     }
   });
 
   const renderProtocolFields = () => {
-    if (specimenProtocolAttributes[process.protocolId]) {
+    if (specimenProtocolAttributes[process.protocol]) {
       if (process.data) {
         return (
           <CustomFields
-            fields={specimenProtocolAttributes[process.protocolId]}
+            fields={specimenProtocolAttributes[process.protocol]}
             data={process.data}
            />
         );
       } else {
-        setProcess('data', {});
+        process.data.clear()
       }
     }
   };
 
-  if (typeId && edit === true) {
+  if (type && edit === true) {
     return (
       <>
         {!hideProtocol && (
-          <ProcessField property={'protocolId'} process={process}/>
+          <ProcessField property={'protocol'} process={process}/>
         )}
-        <ProcessField property={'examinerId'} process={process}/>
+        <ProcessField property={'examiner'} process={process}/>
         <ProcessField property={'date'} process={process}/>
         <ProcessField property={'time'} process={process}/>
-        {collectionFields}
-        {processState === 'collection' && (
+        {processStage === 'collection' && (
           <>
             <ProcessField property={'quantity'} process={process}/>
-            <ProcessField property={'unitId'} process={process}/>
+            <ProcessField property={'unit'} process={process}/>
           </>
-        )
+        )}
         <div className='form-top'/>
         {renderProtocolFields()}
         <ProcessField property={'comments'} process={process}/>
@@ -118,14 +116,14 @@ function ProcessForm({
       });
 
     const collectionStaticFields = (processStage === 'collection') && (
-      <StaticElement label='Quantity' text={process.quantity+' '+options.specimen.units[process.unitId].label}/>
+      <StaticElement label='Quantity' text={process.quantity+' '+process.unit}/>
     );
 
     return (
       <>
-        <StaticElement label='Protocol' text={options.specimen.protocols[process.protocolId].label}/>
-        <StaticElement label='Site' text={options.centers[process.centerId]}/>
-        <StaticElement label='Done By' text={options.examiners[process.examinerId].label}/>
+        <StaticElement label='Protocol' text={process.protocol}/>
+        <StaticElement label='Site' text={process.center}/>
+        <StaticElement label='Done By' text={process.examiner}/>
         <StaticElement label='Date' text={process.date} />
         <StaticElement label='Time' text={process.time} />
         {collectionStaticFields}

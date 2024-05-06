@@ -1,7 +1,8 @@
-import { useState, useEffect, ReactElement} from 'react';
+import { Fragment, useState, useEffect, ReactElement} from 'react';
 import { Link } from 'react-router-dom';
 import { SpecimenForm } from '../components';
-import { Candidate, Pool, Session } from '../types';
+import { Candidate, Session } from '../types';
+import { IPool } from '../entities';
 import { mapFormOptions, clone } from '../utils';
 import FilterableDataTable from 'FilterableDataTable';
 import { useBiobankContext, useEditable } from '../hooks';
@@ -11,34 +12,12 @@ const {
 } = Form;
 declare const loris: any;
 
-/**
- * React component for the Pool tab of the Biobank module.
- */
-export function PoolTab() {
-  const { pools, options } = useBiobankContext();
+export const PoolTab: React.FC = () => {
+  const { pools, options, poolProg: progress } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
                                                                                 
-  const openAliquotForm = (poolId) => {
+  const openAliquotForm = (pool) => {
     edit('aliquotForm');
-  }
-
-  /**
-   * Map IDs in the pool columns to a string value.
-   *
-   * @param {string} column - the column name being mapped
-   * @param {string} value - the column value being mapped
-   *
-   * @return {string}
-   */
-  function mapPoolColumns(column: string, value: string): string {
-    switch (column) {
-      case 'Type':
-        return options.specimen.types[value].label;
-      case 'Site':
-        return options.centers[value];
-      default:
-        return value;
-    }
   }
 
   /**
@@ -55,10 +34,9 @@ export function PoolTab() {
     value: string | string[],
     row: any
   ): ReactElement {
-    value = mapPoolColumns(column, value);
     // Attempt to find the candidate
     const candidate = Object.values(options.candidates)
-    .find((cand: Candidate) => cand.pscid == row['PSCID']);
+    .find((cand: Candidate) => cand.pscid == row['PSCID']) as Candidate;
 
     // Check if a candidate was found before accessing the id
     const candId = candidate ? candidate.id : null;
@@ -68,11 +46,13 @@ export function PoolTab() {
     const candidatePermission = candId != null;
     switch (column) {
       case 'Pooled Specimens':
-        const barcodes = value
-          .map((barcode, i) => {
-            return <Link key={i} to={`/specimens/${barcode}`}>{barcode}</Link>;
+        const barcodesArray = typeof value === 'string' ? [value] : value;
+        const barcodes = barcodesArray.map((barcode, i) => {
+            <Fragment key={i}>
+              {i > 0 && ', '}
+              <Link to={`/specimens/${barcode}`}>{barcode}</Link>;
+            </Fragment>
           })
-          .reduce((prev, curr) => [prev, ', ', curr]);
         return <td>{barcodes}</td>;
       case 'PSCID':
         if (candidatePermission) {
@@ -81,11 +61,11 @@ export function PoolTab() {
         return <td>{value}</td>;
       case 'Visit Label':
         if (candidatePermission) {
-          const ses = Object.values(options.candidateSessions[candId]).find(
-            (sess: Session) => sess.label == value
-          ).id;
+          const session = Object.values(options.candidateSessions[candId])
+          .find((sess: Session) => sess.label == value) as Session;
+          const sessionId = session ? session.id : null;
           const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
-            '&sessionID='+ses;
+            '&sessionID='+sessionId;
           return <td><a href={visitLabelURL}>{value}</a></td>;
         }
         return <td>{value}</td>; 
@@ -115,28 +95,22 @@ export function PoolTab() {
     );
   }
 
-  const specimenTypes = mapFormOptions(
-    options.specimen.types, 'label'
-  );
-  const poolData = Object.values(pools).map((pool: Pool) => {
+  const specimenTypes = mapFormOptions(options.specimen.types, 'label');
+  const poolData = Object.values(pools).map((pool: IPool) => {
     return [
-      pool.id,
       pool.label,
-      Math.round(pool.quantity*100)/100 +
-         ' ' +
-          options.specimen.units[pool.unitId].label,
-      pool.specimenBarcodes,
-      pool.candidatePSCID,
-      options.sessions[pool.sessionId].label,
-      pool.typeId,
-      pool.centerId,
+      Math.round(pool.quantity*100)/100 + ' ' + pool.unit,
+      pool.specimens,
+      pool.candidate,
+      pool.session,
+      pool.type,
+      pool.center,
       pool.date,
       pool.time,
     ];
   });
 
   const fields = [
-    {label: 'ID', show: false},
     {label: 'Label', show: true, filter: {
       name: 'barcode',
       type: 'text',
@@ -173,7 +147,7 @@ export function PoolTab() {
         data={poolData}
         fields={fields}
         getFormattedCell={formatPoolColumns}
-        getMappedCell={mapPoolColumns}
+        progress={progress}
       />
       {renderAliquotForm()}
     </div>

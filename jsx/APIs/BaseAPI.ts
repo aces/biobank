@@ -11,28 +11,20 @@ interface ApiError {
     // Additional error details can be added here
 }
 
-interface IAPI<T> {
-    getAll(): Promise<T[]>,
-    getById(id: string): Promise<T>,
-    create(data: T): Promise<T>,
-    batchCreate(entities: T[]): Promise<T[]>,
-    update(id: string, data: T): Promise<T>,
-    batchUpdate(entities: T[]): Promise<T[]>,
-    // For streamData, you might need a specific return type depending on your implementation
-    streamData(setProgress: (progress: number) => void): Promise<T[]>,
-}
+// XXX: IAPI might not actually be necessary
+// interface IAPI<T> {
+//   getAll(): Promise<T[]>,
+//   getById(id: string): Promise<T>,
+//   create(data: T): Promise<T>,
+//   batchCreate(entities: T[]): Promise<T[]>,
+//   update(id: string, data: T): Promise<T>,
+//   batchUpdate(entities: T[]): Promise<T[]>,
+//   streamData(setProgress: (progress: number) => void): Promise<T[]>,
+//   handleError(response: Response): void;
+// }
 
-function handleHttpErrors(response: Response) {
-  if (response.status === 404) {
-    throw new Error("Resource not found");
-  } else if (response.status === 401) {
-    throw new Error("Unauthorized access");
-  } else {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-}
 
-export default class BaseAPI<T> implements IAPI<T> {
+export default class BaseAPI<T> {
   protected baseUrl: string;
 
   constructor(baseUrl: string) {
@@ -40,170 +32,136 @@ export default class BaseAPI<T> implements IAPI<T> {
   }
 
   async getAll(): Promise<T[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}`);
-      
-      if (!response.ok) {
-        console.warn(`HTTP error! status: ${response.status}`, response);
-        handleHttpErrors(response);
-      }
-  
-      return response.json();
-    } catch (error) {
-      console.error("Error in getAll:", error);
-      throw new Error("An error occurred when fetching data");
-    }
+    return await BaseAPI.fetchJSON(this.baseUrl);
   }
 
   async getById(id: string): Promise<T> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${id}`);
-
-      if (!response.ok) {
-        handleHttpErrors(response);
-      }
-
-      const data = await response.json();
-
-      // XXX: not sure if this check is necessary
-      // Check if the data is not an array or it's an empty array
-      if (!Array.isArray(data) || data.length === 0) {
-        throw new Error("Expected non-empty array, but got either an empty array or a non-array response.");
-      }
-
-      return data[0]; // Ensure the data is awaited before accessing
-    } catch (error) {
-      console.error(`Error in getById for id ${id}:`, error);
-      throw new Error(`An error occurred when fetching data for id ${id}`);
-    }
+    return await BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`);
   }
 
   async create(data: T): Promise<T> {
-    try {
-      const response = await fetch(`${this.baseUrl}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        handleHttpErrors(response);
-      }
-
-      return response.json();
-    } catch (error) {
-      console.error("Error in create:", error);
-      throw new Error("An error occurred when creating data");
-    }
+    return await BaseAPI.fetchJSON<T>(this.baseUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
   }
 
   async batchCreate(entities: T[]): Promise<T[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/batch-create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(entities),
-      });
-
-      if (!response.ok) {
-        handleHttpErrors(response);
-      }
-
-      return response.json();
-    } catch (error) {
-      console.error("Error in batchCreate:", error);
-      throw new Error("An error occurred when batch creating data");
-    }
+    return await BaseAPI.fetchJSON<T[]>(`${this.baseUrl}/batch-create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(entities),
+    });
   }
-
+  
   async update(id: string, data: T): Promise<T> {
-    try {
-      const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        handleHttpErrors(response);
-      }
-
-      return response.json();
-    } catch (error) {
-      console.error(`Error in update for id ${id}:`, error);
-      throw new Error(`An error occurred when updating data for id ${id}`);
-    }
+    return await BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
   }
-
+  
   async batchUpdate(entities: T[]): Promise<T[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/batch-update`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(entities),
-      });
+    return await BaseAPI.fetchJSON<T[]>(`${this.baseUrl}/batch-update`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(entities),
+    });
+  }
 
-      if (!response.ok) {
-        handleHttpErrors(response);
+  async fetchStream(setProgress: (progress: number) => void, signal: AbortSignal): Promise<T[]> {
+    try {
+      const response = await fetch(this.baseUrl, { signal });
+      ErrorHandler.handleResponse(response, { url: this.baseUrl });
+
+      if (!response.body) {
+        throw new Error('No response body');
       }
 
-      return response.json();
+      const reader = response.body.getReader();
+      const contentLength = +response.headers.get('Content-Length') || 0;
+      let receivedLength = 0;
+      let chunks = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        chunks.push(value);
+        receivedLength += value.length;
+        const progress = Math.round((receivedLength / contentLength) * 100);
+        setProgress(progress);
+      }
+
+      const chunksAll = new Uint8Array(receivedLength);
+      let position = 0;
+      for (let chunk of chunks) {
+        chunksAll.set(chunk, position);
+        position += chunk.length;
+      }
+
+      return JSON.parse(new TextDecoder("utf-8").decode(chunksAll));
     } catch (error) {
-      console.error("Error in batchUpdate:", error);
-      throw new Error("An error occurred when batch updating data");
+      ErrorHandler.handleError(error, { url: this.baseUrl} );
     }
   }
 
-  // async delete(id: string): Promise<boolean> {
-  //   const response: AxiosResponse<void> = await axios.delete(`${this.baseUrl}/${id}`);
-  //   return response.status === 204;
-  // }
+  static async fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
+    try {
+      const response = await fetch(url, { ...options });
+      ErrorHandler.handleResponse(response, { url, options });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      ErrorHandler.handleError(error, { url, options} );
+    }
+  }
+}
 
-  async streamData(setProgress: (progress: number) => void): Promise<T[]> {
-    const response = await fetch(this.baseUrl, { credentials: 'same-origin', method: 'GET' });
-    if (!response.body) {
-      throw new Error('No response body');
+class ErrorHandler {
+  static logDetailedError(error: Error, context: { url: string; options?: RequestInit }) {
+    console.error(`Error requesting ${context.url} with options
+                  ${JSON.stringify(context.options)}: `, error);
+  }
+
+  static handleResponse(
+    response: Response,
+    context: {
+      url: string;
+      options?: RequestInit 
+    }
+  ) {
+    if (!response.ok) {
+      this.handleError(new Error(`HTTP error! Status: ${response.status}`), context);
+    }
+    return response;
+  }
+
+  static handleError(
+    error: any,
+    context: { url: string, options?: RequestInit },
+  ) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      // Log for informational purposes, but treat it as a non-critical error
+      console.info("Request was aborted by the client:", error);
+      return; // Exit early, do not throw further, as this is an expected scenario in abort cases
     }
 
-    const reader = response.body.getReader();
-    const contentLength = +response.headers.get('Content-Length') || 0;
-    let receivedLength = 0; // received that many bytes at the moment
-    let chunks = []; // array of received binary chunks (comprises the body)
-    
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        break;
-      }
-
-      chunks.push(value);
-      receivedLength += value.length;
-
-      // Update progress
-      setProgress(Math.round((receivedLength / contentLength) * 100));
+    if (error instanceof Response && !error.ok) {
+      console.error(`HTTP error! Status: ${error.status}`);
+    } else {
+      this.logDetailedError(error, context); // Log detailed information about the error
+      throw new Error(`API Error: ${error.message || "An unknown error occurred"}`);
     }
-
-    // Combine chunks into single Uint8Array
-    const chunksAll = new Uint8Array(receivedLength);
-    let position = 0;
-    for (let chunk of chunks) {
-      chunksAll.set(chunk, position);
-      position += chunk.length;
-    }
-
-    // Decode into a string
-    const result = new TextDecoder("utf-8").decode(chunksAll);
-
-    // Parse the result
-    return JSON.parse(result);
   }
 }

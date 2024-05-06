@@ -1,9 +1,20 @@
 import React, { useState, useEffect, ReactElement, useRef} from 'react';
-import { ContainerParentForm, SpecimenField, ContainerField, ProcessForm, ListForm2 } from '../components';
+import { ContainerParentForm, SpecimenField, ContainerField, ProcessForm,
+  ListForm } from '../components';
 import Modal from 'Modal';
 import { mapFormOptions, clone, padBarcode } from '../utils';
-import { useSpecimen, useContainer, useBiobankContext, useEntities} from '../hooks';
-import { Container, Specimen, Options, Process } from '../types';
+import { useBiobankContext } from '../hooks';
+import { Options } from '../types';
+import {
+  ISpecimen,
+  Specimen,
+  SpecimenHook,
+  SpecimenProvider,
+  useSpecimen,
+  useContainer,
+  useEntities,
+  EntitiesHook,
+} from '../entities';
 import Form from 'Form';
 const {
   CheckboxElement,
@@ -18,20 +29,10 @@ const {
 import dict from '../i18n/en.json';
 declare const loris: any;
 
-// To track the previous value of props.parent
-const usePrevious = (value) => {
-  const ref = useRef();
-  useEffect(() => {
-    ref.current = value;
-  });
-  return ref.current;
-};
-
 type SpecimenFormProps = {
-  parent?: [{ specimen: Specimen, container: Container }], // Replace ParentType with the correct type
+  parent?: SpecimenHook,
   show: boolean,
   onClose: () => void,
-  setSpecimen?: Function, //TODO: type
   title: string,
 };
 
@@ -39,48 +40,41 @@ function SpecimenForm({
   parent,
   show,
   onClose,
-  setSpecimen,
   title,
 }: SpecimenFormProps): ReactElement {
 
   const { options, containers } = useBiobankContext();
 
-  const specimen = useSpecimen({});
-  const container = useContainer({});
-  const specimens = useEntities<Specimen>();
-  const [printBarcodes, setPrintBarcodes] = useState<boolean>(false);
-
-  const prevParent = usePrevious(parent);
+  const specimen = useSpecimen();
+  const container = useContainer();
+  const specimens = useEntities<Specimen, ISpecimen>(Specimen);
+  const [printBarcodes, setPrintBarcodes] = useState(false);
 
   useEffect(() => {
-    // This code will run when the component mounts and whenever `props.parent` changes
-    if (parent !== prevParent) { // You need to track prevParent, see below
-      const parentSpecimen = parent[0].specimen;
-      const parentContainer = parent[0].container;
-      
-      specimen.set('parentSpecimenIds', Object.values(parent).map((item) =>
-item.specimen.id));
-      specimen.set('candidateId', parentSpecimen.candidateId);
-      specimen.set('sessionId', parentSpecimen.sessionId);
-      specimen.set('typeId', parentSpecimen.typeId);
-      container.set('centerId', parentContainer.centerId);
-
-
-      if (parent.length > 1) {
-        specimen.set('quantity', 0)
-      }
+    
+    // specimen.set('parentSpecimens', Object.values(parent).map((item) => item.specimen.id));
+    if (parent) {
+      specimen.set('candidate', parent.candidate);
+      specimen.set('session', parent.session);
+      specimen.set('type', parent.type);
+      specimen.container.set('center', parent.container.center);
     }
+
+
+    // if (parent.length > 1) {
+    //   specimen.set('quantity', 0)
+    // }
   }, [parent]); // Dependency array, effect runs when `parent` changes
 
   /**
-   * When a session is selected, set the sessionId, centerId
+   * When a session is selected, set the session, center
    *
    * @param {object} session
-   * @param {string} sessionId
+   * @param {string} session
    */
   const setSession = (session, sessionId) => {
-    container.set('centerId', options.sessionCenters[sessionId].centerId); 
-    specimen.set('sessionId', sessionId);
+    container.set('center', options.sessionCenters[sessionId].center); 
+    specimen.set('session', session);
   }
 
   /**
@@ -115,7 +109,7 @@ item.specimen.id));
    * Generate barcodes and store in the component state.
    */
   const generateBarcodes = () => {
-    // const pscid = options.candidates[specimen.candidateId].pscid;
+    // const pscid = specimen.candidate;
     // let increment = 0; // Initialize increment to 0
 
     // // Create a new Map from the existing list to avoid mutating the state directly
@@ -133,9 +127,10 @@ item.specimen.id));
     // setList(newList); // Update state with the new Map
   };
 
-  const increaseCoordinate = (coordinate, parentContainerId) => {               
-    const containers = {}; // TODO: fill this with actual containers to make it work!                                              
-    const childCoordinates = containers[parentContainerId].childContainerIds    
+  const increaseCoordinate = (coordinate, parentContainer) => {               
+    const containers = {}; // TODO: fill this with actual containers to make it work!  
+    const childCoordinates =
+      containers[parentContainer].childContainers    
     .reduce((result, id) => {                                                   
       const container = containers[id];                                         
       if (container.coordinate) {                                               
@@ -158,53 +153,49 @@ item.specimen.id));
 
   const onSubmit = (specimens, specimen, container, print) => {               
   //   const labelParams = [];                                                  
-  //   const availableId = Object.keys(options.container.stati).find(           
-  //     (key) => options.container.stati[key].label === 'Available'            
-  //   );                                                                       
   //   const errors = {specimen: {}, container: {}, list: {}};                  
                                                                                 
   //   let isError = false;                                                     
   //   Object.keys(list).reduce((coord, key) => {                               
   //     // set specimen values                                                 
   //     const newSpecimen = list[key];                                         
-  //     newSpecimen.candidateId = specimen.candidateId;                        
-  //     newSpecimen.sessionId = specimen.sessionId;                            
-  //     newSpecimen.projectIds = specimen.projectIds;                          
+  //     newSpecimen.candidate = specimen.candidate;                        
+  //     newSpecimen.session = specimen.session;                            
+  //     newSpecimen.projects = specimen.projects;                          
   //     newSpecimen.quantity = newSpecimen.collection.quantity;                
-  //     newSpecimen.unitId = newSpecimen.collection.unitId;                    
-  //     newSpecimen.collection.centerId = container.centerId;                  
-  //     if ((options.specimen.types[newSpecimen.typeId]||{}).freezeThaw == 1) {
+  //     newSpecimen.unit = newSpecimen.collection.unit;                    
+  //     newSpecimen.collection.center = container.center;                  
+  //     if ((options.specimen.types[newSpecimen.type]||{}).freezeThaw == 1) {
   //       newSpecimen.fTCycle = 0;                                             
   //     }                                                                      
-  //     newSpecimen.parentSpecimenIds = specimen.parentSpecimenIds || null;    
+  //     newSpecimen.parentSpecimens = specimen.parentSpecimens || null;    
                                                                                 
   //     // set container values                                                
   //     const newContainer = newSpecimen.container;                            
-  //     newContainer.statusId = availableId;                                   
   //     newContainer.temperature = 20;                                         
-  //     newContainer.centerId = container.centerId;                            
+  //     newContainer.center = container.center;                            
                                                                                 
   //     // If the container is assigned to a parent, place it sequentially in the
-  //     // parent container and inherit the status, temperature and centerId.  
-  //     if (newContainer.parentContainerId) {                                  
-  //       const containerParentId = newContainer.parentContainerId;            
-  //       newContainer.parentContainerId = container.parentContainerId;        
-  //       const parentContainer = containers[containerParentId];               
-  //       const dims = options.container.dimensions;                           
-  //       const dimensions = dims[parentContainer.dimensionId];                
+  //     // parent container and inherit the status, temperature and center.  
+  //     if (newContainer.parentContainerBarcode) {                                  
+  //       const containerParentBarcode = newContainer.parentContainerBarcode;            
+  //       newContainer.parentContainerBarcode =
+    //       container.parentContainerBarcode;        
+  //       const parentContainer = containers[containerParentBarcode];               
+  //       const dimensions = parentContainer.dimensions;                
   //       const capacity = dimensions.x * dimensions.y * dimensions.z;         
   //       coord = increaseCoordinate(                                          
   //          coord,                                                            
-  //          container.parentContainerId                                       
+  //          container.parentContainerBarcode                                      
   //       );                                                                   
   //       if (coord <= capacity) {                                             
   //         newContainer.coordinate = parseInt(coord);                         
   //       } else {                                                             
   //         newContainer.coordinate = null;                                    
   //       }                                                                    
-  //       newContainer.statusId = parentContainer.statusId;                    
+  //       newContainer.status = parentContainer.status;                    
   //       newContainer.temperature = parentContainer.temperature;              
-  //       newContainer.centerId = parentContainer.centerId;                    
+  //       newContainer.center = parentContainer.center;                    
   //     }                                                                      
                                                                                 
   //     // if specimen type id is not set yet, this will throw an error        
@@ -280,83 +271,53 @@ item.specimen.id));
   }
 
   const renderGlobalFields = () => {
-    if (parent && specimen.candidateId && specimen.sessionId) {
+    if (parent && specimen.candidate && specimen.session) {
       const parentBarcodes = Object.values(parent).map(
-        (item) => item.container.barcode
+        (item) => item.barcode
       );
       const parentBarcodesString = parentBarcodes.join(', ');
       return (
         <div>
           <StaticElement
             label="Parent Specimen(s)"
-            text={parentBarcodesString}
-          />
-          <StaticElement
-            label="PSCID"
-            text={options.candidates[specimen.candidateId].pscid}
-          />
-          <StaticElement
-            label="Visit Label"
-            text={options.sessions[specimen.sessionId].label}
-          />
+            text={parentBarcodesString}/>
+          <SpecimenField property={'candidate'} isStatic/>
+          <SpecimenField property={'session'} isStatic/>
         </div>
       );
     } else {
-    const sessions = specimen.candidateId ?
-      mapFormOptions(options.candidateSessions[specimen.candidateId], 'label')
-      : {};
-    const candidates = mapFormOptions(options.candidates, 'pscid');
       return (
-        <div>
-          <SearchableDropdown
-            name="candidateId"
-            label="PSCID"
-            options={candidates}
-            onUserInput={specimen.set}
-            required={true}
-            value={specimen.candidateId}
-            placeHolder='Search for a PSCID'
-            errorMessage={specimen.errors.candidateId}
-          />
-          <SelectElement
-            name='sessionId'
-            label='Visit Label'
-            options={sessions}
-            onUserInput={setSession}
-            required={true}
-            value={specimen.sessionId}
-            disabled={specimen.candidateId ? false : true}
-            errorMessage={specimen.errors.sessionId}
-            autoSelect={true}
-          />
-        </div>
+        <>
+          <SpecimenField property='candidate'/>
+          <SpecimenField property='session'/>
+        </>
       );
     }
   };
 
   const renderRemainingQuantityFields = () => {
     if (parent) {
-      if (loris.userHasPermission('biobank_specimen_update')
-           && parent.length === 1) {
+      // if (loris.userHasPermission('biobank_specimen_update')
+      //      && parent.length === 1) {
         return (
           <>
-            <SpecimenField field={'quantity'} specimen={specimen}/>
-            <SpecimenField field={'unitId'} specimen={specimen}/>
+            <SpecimenField property={'quantity'}/>
+            <SpecimenField property={'unit'}/>
           </>
         );
-      }
+      // }
     }
   };
 
-  // Assuming container.parentContainerId is defined
-  if (container.parentContainerId) {
+  // Assuming container.parentContainerBarcode is defined
+  if (container.parentContainer) {
       let initialCoord = 0; // Initial coordinate value
       let coordinates = []; // Local array to accumulate coordinates
   
       for (const key of Object.keys(specimens)) {
           initialCoord = increaseCoordinate(
               initialCoord,
-              container.parentContainerId,
+              container.parentContainer,
           );
   
           // Parse and add the new coordinate
@@ -383,7 +344,7 @@ item.specimen.id));
       onSubmit={handleSubmit}
       throwWarning={true}
     >
-      <FormElement>
+      <SpecimenProvider specimen={specimen}>
         <div className='row'>
           <div className="col-xs-11">
             <StaticElement
@@ -392,21 +353,19 @@ item.specimen.id));
             />
             {renderGlobalFields()}
             <SelectElement
-              name='projectIds'
+              name='projects'
               label='Project'
               options={options.projects}
               onUserInput={specimen.set}
               required={true}
-              value={specimen.projectIds}
-              disabled={specimen.candidateId ? false : true}
-              errorMessage={specimen.errors.projectIds}
+              value={specimen.projects}
+              disabled={specimen.candidate ? false : true}
+              errorMessage={specimen.errors.projects}
             />
             {renderRemainingQuantityFields()}
           </div>
         </div>
-        <ListForm2 list={specimens}>
-          <SpecimenBarcodeForm/>
-        </ListForm2>
+        <ListForm list={specimens} listItemComponent={SpecimenBarcodeForm}/>
         <br/>
         <div className='form-top'/>
         <ContainerParentForm
@@ -419,7 +378,7 @@ item.specimen.id));
           label='Generate Barcodes'
           type='button'
           onUserInput={generateBarcodes}
-          disabled={specimen.candidateId ? false : true}
+          disabled={specimen.candidate ? false : true}
         />
         <CheckboxElement
           name='printBarcodes'
@@ -427,95 +386,41 @@ item.specimen.id));
           onUserInput={(name, value) => setPrintBarcodes(value)}
           value={printBarcodes}
         />
-      </FormElement>
+      </SpecimenProvider>
     </Modal>
   );
 }
 
 const SpecimenBarcodeForm: React.FC<{
+  id: string,
   entity: Specimen,
+  update: EntitiesHook<Specimen, ISpecimen>['update'],
 }> = ({
-  entity: specimen,
+  id,
+  entity,
+  update,
 }) => {
 
-  const { options } = useBiobankContext();
+  const specimen = useSpecimen(entity.getData());
 
-  // XXX: Only allow the selection of child types
-  const renderSpecimenTypes = () => {
-    let specimenTypes;
-    if (specimen.typeId) {
-      specimenTypes = Object.entries(options.specimen.types).reduce(
-        (result, [id, type]) => {
-          if (id == specimen.typeId) {
-            result[id] = type;
-          }
-
-          if (type.parentTypeIds) {
-            type.parentTypeIds.forEach((i) => {
-              if (i == specimen.typeId) {
-                result[id] = type;
-              }
-            });
-          }
-
-          return result;
-        }, {}
-      );
-    } else {
-      specimenTypes = options.specimen.types;
-    }
-
-    return mapFormOptions(specimenTypes, 'label');
-  };
-
-  const containerTypesPrimary = mapFormOptions(
-    options.container.typesPrimary,
-    'label',
-  );
-
-  const validContainers = {};
-  if (specimen.typeId && options.specimen.typeContainerTypes[specimen.typeId]) {
-    Object.keys(containerTypesPrimary).forEach((id) => {
-      options.specimen.typeContainerTypes[specimen.typeId].forEach((i) => {
-        if (id == i) {
-          validContainers[id] = containerTypesPrimary[id];
-        }
-      });
-    });
-  }
+  useEffect(() => {
+    update(id, specimen.getData());
+  }, [specimen]);
 
   return (
-    <>
-      <ContainerField property={'barcode'} container={specimen.container}/>
-      <SelectElement
-        name="typeId"
-        label="Specimen Type"
-        options={renderSpecimenTypes()}
-        onUserInput={specimen.set}
-        required={true}
-        value={specimen.typeId}
-        errorMessage={(specimen.errors.specimen||{}).typeId}
-      />
-      <SelectElement
-        name="typeId"
-        label="Container Type"
-        options={specimen.typeId ? validContainers : containerTypesPrimary}
-        onUserInput={specimen.container.set}
-        required={true}
-        value={specimen.container.typeId}
-        errorMessage={specimen.errors.container?.typeId}
-        autoSelect={true}
-      />
-      <ContainerField property={'lotNumber'} container={specimen.container}/>
-      <ContainerField property={'expirationDate'} container={specimen.container}/>
+    <SpecimenProvider specimen={specimen}>
+      <ContainerField property={'barcode'}/>
+      <SpecimenField property={'type'}/>
+      <ContainerField property={'type'}/>
+      <ContainerField property={'lotNumber'}/>
+      <ContainerField property={'expirationDate'}/>
       <ProcessForm
         edit={true}
-        errors={errors}
         process={specimen.collection}
         processStage='collection'
-        typeId={specimen.typeId}
+        type={specimen.type}
       />
-    </>
+    </SpecimenProvider>
   );
 }
 

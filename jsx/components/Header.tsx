@@ -1,38 +1,21 @@
 import { ReactElement } from 'react';
 import Modal from 'Modal';
-import { SpecimenForm, LifeCycle } from '../components';
+import { SpecimenForm, LifeCycle, ContainerField, BarcodePathDisplay } from '../components';
 import Swal from 'sweetalert2';
-import Form from 'Form';
-const { FormElement, TextboxElement, DateElement } = Form;
-import { Options, Container, Specimen } from '../types';
+import { useSpecimenContext, useContainerContext } from '../entities';
 import { useBarcodePageContext, useBiobankContext } from '../hooks';
 import { LabelAPI, ContainerAPI } from '../APIs';
 
 declare const loris: any;
 
-interface HeaderProps {
-  container: Container; 
-  specimen?: Specimen; 
+const Header: React.FC<{
   clearAll: () => void,
-  render: any //TODO type declaration
-}
-
-/**
- * Header component for displaying specimen information and actions.
- *
- * @param {HeaderProps} props - The properties passed to the component.
- * @returns {ReactElement} React element representing the header.
- */
-function Header({ 
-  container,
-  specimen,
-  clearAll,
-  render,
-}: HeaderProps): ReactElement {
+}> = ({ clearAll }) => {
 
   const { editable, edit } = useBarcodePageContext();
   const { options } = useBiobankContext();
-  const status = options.container.stati[container.statusId]?.label; //TODO: remove ?
+  const specimen = useSpecimenContext();
+  const container = useContainerContext();
 
   /**
    * Renders an action button for adding aliquots based on specimen and container status.
@@ -40,7 +23,7 @@ function Header({
    * @returns {ReactElement} Action button for adding aliquots.
    */
   const renderActionButton = (): ReactElement => {
-    if (status === 'Available' && specimen.quantity > 0 && !specimen.poolId) {
+    if (container.status === 'Available' && specimen.quantity > 0 && !specimen.pool) {
       return (
         <div className='action-button add' onClick={() => edit('aliquotForm')}>
           +
@@ -60,18 +43,17 @@ function Header({
   const addAliquotForm = (): ReactElement => {
     if (specimen && loris.userHasPermission('biobank_specimen_create')) {
       return (
-        <div>
+        <>
           <div className='action' title='Make Aliquots'>
             {renderActionButton()}
           </div>
           <SpecimenForm
             title='Add Aliquots'
-            parent={[{ specimen: specimen, container: container }]}
+            parent={specimen}
             show={editable.aliquotForm}
             onClose={clearAll}
-            setSpecimen={specimen.set}
           />
-        </div>
+        </>
       );
     }
   };
@@ -124,9 +106,7 @@ function Header({
       onSubmit={() => ContainerAPI.update(container)}
       onSuccess={() => edit('lotForm')}
     >
-      <FormElement>
-        <ContainerField property={'lotNumber'} container={container}/>
-      </FormElement>
+      <ContainerField property={'lotNumber'}/>
     </Modal>
   );
 
@@ -138,13 +118,11 @@ function Header({
       onSubmit={() => ContainerAPI.update(container)}
       onSuccess={() => edit('expirationForm')}
     >
-      <FormElement>
-        <ContainerField property={'expirationDate'} container={container}/>
-      </FormElement>
+      <ContainerField property={'expirationDate'}/>
     </Modal>
   );
 
-  const barcodePathDisplay = render();
+  const barcodePathDisplay = <BarcodePathDisplay container={container.getData()}/>;
 
   /**
    * Prints the barcode of the container and its type.
@@ -156,7 +134,7 @@ function Header({
     const label = [
       {
         barcode: container.barcode,
-        type: options.specimen.types[specimen.typeId].label,
+        type: specimen.type,
       },
     ];
     LabelAPI.create(label)
@@ -179,7 +157,7 @@ function Header({
    * @returns {void}
    */
   const checkoutContainer = (): void => {
-      container.set('parentContainerId', null);
+      container.set('parentContainer', null);
       container.set('coordinate', null);
       // TODO: this function has to be created!
       //contHandler.put();
@@ -210,7 +188,7 @@ function Header({
         </div>
         {addAliquotForm()}
         {loris.userHasPermission('biobank_container_update') &&
-        container.parentContainerId ? (
+        container.parentContainer ? (
           <div className='action'>
             <div
               className='action-button update'

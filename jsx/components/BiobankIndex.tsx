@@ -1,79 +1,24 @@
 import ReactDOM from 'react-dom';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { useState, useEffect} from 'react';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { Suspense, lazy } from 'react';
+import { BrowserRouter, Switch, Route } from 'react-router-dom';
 import { Tabs, TabPane } from 'Tabs';
 import {
   ContainerPage,
   SpecimenPage,
-  SpecimenTab, 
   ContainerTab, 
   PoolTab, 
-  // ShipmentTab, 
 } from '../components';
-import {
-  OptionAPI,
-  SpecimenAPI,
-  ContainerAPI,
-  PoolAPI,
-  ShipmentAPI
-} from '../APIs';
+const ShipmentTab = lazy(() => import('./ShipmentTab'));
+const SpecimenTab = lazy(() => import('./SpecimenTab'));
 import { BiobankProvider, BarcodePageProvider } from '../contexts';
-import { useHTTPRequest } from '../hooks';
 declare const loris: any;
 
 /**
  * The main React entrypoint for the biobank module. This component
  * renders the index page.
  */
-function BiobankIndex() {
-
-  const { data: options, isLoading: optWait, error: optionsError }
-    = useHTTPRequest(() => new OptionAPI().getAll());
-
-  const { data: containers, isLoading: contWait, error: containersError }
-    = useHTTPRequest(() => new ContainerAPI().getAll());
-
-  const { data: specimens, isLoading: specWait, error: specimensError }
-    = useHTTPRequest(() => new SpecimenAPI().getAll());
-
-  const { data: pools, isLoading: poolWait, error: poolsError }
-    = useHTTPRequest(() => new PoolAPI().getAll());
-
-  const { data: shipments, isLoading: shipWait, error: shipmentsError }
-    = useHTTPRequest(() => new ShipmentAPI().getAll());
-
-  if (contWait || specWait || poolWait || shipWait || optWait) {
-    return <div>Loading...</div>; // Render a loader
-  }
-
-  if (containersError || specimensError | poolsError || shipmentsError || optionsError) {
-    return <div>Error loading data</div>;
-  }
-
-  const specimenPage = async (props) => {
-    const barcode = props.match.params.barcode;
-    const specimen = await new SpecimenAPI().getById(barcode);
-    return (
-      <BarcodePageProvider>
-        <SpecimenPage
-          key={barcode} // Ensures component resets on barcode change
-          specimen={specimen}
-          options={options}
-        />
-      </BarcodePageProvider>
-    );
-  };
-
-  const containerPage = (props) => {
-    return (
-      <BarcodePageProvider>
-        <ContainerPage
-          key={props.match.params.barcode} // Ensures component resets on barcode change
-          barcode={props.match.params.barcode}
-        />
-      </BarcodePageProvider>
-    );
-  };
+const BiobankIndex: React.FC = () => {
 
   const tabInfo = [];                                                           
   const tabList = [];                                                           
@@ -93,8 +38,8 @@ function BiobankIndex() {
     tabList.push({ id: 'pools', label: 'Pools' });                              
   }                                                                             
                                                                                 
-  // tabInfo.push({ id: 'shipments', content: <ShipmentTab/> });                      
-  // tabList.push({ id: 'shipments', label: 'Shipments' });                        
+  tabInfo.push({ id: 'shipments', content: <ShipmentTab/> });                      
+  tabList.push({ id: 'shipments', label: 'Shipments' });                        
                                                                                 
   const tabContent = Object.keys(tabInfo).map((key) => (                        
     <TabPane key={key} TabId={tabInfo[key].id}>                                 
@@ -102,35 +47,34 @@ function BiobankIndex() {
     </TabPane>                                                                  
   ));                                                                           
                                                                                 
+  const fallback = <div>Loading...</div>;
   const filter = () => (
-    <div id='biobank-page'>                                                     
-      <Tabs tabs={tabList} defaultTab={tabList[0].id} updateURL={true}>         
-        {tabContent}                                                            
-      </Tabs>                                                                   
-    </div>                                                                      
+    <Suspense fallback={fallback}>
+      <div id='biobank-page'>                                                     
+        <Tabs tabs={tabList} defaultTab={tabList[0].id} updateURL={true}>         
+          {tabContent}                                                            
+        </Tabs>                                                                   
+      </div>                                                                      
+    </Suspense>
   );
 
-  const data = {
-    options: options,
-    specimens: specimens,
-    containers: containers,
-    pools: pools,
-    shipments: shipments,
-  };
-
   return (
-    <BiobankProvider data={data}>
-      <BrowserRouter basename='/biobank'>
-        <Routes>
-          <Route path='/' element={filter}/>
-          <Route path='/containers/:barcode' element={containerPage}/>
-          <Route path='/specimens/:barcode' element={specimenPage}/>
-        </Routes>
-      </BrowserRouter>
-    </BiobankProvider>
+    <BrowserRouter basename='/biobank'>
+      <Switch>
+        <Route path='/' render={filter}/>
+        <Route path='/containers/:barcode' render={<ContainerPage/>}/>
+        <Route path='/specimens/:barcode' render={<SpecimenPage/>}/>
+      </Switch>
+    </BrowserRouter>
   );
 }
 
+const queryClient = new QueryClient();
 window.addEventListener('load', () => {
-  ReactDOM.render(<BiobankIndex/>, document.getElementById('lorisworkspace'));
+  ReactDOM.render(
+    <QueryClientProvider client={queryClient}>
+      <BiobankProvider><BiobankIndex/></BiobankProvider>
+    </QueryClientProvider>,
+    document.getElementById('lorisworkspace')
+  );
 });

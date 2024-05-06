@@ -130,20 +130,20 @@ class Module extends \Module
 //         return $page->process($request, $page);
 //     }
 
-//
-//    /**
-//     * The default handler for a module routes to a page of the first component of
-//     * the URL's name, or the same name as the module if serving the root of the
-//     * module.
-//     *
-//     * Modules extend PrefixRouter, so that the parent handler knows that the
-//     * css, static, and js routes should be routed through the file system to
-//     * retrieve the files before trying to load any specific pages.
-//     *
-//     * @param ServerRequestInterface $request The incoming PSR7 request
-//     *
-//     * @return ResponseInterface the outgoing PSR7 response
-//     */
+
+    /**
+     * The default handler for a module routes to a page of the first component of
+     * the URL's name, or the same name as the module if serving the root of the
+     * module.
+     *
+     * Modules extend PrefixRouter, so that the parent handler knows that the
+     * css, static, and js routes should be routed through the file system to
+     * retrieve the files before trying to load any specific pages.
+     *
+     * @param ServerRequestInterface $request The incoming PSR7 request
+     *
+     * @return ResponseInterface the outgoing PSR7 response
+     */
 //    public function handle(ServerRequestInterface $request) : ResponseInterface
 //    {
 //        $resp = parent::handle($request);
@@ -166,10 +166,11 @@ class Module extends \Module
 //
 //        $pagename = $this->getName();
 //        $path     = trim($request->getURI()->getPath(), "/");
-//        if ($path == 'optionsendpoint'
-//            || $path == 'poolendpoint'
-//            || $path == 'containerendpoint'
-//            || $path == 'specimenendpoint'
+//        if ($path == 'options'
+//            || $path == 'pools'
+//            || $path == 'containers'
+//            || $path == 'specimens'
+//            || $path == 'shipments'
 //        ) {
 //            // There is a subpage
 //            $pagename = explode("/", $path)[0];

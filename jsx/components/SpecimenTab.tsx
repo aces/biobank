@@ -1,12 +1,13 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { Candidate, Specimen, Session} from '../types';
+import { Candidate, Session} from '../types';
+import { ISpecimen } from '../entities';
 import { clone, mapFormOptions } from '../utils';
 import FilterableDataTable from 'FilterableDataTable';
 import { useBiobankContext, useEditable } from '../hooks';
 import {
   SpecimenForm,
-  PoolSpecimenForm,
+  PoolForm,
   BatchProcessForm,
   BatchEditForm,
   Search,
@@ -18,44 +19,9 @@ declare const loris: any;
  * JSX Component representing the specimen tab of the biobank
  * module.
  */
-export const SpecimenTab: React.FC = () => {
-  const { options, specimens } = useBiobankContext();
+const SpecimenTab: React.FC = () => {
+  const { options, specimens, specProg: progress } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
-
-  /**
-   * Map a specimen id to a string value for display.
-   *
-   * @param {string} column - the column name being mapped
-   * @param {string} value - the value being mapped
-   *
-   * @return {string}
-   */
-  function mapSpecimenColumns(
-    column: string,
-    value: any
-  ): any {
-    switch (column) {
-      case 'Type':
-        return options.specimen.types[value].label;
-      case 'Container Type':
-        return options.container.typesPrimary[value].label;
-      case 'Diagnosis':
-        if (value) {
-          return value.map((id) => options.diagnoses[id].label);
-        }
-        break;
-      case 'Status':
-        return options.container.stati[value].label;
-      case 'Current Site':
-        return options.centers[value];
-      case 'Draw Site':
-        return options.centers[value];
-      case 'Projects':
-        return value.map((id) => options.projects[id]);
-      default:
-        return value;
-    }
-  }
 
   /**
    * Format columns for a specimen row
@@ -71,7 +37,6 @@ export const SpecimenTab: React.FC = () => {
     value: string | string[],
     row: Record<string, string>,
   ): ReactElement {
-    value = mapSpecimenColumns(column, value);
     const candidate = Object.values(options.candidates)
       .find((cand: Candidate) => cand.pscid == row['PSCID']) as Candidate;
     const candidatePermission = candidate !== undefined;
@@ -124,32 +89,23 @@ export const SpecimenTab: React.FC = () => {
   }
 
   const barcodesPrimary = Object.values(specimens)
-    .reduce<{ [key: string]: string }>((result, specimen: Specimen) => {
+    .reduce<{ [key: string]: string }>((result, specimen: ISpecimen) => {
       if (specimen.barcode) {
         result[specimen.barcode] = specimen.barcode;
       }
       return result;
     }, {});
 
-  const specimenTypes = mapFormOptions(options.specimen.types, 'label');
-  const containerTypesPrimary = mapFormOptions(
-      options.container.typesPrimary, 'label'
-  );
-  const stati = mapFormOptions(options.container.stati, 'label');
-  const diagnoses = mapFormOptions(options.diagnoses, 'label');
-  const specimenData = Object.values(specimens).map((specimen: Specimen) => {
+  const specimenData = Object.values(specimens).map((specimen: ISpecimen) => {
     let specimenAttributeData = [];
     Object.keys(options.specimen.processAttributes)
       .forEach((processId) => {
         Object.keys(options.specimen.processAttributes[processId])
           .forEach((attributeId) => {
-            const sopt = options.specimen;
-            const process = sopt.processes[processId].label.toLowerCase();
+            const process = options.specimen.processes[processId].label.toLowerCase();
             if ((specimen[process]||{}).data) {
-              const processIdStr = specimen[process].protocolId.toString();
-              const attrs = options.specimen.processAttributes;
-              const protocols = attrs[processId][attributeId].protocolIds;
-              if (protocols.includes(processIdStr)) {
+              const protocols = options.specimen.processAttributes[processId][attributeId].protocolIds;
+              if (protocols.includes(specimen[process].protocol)) {
                 const data = specimen[process].data[attributeId];
                 specimenAttributeData.push(data);
               } else {
@@ -159,28 +115,28 @@ export const SpecimenTab: React.FC = () => {
           });
       });
 
-    const candidate = options.candidates[specimen.candidateId];
+    const candidate = options.candidate[specimen.candidate];
     return [
       specimen.barcode,
-      specimen.typeId,
-      specimen.container.typeId,
-      specimen.quantity+' '+options.specimen.units[specimen.unitId].label,
-      specimen.fTCycle || null,
-      specimen.parentSpecimenBarcodes,
-      specimen.candidatePSCID,
-      candidate?.sex || null,
-      specimen.candidateAge,
-      candidate?.diagnosisIds || null,
-      options.sessions[specimen.sessionId].label,
+      specimen.type,
+      specimen.container.type,
+      specimen.quantity+' '+specimen.unit,
+      specimen.fTCycle,
+      specimen.parentSpecimens,
+      specimen.candidate,
+      candidate.sex,
+      candidate.age,
+      candidate.diagnosisIds,
+      specimen.session,
       specimen.poolLabel,
-      specimen.container.statusId,
-      specimen.projectIds,
-      specimen.centerId,
-      options.sessionCenters[specimen.sessionId]?.centerId,
+      specimen.container.status,
+      specimen.projects,
+      specimen.container.center,
+      options.sessionCenters[specimen.session]?.center,
       specimen.collection.date,
       specimen.collection.time,
-      (specimen.preparation||{}).time,
-      specimen.container.parentContainerBarcode,
+      specimen.preparation?.time,
+      specimen.container.parentContainer,
       specimen.container.coordinate,
       ...specimenAttributeData,
     ];
@@ -208,12 +164,12 @@ export const SpecimenTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: specimenTypes,
+      options: options.specimen.types,
     }},
     {label: 'Container Type', show: true, filter: {
       name: 'containerType',
       type: 'select',
-      options: containerTypesPrimary,
+      options: options.container.typesPrimary,
     }},
     {label: 'Quantity', show: true},
     {label: 'F/T Cycle', show: false, filter: {
@@ -242,7 +198,7 @@ export const SpecimenTab: React.FC = () => {
     {label: 'Diagnosis', show: true, filter: {
       name: 'diagnosis',
       type: 'multiselect',
-      options: diagnoses,
+      options: options.diagnoses,
     }},
     {label: 'Visit Label', show: true, filter: {
       name: 'session',
@@ -256,7 +212,7 @@ export const SpecimenTab: React.FC = () => {
     {label: 'Status', show: true, filter: {
       name: 'status',
       type: 'select',
-      options: stati,
+      options: options.container.stati,
     }},
     {label: 'Projects', show: true, filter: {
       name: 'projects',
@@ -300,7 +256,7 @@ export const SpecimenTab: React.FC = () => {
       action: () => edit('searchSpecimen'),
     },
     {name: 'addSpecimen', label: 'Add Specimen', action: () => edit('specimenForm')},
-    {name: 'poolSpecimen', label: 'Pool Specimens', action: () => edit('poolSpecimenForm')},
+    {name: 'poolForm', label: 'Pool Specimens', action: () => edit('poolForm')},
     {
       name: 'batchProcess',
       label: 'Process Specimens',
@@ -313,11 +269,11 @@ export const SpecimenTab: React.FC = () => {
     <>
       <FilterableDataTable
         name='specimen'
+        progress={progress}
         data={specimenData}
         fields={fields}
         actions={actions}
         getFormattedCell={formatSpecimenColumns}
-        getMappedCell={mapSpecimenColumns}
       />
       <Search
         title='Go To Specimen'
@@ -332,7 +288,7 @@ export const SpecimenTab: React.FC = () => {
         onClose={clear}
       /> : null}
       {loris.userHasPermission('biobank_pool_create') ?
-      <PoolSpecimenForm show={editable.poolSpecimenForm} onClose={clear} /> : null}
+      <PoolForm show={editable.poolForm} onClose={clear} /> : null}
       {loris.userHasPermission('biobank_specimen_update') &&
         <BatchProcessForm
           show={editable.batchProcessForm}
@@ -348,3 +304,5 @@ export const SpecimenTab: React.FC = () => {
     </>
   );
 }
+
+export default SpecimenTab;

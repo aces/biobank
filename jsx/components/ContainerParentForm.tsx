@@ -1,11 +1,10 @@
 import { ReactElement, useState, useEffect } from 'react';
-import { ContainerDisplay } from '../components';
-import { Container } from '../types';
+import { ContainerDisplay, ContainerField } from '../components';
+import { ContainerHook } from '../entities';
 import { useBiobankContext} from '../hooks';
-const containerAPI = new ContainerAPI;
 
 const ContainerParentForm: React.FC<{
-  container: Container,
+  container: ContainerHook,
   display?: boolean,
 }> = ({
   container,
@@ -15,17 +14,17 @@ const ContainerParentForm: React.FC<{
 
   // when a parent container is selected, the passed container gets updated
   useEffect(() => {
-    const parentContainer = containers[container.parentContainerId];
+    const parentContainer = containers[container.parentContainer];
     if (parentContainer) {
       container.set('coordinate', null);
       container.set('temperature', parentContainer.temperature);
-      container.set('centerId', parentContainer.centerId);
-      container.set('statusId', parentContainer.statusId);
+      container.set('center', parentContainer.center);
+      container.set('status', parentContainer.status);
     }
-  }, [container.parentContainerId]);
+  }, [container.parentContainer]);
 
   const renderContainerDisplay = () => {
-    if (!(container.parentContainerId && display)) {
+    if (!(container.parentContainer && display)) {
       return;
     }
 
@@ -41,7 +40,7 @@ const ContainerParentForm: React.FC<{
   return (
     <div className='row'>
       <div className="col-lg-11">
-        <ContainerField property={parentContainerId} container={container}/>
+        <ContainerField property={'parentContainer'}/>
       </div>
       {renderContainerDisplay()}
     </div>

@@ -1,8 +1,8 @@
 import BaseAPI from './BaseAPI';
-import { Pool } from '../types';
+import { Pool } from '../entities';
 
 export default class PoolAPI extends BaseAPI<Pool> {
   constructor() {
-    super('/biobank/pools'); // Provide the base URL for pool-related API
+    super('/biobank/pools');
   }
 }

@@ -4,38 +4,14 @@ import { Search, ContainerForm } from '../components';
 import FilterableDataTable from 'FilterableDataTable';
 import { mapFormOptions, clone} from '../utils';
 import { useBiobankContext, useEditable } from '../hooks';
-import { Container } from '../types';
+import { IContainer } from '../entities';
 import { ContainerAPI } from '../APIs';
 declare const loris: any;
 
-/**
- * React component for the Container tab in the Biobank module
- */
-export function ContainerTab() {
+export const ContainerTab: React.FC = () => {
 
-  const { options, containers } = useBiobankContext();
+  const { options, containers, contProg: progress } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
-
-  /**
-   * Map the columns for this container
-   *
-   * @param {string} column - the column name
-   * @param {string} value - the column value
-   *
-   * @return {string}
-   */
-  function mapContainerColumns(column: string, value: string): string {
-    switch (column) {
-      case 'Type':
-        return options.container.types[value].label;
-      case 'Status':
-        return options.container.stati[value].label;
-      case 'Site':
-        return options.centers[value];
-      default:
-        return value;
-    }
-  }
 
   /**
    * Format the cells for a column in the container
@@ -46,9 +22,8 @@ export function ContainerTab() {
    *
    * @return {ReactElement} a table cell
    */
-  function formatContainerColumns(column: string, value: string | string[], row: any): ReactElement {
+  function formatContainerColumns(column: string, value: any, row: any): ReactElement {
 
-    value = mapContainerColumns(column, value);
     const style: CSSProperties = {};
 
     switch (column) {
@@ -92,8 +67,8 @@ export function ContainerTab() {
   //     // first specimen is added.
   //     if (container) {
   //       const tprops = options.container.types;
-  //       if (tprops[container.typeId].primary == 0) {
-  //         result[container.id] = container;
+  //       if (props[container.type].primary == 0) {
+  //         result[container.barcode] = container;
   //       }
   //       return result;
   //     }
@@ -102,15 +77,13 @@ export function ContainerTab() {
   const barcodesNonPrimary = mapFormOptions(containers, 'barcode');
 
   const data = Object.values(containers).map(
-    (container: Container) => {
+    (container: IContainer) => {
       return [
         container.barcode,
-        container.typeId,
-        container.statusId,
-        container.centerId,
-        container.parentContainerBarcode ?
-          containers[container.parentContainerBarcode].barcode :
-          null,
+        container.type,
+        container.status,
+        container.center,
+        container.parentContainer,
       ];
     }
   );
@@ -157,14 +130,14 @@ export function ContainerTab() {
   ];
 
   return (
-    <div>
+    <>
       <FilterableDataTable
         name='container'
         data={data}
         fields={fields}
         actions={actions}
         getFormattedCell={formatContainerColumns}
-        getMappedCell={mapContainerColumns}
+        progress={progress}
       />
       <Search
         title='Go To Container'
@@ -174,10 +147,9 @@ export function ContainerTab() {
       />
       {loris.userHasPermission('biobank_container_create') ?
       <ContainerForm
-        options={options}
         show={editable.containerForm}
         onClose={clear}
       /> : null}
-    </div>
+    </>
   );
 }

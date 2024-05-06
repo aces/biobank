@@ -15,12 +15,10 @@ type CustomFieldsProps = {
     [key: string]: {
       label: string,
       required: boolean,
-      datatypeId: string,
+      datatype: string,
     },
   },
   data: any //TODO: type,
-  setData: (attribute: string, value: any) => void, // Replace 'any' with a more specific type if possible
-  errors: any //TODO: type,
 };
 
 /**
@@ -30,29 +28,25 @@ type CustomFieldsProps = {
  * @returns {ReactElement} JSX Element corresponding to each field.
  */
 const CustomFields = ({
-  errors,
   fields,
   data,
-  setData,
 }: CustomFieldsProps): ReactElement => {
   const { options } = useBiobankContext();
 
   return (
     <>
       {Object.keys(fields).map((attribute, key) => {
-        const datatype = options.specimen.attributeDatatypes[
-            fields[attribute]['datatypeId']
-          ].datatype;
+        const datatype = fields[attribute]['datatype'];
         if (datatype === 'text' || datatype === 'number') {
           return (
             <TextboxElement
               key={key}
               name={attribute}
               label={fields[attribute].label}
-              onUserInput={setData}
+              onUserInput={data.set}
               required={fields[attribute].required}
               value={data[attribute]}
-              errorMessage={errors[attribute]}
+              errorMessage={data.errors[attribute]}
             />
           );
         }
@@ -63,10 +57,10 @@ const CustomFields = ({
               key={key}
               name={attribute}
               label={fields[attribute].label}
-              onUserInput={setData}
+              onUserInput={data.set}
               required={fields[attribute].required}
               value={data[attribute]}
-              errorMessage={errors[attribute]}
+              errorMessage={data.errors[attribute]}
             />
           );
         }
@@ -77,10 +71,10 @@ const CustomFields = ({
               key={key}
               name={attribute}
               label={fields[attribute].label}
-              onUserInput={setData}
+              onUserInput={data.set}
               required={fields[attribute].required}
               value={data[attribute]}
-              errorMessage={errors[attribute]}
+              errorMessage={data.errors[attribute]}
             />
           );
         }
@@ -91,10 +85,10 @@ const CustomFields = ({
               key={key}
               name={attribute}
               label={fields[attribute].label}
-              onUserInput={setData}
+              onUserInput={data.set}
               required={fields[attribute].required}
               value={data[attribute]}
-              errorMessage={errors[attribute]}
+              errorMessage={data.errors[attribute]}
             />
           );
         }

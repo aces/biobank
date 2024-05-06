@@ -1,34 +1,22 @@
 // TODO: ELIMINATE THIS EVENUTALLY BY MOVING THINGS TO WHERE THEY SHOULD BE 
+import { Dimension } from '../entities';
 
 export type Status = {
   id: string,
   label: string,
 }
 
-export type Dimension = {
-  y: number,
-  x: number,
-  z: number,
-  xNum: number,
-  yNum: number,
-  zNum: number,
-};
-
 export type Protocol = {
    label: string,
-   typeId: string,
-   processId: string,
+   type: string,
+   process: string,
  };
 
 export type Candidate = {
    id: string,
    pscid: string,
    sex: string,
-   diagnosisIds: string[],
-};
-
-export type Center = {
-  centerId: string,
+   diagnosis: string[],
 };
 
 export type User ={
@@ -45,7 +33,7 @@ export type Options = {
   diagnoses: Record<string, any>,
   sessions: Record<string, any>,
   projects: Record<string, any>,
-  centers: Record<string, Center>,
+  centers: Record<string, string>,
   examiners: Record<string, any>,
   users: Record<string, User>,
   candidateSessions: Record<string, any>,

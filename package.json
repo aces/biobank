@@ -5,10 +5,11 @@
     "main": "biobankIndex.js",
     "dependencies": {
         "partial-json-parser": "^1.2.2",
+        "react-query": "^3.39.3",
         "react-router-dom": "^5.2.0",
-        "transliteration": "^2.1.8"
+        "transliteration": "^2.1.8",
+        "uuid": "^9.0.1"
     },
-    "devDependencies": {},
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },

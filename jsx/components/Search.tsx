@@ -1,15 +1,8 @@
 import { useState, ReactElement } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import Modal from 'Modal';
 import Form from 'Form';
 const { FormElement, TextboxElement } = Form;
-
-interface SearchProps {
-  title: string,
-  show: boolean,
-  onClose: () => void,
-  barcodes?: {[key: string]: string},
-}
 
 /**
  * Provides a modal window that can be used to search barcodes.
@@ -18,15 +11,20 @@ interface SearchProps {
  * @param {SearchProps} props - The component's props.
  * @returns {ReactElement} The rendered component.
  */
-export const Search = ({
+export const Search: React.FC<{
+  title: string,
+  show: boolean,
+  onClose: () => void,
+  barcodes?: {[key: string]: string},
+}> = ({
   title,
   show,
   onClose,
   barcodes = {},
-}: SearchProps): ReactElement  => {
+}) => {
 
   const [barcode, setBarcode] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const history = useHistory();
 
   /**
    * Handles user input in the barcode textbox.
@@ -39,7 +37,7 @@ export const Search = ({
   const onInput = (name: string, value: string) : void => {
     setBarcode(value);
     if (Object.values(barcodes).find((barcode) => barcode === value)) {
-      navigate(`/barcode=${value}`);
+      history.push(`/barcode=${value}`);
       onClose();
     }
   };

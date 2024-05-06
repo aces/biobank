@@ -10,7 +10,7 @@
 export function mapFormOptions(                                                 
   object: { [key: string]: any },                                               
   attribute: string                                                             
-): { [key: string]: any } {                                                     
+): { [key: string]: string } {                                                     
   return Object.keys(object).reduce((result, id) => {                           
     result[id] = object[id][attribute];                                         
     return result;                                                              

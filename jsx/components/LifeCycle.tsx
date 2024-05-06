@@ -1,10 +1,5 @@
-import { ReactElement } from 'react';
-import { Container, Specimen } from '../types';
-
-type LifeCycleProps = {
-  specimen: Specimen
-  container?: Container;
-};
+import React from 'react';
+import { ContainerHook, SpecimenHook } from '../entities';
 
 /**
  * Functional component representing the lifecycle of a specimen.
@@ -13,10 +8,13 @@ type LifeCycleProps = {
  * @param {LifeCycleProps} props - The props object for the component.
  * @returns {ReactElement} - A React Element representing the component.
  */
-function LifeCycle({
+const LifeCycle: React.FC<{
+  specimen: SpecimenHook,
+  container?: ContainerHook,
+}> = ({
   specimen,
   container
-}: LifeCycleProps): ReactElement {
+}) => {
   // Conditionally renders the collection node
   const collectionNode = specimen?.collection || container ? (
     <div

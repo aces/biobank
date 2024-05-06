@@ -2,28 +2,28 @@ import { ReactElement } from 'react';
 import Form from 'Form';
 const { FormElement } = Form;
 import { ProcessForm } from '../components';
-import { Protocol, Specimen, Options, ProcessType } from '../types';
+import { Protocol, Options } from '../types';
+import { ProcessType, useSpecimenContext } from '../entities';
 import { useBarcodePageContext, useBiobankContext } from '../hooks';
 declare const loris: any;
 
 // Define the type for your props
 type ProcessPanelProps = {
   process: ProcessType;
-  specimen: Specimen; // Define a more specific type if possible
   clearAll: () => void,
 };
 
 function ProcessPanel({
   process,
-  specimen,
   clearAll,
 }: ProcessPanelProps): ReactElement {
 
   const { edit, editable } = useBarcodePageContext();
   const { options } = useBiobankContext();
+  const specimen = useSpecimenContext();
 
   const addProcess = async () => {
-    specimen.setProcess(process, 'centerId', specimen.container.centerId);
+    specimen[process].set('center', specimen.container.center);
     edit(process);
   };
 
@@ -54,9 +54,8 @@ function ProcessPanel({
 
   const protocolExists = Object.values(options.specimen.protocols).find(
     (protocol: Protocol) => {
-      return protocol.typeId == specimen.typeId &&
-      options.specimen.processes[protocol.processId].label ==
-      process.replace(/^\w/, (c) => c.toUpperCase());
+      return protocol.type == specimen.type &&
+      protocol.process == process.replace(/^\w/, (c) => c.toUpperCase());
     }
   );
 
@@ -82,8 +81,7 @@ function ProcessPanel({
         specimen={specimen}
         process={specimen[process]}
         processStage={process}
-        setParent={specimen.set}
-        typeId={editable[process] ? specimen.typeId : specimen.typeId}
+        type={editable[process] ? specimen.type : specimen.type}
       />
     </FormElement>
   );

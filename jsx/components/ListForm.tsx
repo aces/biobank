@@ -1,265 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import { clone, isEmpty } from '../utils';
+import React, { useState, useCallback, ReactElement } from 'react';
+import { Entity, EntitiesHook } from '../entities';
+import { Form } from '../styles/form';
+import { Layout } from '../styles/layout';
+import { Button } from '../styles/buttons';
+import { Input } from './Form';
 
-interface ListFormProps<T, H> {
-  list: Map<number, [T, H]>,
-  errors: Record<string, any>;
-  setList: (list: Map<number, [T, H]>) => void;
-  listItem: () => [T, H];
-}
-
-const ListForm = <T, H>({
-  children,
+export const ListForm = <E extends Entity<T>, T extends object>({
   list,
-  errors,
-  setList,
-  listItem
-}: ListFormProps<T, H>): ReactElement => {
-  const [count, setCount] = useState<number>(0);
-  const [multiplier, setMultiplier] = useState<number>(1);
-  const [collapsed, setCollapsed] = useState<Map<number, boolean>>(new Map());
-  
-  useEffect(() => {
-    if(list.length === 0) addListItem();
-  }, []); // Runs once on mount
+  listItemComponent: ListItemComponent
+}: {
+  list: EntitiesHook<E, T>,
+  listItemComponent: React.ComponentType<{
+    id: string,
+    entity: E,
+    update: EntitiesHook<E, T>['update'],
+  }>,
+}): ReactElement => {
+  const { entities, add, remove, update} = list;
+  const [multiplier, setMultiplier] = useState(1);
+  const [collapsedStates, setCollapsedStates] = useState(new Map());
 
-  useEffect(() => {
-    list.forEach((key) => {
-      if (!isEmpty(errors[key]) && collapsed[key]) {
-        toggleCollapse(key);
-      }
-    });
-  }, [list, errors, collapsed]); // Dependencies array, runs on changes to these variables
-
-  /**
-   * Toggle whether a key is collapsed
-   *
-   * @param {string} key - the key to toggle
-   */
-  const toggleCollapse = useCalledback((key: number) => {
-    const newCollapsed = {...collapsed};
-    newCollapsed[key] = !newCollapsed[key];
-    setCollapsed(newCollapsed);
+  const toggleCollapse = useCallback((key) => {
+    setCollapsedStates(prevStates => new Map(prevStates).set(key, !prevStates.get(key)));
   }, []);
 
-  /**
-   * Set the value of a list item
-   *
-   * @param {string} name - the item name
-   * @param {string} value - the item value
-   * @param {string} key - the key with the item
-   */
-  const setListItem = (name: string, value: string, key: number) => {
-    // 1 represents the handler here
-    list[key][1].set(name, value);
-  }
-
-  /**
-   * Add an empty list item
-   */
-  const addListItem = () => {
-    const newCount = count + 1;
-    const newCollapsed = {...collapsed, [newCount]: false};
-    const newList = {...list, [newCount]: listItem()};
-
-    setCount(newCount);
-    setCollapsed(newCollapsed);
-    setList(newList);
-  };
-
-  /**
-   * Copy an item in a list
-   *
-   * @param {string} key - the key to copy
-   */
-  const copyListItem = (key: number) => {
-    let newCount = count;
-    const newList = [...list];
-    const newCollapsed = {...collapsed};
-
-    for (let i=1; i<=multiplier; i++) {
-       newCount++;
-       // Use the data from the item you're copying as the initial state for the new item
-       const originalItemData = newList[key][0];
-
-       // Assuming `listItem` is your hook that initializes a new item and its handler
-       // You might need to adjust how you pass the initial data to `listItem` based on its implementation
-       const newItemTuple = listItem(originalItemData);
-
-
-       // Exempt certain elements from being copied
-       if (newList[newCount].container && newList[newCount].container.barcode) {
-         newItemTuple[1].remove('barcode');
-       }
-
-       newList[newCount](newItemTuple);
-       newCollapsed[newCount] = true;
+  // Duplicate the last subform based on the multiplier
+  const duplicate = useCallback(() => {
+    if (entities.size > 0) {
+      const lastKey = Array.from(entities.keys()).pop(); // Get the last key
+      const lastEntity = entities.get(lastKey);
+      for (let i = 0; i < multiplier; i++) {
+        // Presuming add function creates a new ID automatically and returns it
+        const newKey = add(lastEntity.getData());
+        setCollapsedStates(prevStates => new Map(prevStates).set(newKey, false));
+      }
     }
-
-    setCount(newCount);
-    setCollapsed(newCollapsed);
-    setList(newList);
-  }
-
-  /**
-   * Remove a list item from the list
-   *
-   * @param {string} key - the key to remove
-   */
-  const removeListItem = useCallback((key: number) => {
-    const newList = clone(list);
-    delete newList[key];
-    setList(newList);
-  });
-
-  return list.map(([key, item], i, listArray) => {
-    const listLength = list.length;
-    const handleRemoveItem = listLength > 1 ?
-        () => removeListItem(key) : null;
-    const handleCopyItem = () => copyListItem(key);
-    const handleCollapse = () => toggleCollapse(key);
-
-    return subForms.map((subForm) => React.Children.map(children, (child) => {
-      const form = React.cloneElement(child, {
-        key: key,
-        itemKey: key,
-        id: (i + 1),
-        collapsed: collapsed[key],
-        handleCollapse: handleCollapse,
-        item: (item || {}),
-        removeItem: handleRemoveItem,
-        setListItem: setListItem,
-        errors: (errors[key] || {}),
-      });
-
-      const renderAddButtons = () => {
-        if (i+1 == listLength) {
-          return (
-            <div className='row'>
-              <div className='col-xs-12'>
-                <div className='col-xs-3'/>
-                <div className='col-xs-4 action'>
-                  <div>
-                    <span className='action'>
-                      <div
-                        className='action-button add'
-                        onClick={addListItem}
-                      >
-                        +
-                      </div>
-                    </span>
-                    <span className='action-title'>
-                      New Entry
-                    </span>
-                  </div>
-                </div>
-                <div className='col-xs-5 action'>
-                  <div>
-                    <span className='action'>
-                      <div
-                       className='action-button add'
-                       onClick={handleCopyItem}
-                      >
-                        <span className='glyphicon glyphicon-duplicate'/>
-                      </div>
-                    </span>
-                    <span className='action-title'>
-                      <input
-                        className='form-control input-sm'
-                        type='number'
-                        min='1'
-                        max='50'
-                        style={{width: 50, display: 'inline'}}
-                        value={multiplier}
-                        onChange={(e) => setMultiplier(Number(e.target.value))}
-                      />
-                      Copies
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        }
-      };
-
-      return (
-        <div>
-          {form}
-          {renderAddButtons()}
-        </div>
-      );
-    });
-  });
-}
-
-const ListItem: React.FC<{
-  id: number | string;
-  removeItem?: () => void; // Optional prop, since you're conditionally checking its existence
-  itemKey: string;
-  collapsed: boolean;
-  handleCollapse: () => void;
-}> = ({
-  children,
-  id,
-  removeItem,
-  itemKey,
-  collapsed,
-  handleCollapse
-}) => {
-  const childrenArray = React.Children.toArray(children);
-  const firstChild = React.cloneElement(childrenArray[0] as React.ReactElement, {
-    label: children[0].props.label + ' ' + id,
-  });
-  const remainingChildren = childrenArray.slice(1);
-
-  const glyphStyle = {
-    color: '#808080',
-    marginLeft: 10,
-    cursor: 'pointer',
-    fontSize: 15,
-  };
-
-  const removeItemButton = (
-    <span
-      className='glyphicon glyphicon-remove'
-      onClick={removeItem}
-      style={glyphStyle}
-    />
-  );
+  }, [entities, multiplier, add]);
 
   return (
-    <div className='row'>
-      <div className='col-xs-11'>
-        {firstChild}
-      </div>
-      <div className='col-xs-1' style={{paddingLeft: 0, marginTop: 10}}>
-        <span
-          className= {
-              collapsed
-                  ? 'glyphicon glyphicon-chevron-down'
-                  : 'glyphicon glyphicon-chevron-up'
-              }
-          style={{
-                 cursor: 'pointer',
-                 fontSize: 15,
-                 position: 'relative',
-                 right: 40,
-          }}
-          onClick={handleCollapse}
-        />
-        {removeItem ? removeItemButton : null}
-      </div>
-      <div className='col-xs-9 col-xs-offset-2'>
-        <div
-          id={'item-' + itemKey}
-          className={collapsed ? 'closed' : 'open'}
+    <>
+      {Array.from(entities.entries()).map(([key, entity]) => (
+        <ListItem
+          id={key}
+          collapsed={collapsedStates.get(key)}
+          removeSelf={() => remove(key)}
+          toggleCollapse={() => toggleCollapse(key)}
         >
-          {remainingChildren}
-        </div>
-      </div>
-    </div>
+          <ListItemComponent id={key} entity={entity} update={list.update}/>
+        </ListItem>
+      ))}
+      <Layout.Row>
+        <Button.Add onClick={() => add({})}/>
+        <Layout.ActionTitle>New Entry</Layout.ActionTitle>
+        <Button.Duplicate onClick={duplicate}/>
+        <Layout.ActionTitle>
+          <Input
+            name='multiplier'
+            type='number'
+            min={1}
+            max={10}
+            value={multiplier}
+            onUserInput={(name, value) => setMultiplier(Number(value))}
+          />
+          Copies
+        </Layout.ActionTitle>
+      </Layout.Row>
+    </>
   );
-}
+};
 
-export {ListForm, ListItem};
+const ListItem: React.FC<{
+  id: string;
+  collapsed: boolean;
+  removeSelf: () => void;
+  toggleCollapse: () => void;
+}> = ({ id, collapsed, removeSelf, toggleCollapse, children }) => {
+                                                                             
+  return (                                                                   
+    <Layout.Grid columns="4fr 1fr">
+      <Layout.Item column='1 / 2'>Barcode {id}</Layout.Item>
+      <Layout.Item column='2 / 3'>
+        <Layout.Row>
+          <Form.CollapseButton collapsed={collapsed} onClick={toggleCollapse}/>
+          <Button.Remove onClick={removeSelf}/>                              
+        </Layout.Row>
+      </Layout.Item>
+      <Layout.Item column='1 / 3' row='2'>
+        <Form.CollapsibleContent collapsed={collapsed}>
+          {children}                                                
+        </Form.CollapsibleContent>                                                                 
+      </Layout.Item>
+    </Layout.Grid>
+  );    
+};
+

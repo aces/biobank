@@ -3,49 +3,21 @@ import { Link } from 'react-router-dom';
 import { mapFormOptions, isEmpty } from '../utils';
 import Modal from 'Modal';
 import Loader from 'Loader';
-import { ContainerParentForm } from '../components';
-import Form from 'Form';
-const {
-  Button,
-  TextboxElement,
-  TextareaElement,
-  SelectElement,
-  NumericElement
-} = Form;
-import { Container, Specimen } from '../types';
+import { ContainerParentForm, SpecimenField, ContainerField, CoordinateLabel } from '../components';
+import { Button } from './';
+import { useSpecimenContext, useContainerContext } from '../entities';
 import { useBarcodePageContext, useBiobankContext } from '../hooks';
 import { ContainerAPI, SpecimenAPI } from '../APIs';
 
 declare const loris: any;
 
-type GlobalsType = {
-  specimen?: Specimen,
-  container: Container,
+const Globals: React.FC<{
   clearAll: () => void,
-  getCoordinateLabel: Function, //TODO: type declaration
-};
-
-/**                                                                             
- * Header component for displaying specimen information and actions.            
- *                                                                              
- * @param {GlobalsType} props - The properties passed to the component.         
- * @returns {ReactElement} React element representing the header.               
- */       
-function Globals({
-  specimen,
-  container,
-  clearAll,
-  getCoordinateLabel,
-}: GlobalsType): ReactElement {
+}> = ({ clearAll }) => {
   const { editable, edit } = useBarcodePageContext();
   const { options } = useBiobankContext();
-
-  const specimenTypeField = !isEmpty(specimen) && (
-    <InlineField
-      label='Specimen Type'
-      value={options.specimen.types[specimen.typeId]?.label}
-    />
-  );
+  const specimen = useSpecimenContext();
+  const container = useContainerContext();
 
   const editContainerType = loris.userHasPermission('biobank_specimen_alter')
     && specimen && (
@@ -59,15 +31,15 @@ function Globals({
       updateValue={() => ContainerAPI.update(container)}
       clearAll={clearAll}
       pencil={true}
-      value={options.container.types[container.typeId]?.label} //TODO remove '?'
+      value={container.type} //TODO remove '?'
       edit={editContainerType}
       editable={editable.containerType}
     >
-      <ContainerField property={'typeId'} container={container}/> //TODO: this will have to be modified to type primary
+      <ContainerField property={'type'}/> //TODO: this will have to be modified to type primary
     </InlineField>
   );
 
-  const poolField = (specimen||{}).poolId ? (
+  const poolField = (specimen||{}).pool ? (
     <InlineField
       label='Pool'
       value={specimen.poolLabel}
@@ -81,17 +53,17 @@ function Globals({
       updateValue={() => SpecimenAPI.update(specimen)}
       edit={() => edit('quantity')}
       value={Math.round(specimen.quantity * 100) / 100+
-      ' '+options.specimen.units[specimen.unitId].label}
+      ' '+options.specimen.units[specimen.unit].label}
       editable={editable.quantity}
     >
-      <SpecimenField property={'quantity'} specimen={specimen}/>
-      <SpecimenField property={'unitId'} specimen={specimen}/>
+      <SpecimenField property={'quantity'}/>
+      <SpecimenField property={'unit'}/>
     </InlineField>
   ) : null;
 
   const fTCycleField = () => {
     if (!isEmpty(specimen)
-        && options.specimen.types[specimen.typeId].freezeThaw == 1) {
+        && specimen.fTCycle) {
       // const changeCycle = (value) => {
       //   editSpecimen(specimen)
       //   .then(() => {
@@ -133,7 +105,7 @@ function Globals({
           value={specimen.fTCycle || 0}
           editable={editable.fTCycle}
         >
-          <SpecimenField property={'fTCycle'} specimen={specimen}/>
+          <SpecimenField property={'fTCycle'}/>
         </InlineField>
       );
     }
@@ -145,24 +117,13 @@ function Globals({
       label={'Temperature'}
       clearAll={clearAll}
       updateValue={() => ContainerAPI.update(container)}
-      edit={!container.parentContainerId && editTemperature}
+      edit={!container.parentContainer && editTemperature}
       value={container.temperature + '°'}
       editable={editable.temperature}
     >
-      <SpecimenField property={'temperature'} specimen={specimen}/>
+      <ContainerField property={'temperature'}/>
     </InlineField>
   );
-
-  const renderCommentsField = () => {
-    if (stati[container.statusId] !== 'Discarded' &&
-        stati[container.statusId] !== 'Dispensed' &&
-        stati[container.statusId] !== 'Shipped') {
-      return [];
-    }
-    return (
-      <ContainerField property={'comments'} container={container}/>
-    );
-  };
 
   const statusField = (
     <InlineField
@@ -170,12 +131,12 @@ function Globals({
       clearAll={clearAll}
       updateValue={() => ContainerAPI.update(container)}
       edit={() => edit('status')}
-      value={options.container.stati[container.statusId].label}
+      value={container.status}
       subValue={container.comments}
       editable={editable.status}
     >
-      <ContainerField property={'statusId'} container={container}/>
-      {renderCommentsField()}
+      <ContainerField property={'status'}/>
+      <ContainerField property={'comments'}/>
     </InlineField>
   );
 
@@ -185,13 +146,13 @@ function Globals({
       clearAll={clearAll}
       updateValue={() => SpecimenAPI.update(specimen)}
       edit={() => edit('project')}
-      value={specimen.projectIds.length !== 0 ?
-       specimen.projectIds
+      value={specimen.projects.length !== 0 ?
+       specimen.projects
          .map((id) => options.projects[id])
          .join(', ') : 'None'}
       editable={editable.project}
     >
-      <ContainerField property={'projectIds'} specimen={specimen}/>
+      <SpecimenField property={'projects'}/>
     </InlineField>
   );
 
@@ -199,7 +160,7 @@ function Globals({
     <InlineField
       label='Draw Site'
       value={options.centers[
-        options.sessionCenters[specimen.sessionId].centerId
+        options.sessionCenters[specimen.session].center
       ]}
     />
   );
@@ -207,16 +168,16 @@ function Globals({
   const centerField = (
     <InlineField
       label='Current Site'
-      value={options.centers[container.centerId]}
+      value={container.center}
     />
   );
 
   const shipmentField = () => {
-    if (container.shipmentBarcodes.length !== 0) {
+    if (container.shipments.length !== 0) {
       return (
         <InlineField
           label='Shipment'
-          value={container.shipmentBarcodes.slice(-1)[0]}
+          value={container.shipments.slice(-1)[0]}
         />
       );
     }
@@ -227,11 +188,10 @@ function Globals({
       return null;
     }
   
-    const { parentSpecimenIds, parentSpecimenBarcodes } = specimen;
-    const value = parentSpecimenIds.length === 0
+    const value = specimen.parentSpecimens.length === 0
         ? 'None'
         : <>
-            {parentSpecimenBarcodes.map((barcode, index) => (
+            {specimen.parentSpecimens.map((barcode, index) => (
               <React.Fragment key={barcode}>
                 {index > 0 && ', '}
                 <Link to={'/specimens/'+barcode}>{barcode}</Link>
@@ -252,8 +212,8 @@ function Globals({
     if (loris.userHasPermission('biobank_container_view')) {
       // Set Parent Container Barcode Value if it exists
       const parentContainerBarcodeValue = () => {
-        if (container.parentContainerBarcode) {
-          const barcode = container.parentContainerBarcode
+        if (container.parentContainer) {
+          const barcode = container.parentContainer
           // TODO: in the future, this should only be linked conditionally based
           // on whether the user has permission to view this container.
           return <Link to={'/containers/'+barcode}>{barcode}</Link>;
@@ -294,7 +254,7 @@ function Globals({
 
       let coordinate;
       if (container.coordinate) {
-        coordinate = getCoordinateLabel(container);
+        coordinate = <CoordinateLabel container={container.getData()}/>;
       }
 
       return (
@@ -317,16 +277,16 @@ function Globals({
     <div>
       <InlineField
         label='PSCID'
-        value={options.candidates[specimen.candidateId].pscid}
-        link={loris.BaseURL+'/'+specimen.candidateId}
+        value={specimen.candidate}
+        link={loris.BaseURL+'/'+specimen.candidate}
       />
       <InlineField
         label='Visit Label'
-        value={options.sessions[specimen.sessionId].label}
+        value={specimen.session}
         link={
             loris.BaseURL+'/instrument_list/?candID='+
-            specimen.candidateId+'&sessionID='+
-            specimen.sessionId
+            specimen.candidate+'&sessionID='+
+            specimen.session
         }
       />
     </div>
@@ -335,7 +295,11 @@ function Globals({
   return (
     <div className="globals">
       <div className='list'>
-        {specimenTypeField}
+        {!isEmpty(specimen) && (
+          <InlineField label='Specimen Type'
+            value={options.specimen.types[specimen.type]?.label}
+          />
+        )}
         {containerTypeField}
         {poolField}
         {quantityField}
@@ -360,16 +324,13 @@ function Globals({
  * @param {object} props
  * @return {*}
  **/
-function Item({
-  children,
-}): React.FC {
-  return <div className="item">{children}</div>;
-}
+const Item: React.FC = ({children}) => (
+  <div className="item">{children}</div>
+);
 
-type InlineFieldType = {
+const InlineField: React.FC<{
   label: string,
   value: any,
-  children?: ReactNode,
   edit?: Function, //TODO: type declaration 
   editable?: boolean,
   pencil?: boolean,
@@ -377,15 +338,7 @@ type InlineFieldType = {
   clearAll?: () => void,
   link?: string
   subValue?: string
-};
-
-/**
- * Inline Field
- *
- * @param {InlineFieldType} props
- * @return {ReactElement}
- **/
-function InlineField({
+}> = ({
   label,
   value,
   children,
@@ -396,16 +349,30 @@ function InlineField({
   clearAll,
   link,
   subValue,
-}: InlineFieldType): ReactElement {
+}) => {
   const [loading, setLoading] = useState(false);
 
-  const fields = React.Children.map(children, (child) => {
-    return child && React.isValidElement(child) ? (
-      <div style={{flex: '1 0 25%', minWidth: '90px'}}>
-        {React.cloneElement(child, {inputClass: 'col-lg-11'})}
-      </div>
-    ) : null;
-  });
+  // const fields = React.Children.map(children, (child) => {
+  //   return child && React.isValidElement(child) ? (
+  //     <div style={{flex: '1 0 25%', minWidth: '90px'}}>
+  //       {React.cloneElement(child, {inputClass: 'col-lg-11'})}
+  //     </div>
+  //   ) : null;
+  // });
+
+  const handleUpdate = async () => {
+    setLoading(true);
+    try {
+      await updateValue();
+      edit();
+      // Add any additional logic after the promise is resolved, if necessary
+    } catch (error) {
+      // Handle errors if necessary
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   // loris.userHasPermission('biobank_container_update') should determine if 'edit'
   // can be passed in the first place.
@@ -424,44 +391,26 @@ function InlineField({
     </div>
   );
 
-  const handleUpdate = async () => {
-    setLoading(true);
-    try {
-      await updateValue();
-      edit();
-      // Add any additional logic after the promise is resolved, if necessary
-    } catch (error) {
-      // Handle errors if necessary
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loader = loading && (
-    <React.Fragment>
+    <>
       <div style={{flex: '0 1 15%', margin: '0 1%'}}>
         <Loader size={20}/>
       </div>
       <div style={{flex: '0 1 15%', margin: '0 1%'}}>
         <h5 className='animate-flicker'>Saving...</h5>
       </div>
-    </React.Fragment>
+    </>
   );
 
   const submitButton = !loading && (
-    <React.Fragment>
+    <>
       <div style={{flex: '0 1 15%', margin: '0 1%'}}>
-        <Button
-          label="Update"
-          onClick={handleUpdate}
-        />
+        <Button label="Update" onClick={handleUpdate}/>
       </div>
       <div style={{flex: '0 1 15%', margin: '0 1%'}}>
-        <a onClick={clearAll} style={{cursor: 'pointer'}}>
-          Cancel
-        </a>
+        <a onClick={clearAll} style={{cursor: 'pointer'}}>Cancel</a>
       </div>
-    </React.Fragment>
+    </>
   );
 
   const displayValue = link ? (
@@ -472,7 +421,7 @@ function InlineField({
     <div className='field'>
       {label}
       <div className='inline-field'>
-        {fields}
+        {children}
         {submitButton}
         {loader}
       </div>

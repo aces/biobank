@@ -1,5 +1,5 @@
 import BaseAPI from './BaseAPI';
-import { Specimen } from '../types';
+import { Specimen } from '../entities';
 
 export default class SpecimenAPI extends BaseAPI<Specimen> {
   constructor() {

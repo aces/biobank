@@ -1,7 +1,7 @@
 import BaseAPI from './BaseAPI';
-import { Container } from '../types'; // Assuming you have a User type
+import { IContainer } from '../entities';
 
-export default class ContainerAPI extends BaseAPI<Container> {
+export default class ContainerAPI extends BaseAPI<IContainer> {
   constructor() {
     super('/biobank/containers'); // Provide the base URL for container-related API
   }
