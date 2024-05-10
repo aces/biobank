@@ -308,7 +308,7 @@ class BarcodeInput extends PureComponent {
     const barcodesPrimary = Object.values(data.containers)
     .reduce((result, container) => {
       if (options.container.types[container.typeId].primary == 1) {
-        const specimen = data.specimens[container.specimenId];
+        const specimen = data.specimens[container.specimenId] || {};
         const availableId = Object.keys(options.container.stati).find(
           (key) => options.container.stati[key].label === 'Available'
         );
