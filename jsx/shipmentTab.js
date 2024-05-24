@@ -74,7 +74,6 @@ function ShipmentTab({
             >
               <ShipmentInformation
                 shipment={shipments[value]}
-                containers={data.containers}
                 centers={options.centers}
               />
             </TriggerableModal>
@@ -171,7 +170,6 @@ function ShipmentTab({
  */
 function ShipmentInformation({
   shipment,
-  containers = {},
   centers,
 }) {
   const logs = shipment.logs.map((log, i) => {
@@ -211,8 +209,7 @@ function ShipmentInformation({
     );
   });
 
-  const containerBarcodes = shipment.containerIds.map((id, i) => {
-    const barcode = (containers[id] || {}).barcode;
+  const containerBarcodes = shipment.containerBarcodes.map((barcode, i) => {
     return (
       <Link
         key={i}
@@ -335,7 +332,7 @@ function CreateShipment({
         onUserInput={handler.set}
         value={shipment.destinationCenterId}
         options={centers}
-        errorMessage={errors.destinationCenterId}
+        errorMessage={errors.destinationCenter}
         required={true}
       />
       <ShipmentLogForm

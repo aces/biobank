@@ -69,12 +69,14 @@ class ContainerController
     /**
      * Get all Container Objects permitted by the Container Data Provisioner (DAO).
      *
-     * @return array $specimens All permissable Container Objects
+     * @return array $containers All permissable Container Objects
      */
     public function getInstances() : array
     {
         $this->_validatePermission('view');
         $containers  = [];
+        $this->dao = $this->dao
+                          ->filter(new \LORIS\Data\Filters\UserSiteMatch());
         $containerIt = $this->dao->execute($this->user);
         foreach ($containerIt as $id => $container) {
             $containers[$id] = $container;
@@ -151,6 +153,8 @@ class ContainerController
     }
 
     /**
+     * XXX: This function can likely be delete completely and the dao can be
+     * instatiated at the beginning. This filters can be add at the API endpoint.
      * Treats the Container DAO as a Provisioner that can be iterated through
      * to provide the permissable Container Objects for the current User.
      *
@@ -158,17 +162,7 @@ class ContainerController
      */
     private function _getDataProvisioner() : ContainerDAO
     {
-        $dao = new ContainerDAO($this->db);
-        if ($this->user->hasPermission('access_all_profiles') === false) {
-            $dao = $dao->filter(new \LORIS\Data\Filters\UserSiteMatch());
-        }
-        if ($this->user->hasPermission('biobank_container_view') === false) {
-            $dao = $dao->filter(new PrimaryContainerFilter($this->loris, 0));
-        }
-        if ($this->user->hasPermission('biobank_specimen_view') === false) {
-            $dao = $dao->filter(new PrimaryContainerFilter($this->loris, 1));
-        }
-        return $dao;
+        return new ContainerDAO($this->db);
     }
 
     /**
@@ -212,7 +206,6 @@ class ContainerController
         $this->_validateTypeId($container);
         $this->_validateTemperature($container);
         $this->_validateStatusId($container);
-        $this->_validateProjectIds($container);
         $this->_validateShipmentBarcodes($container);
         $this->_validateCenterId($container);
         $this->_validateParentContainerId($container);
@@ -380,71 +373,6 @@ class ContainerController
     }
 
     /**
-     * Validates Container Object Project ID.
-     *
-     * @param Container $container Container to be checked.
-     *
-     * @throws BadRequest if the provided Container does not meet validation
-     *                    requirements
-     *
-     * @return void
-     */
-    private function _validateProjectIds(Container $container) : void
-    {
-        $projectIds = $container->getProjectIds();
-
-        if (empty($projectIds)) {
-            throw new BadRequest("A Project must be assigned");
-        }
-
-        foreach ($projectIds as $id) {
-            if (empty($id)) {
-                throw new BadRequest("All project values must be valid.");
-            }
-        }
-
-        // Check that current container's projects are a subset of the parent
-        // Container's projects.
-        $parentContainerId = $container->getParentContainerId();
-        if (false) {
-            $parentContainer  = $this->dao->getInstanceFromId($parentContainerId);
-            $parentProjectIds = $parentContainer->getProjectIds();
-            if (array_intersect($projectIds, $parentProjectIds) != $projectIds) {
-                $barcode       = $container->getBarcode();
-                $parentBarcode = $parentContainer->getBarcode();
-                throw new BadRequest(
-                    "The Projects to which $barcode
-                                      belongs must be a subset of the Projects to
-                                      which $parentBarcode
-                                      belongs."
-                );
-            }
-        }
-
-        // Check the current container's projects are a superset of the child
-        // Containers' projects.
-        $childContainerIds = $container->getChildContainerIds();
-        if ($childContainerIds) {
-            forEach ($childContainerIds as $id) {
-                $childContainer  = $this->dao->getInstanceFromId((int) $id);
-                $childProjectIds = $childContainer->getProjectIds();
-                if (array_intersect(
-                    $childProjectIds,
-                    $projectIds
-                ) != $childProjectIds
-                ) {
-                    $barcode = $container->getBarcode();
-                    throw new BadRequest(
-                        "The projects to which $barcode
-                                           belongs must be a superset 
-                                           of it's child Containers' Projects"
-                    );
-                }
-            }
-        }
-    }
-
-    /**
      * Validates Container Object Shipment Barcodes.
      *
      * @param Container $container Container to be checked.
@@ -456,8 +384,13 @@ class ContainerController
      */
     private function _validateShipmentBarcodes(Container $container) : void
     {
+        if (empty($container->getShipmentBarcodes())) {
+            // Handle the null case here
+            return;
+        }
         $shipmentDAO = new ShipmentDAO($this->db);
         foreach ($container->getShipmentBarcodes() as $barcode) {
+            error_log($barcode);
             $shipment = $shipmentDAO->getInstanceFromBarcode($barcode);
             if ($shipment->getActive()) {
                 throw new BadRequest(

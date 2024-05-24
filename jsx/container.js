@@ -125,6 +125,7 @@ class BiobankContainer extends Component {
         }
 
         const child = data.containers[childId];
+        
         if (child.coordinate) {
           listAssigned.push(
             <div>

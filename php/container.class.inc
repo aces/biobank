@@ -30,29 +30,33 @@ namespace LORIS\biobank;
  * @link     https://www.github.com/aces/Loris/
  */
 
-class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyEntities\SiteHaver
+class Container implements
+    \JsonSerializable,
+    \LORIS\Data\DataInstance,
+    \LORIS\StudyEntities\SiteHaver
 {
     /**
      * Persistent Instance variables.
      *
      * These properties describe a container entity.
      *
-     * @var int       $id
-     * @var string    $barcode
-     * @var int       $specimenId
-     * @var int       $typeId
-     * @var int       $dimensionId
-     * @var float     $temperature
-     * @var int       $statusId
-     * @var array     $projectIds
-     * @var array     $shipmentBarocdes
-     * @var \CenterID $centerId
-     * @var int       $parentContainerId
-     * @var array     $childContainerIds
-     * @var int       $coordinate
-     * @var string    $lotNumber
-     * @var \DateTime $expirationDate
-     * @var string    $comments
+     * @var int          $id
+     * @var string       $barcode
+     * @var int          $specimenId
+     * @var int          $typeId
+     * @var int          $dimensionId
+     * @var float        $temperature
+     * @var int          $statusId
+     * @var array        $shipmentBarcodes
+     * @var \ProjectID[] $projectIds
+     * @var \CenterID    $centerId
+     * @var int          $parentContainerId
+     * @var ?string      $parentContainerBarcode
+     * @var array        $childContainerIds
+     * @var int          $coordinate
+     * @var string       $lotNumber
+     * @var \DateTime    $expirationDate
+     * @var string       $comments
      *
      * @access private
      */
@@ -63,10 +67,11 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\S
     private $dimensionId;
     private $temperature;
     private $statusId;
-    private $projectIds;
     private $shipmentBarcodes;
+    private array $projectIds;
     private \CenterID $centerId;
     private $parentContainerId;
+    private ?string $parentContainerBarcode = null;
     private $childContainerIds;
     private $coordinate;
     private $lotNumber;
@@ -221,28 +226,6 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\S
     }
 
     /**
-     * Sets the ID of the container's current projects
-     *
-     * @param int[] $projectIds the IDs of the container's current projects
-     *
-     * @return void
-     */
-    public function setProjectIds(array $projectIds) : void
-    {
-        $this->projectIds = $projectIds;
-    }
-
-    /**
-     * Gets the ID of the container's current projects
-     *
-     * @return ?array
-     */
-    public function getProjectIds() : ?array
-    {
-        return $this->projectIds;
-    }
-
-    /**
      * Sets the Barcodes of the container's shipments
      *
      * @param array $shipmentBarcodes the IDs of the container's shipments
@@ -255,7 +238,7 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\S
     }
 
     /**
-     * Gets the Barocdes of the container's shipments
+     * Gets the Barcodes of the container's shipments
      *
      * @return ?array
      */
@@ -288,6 +271,26 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\S
         return $this->statusId;
     }
 
+    /**                                                                         
+     * Sets Project IDs of affiliated container specimen.                      
+     *                                                                          
+     * @param \ProjectID[]                                                     
+     */                                                                         
+    public function setProjectIds(array $projectIds)                            
+    {                                                                           
+        $this->projectIds = $projectIds;                                        
+    }                                                                           
+                                                                                
+    /**                                                                         
+     * Return Project ID of affiliated specimen container.                      
+     *                                                                          
+     * @return \ProjectID[]                                                     
+     */                                                                         
+    public function getProjectIds() : array
+    {                                                                           
+        return $this->projectIds;                                               
+    }   
+
     /**
      * Sets the ID of the container's current centerId
      *
@@ -305,7 +308,7 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\S
      *
      * @return \CenterID
      */
-    public function getCenterID() : \CenterID
+    public function getCenterId() : \CenterID
     {
         return $this->centerId;
     }
@@ -330,6 +333,28 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\S
     public function getParentContainerId() : ?int
     {
         return $this->parentContainerId;
+    }
+
+    /**
+     * Sets the parent container's barcode
+     *
+     * @param ?int $parentContainerBarcode the parent container's barcode
+     *
+     * @return void
+     */
+    public function setParentContainerBarcode(?string $parentContainerBarcode) : void
+    {
+        $this->parentContainerBarcode = $parentContainerBarcode;
+    }
+
+    /**
+     * Gets the parent container's barcode
+     *
+     * @return ?string
+     */
+    public function getParentContainerBarcode() : ?string
+    {
+        return $this->parentContainerBarcode;
     }
 
     /**
@@ -474,17 +499,20 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\S
         if (isset($data['statusId'])) {
             $this->setStatusId((int) $data['statusId']);
         }
-        if (isset($data['projectIds'])) {
-            $this->setProjectIds($data['projectIds']);
-        }
         if (isset($data['shipmentBarcodes'])) {
             $this->setShipmentBarcodes($data['shipmentBarcodes']);
+        }
+        if (isset($data['projectIds'])) {
+            $this->setProjectIds($data['projectIds']);
         }
         if (isset($data['centerId'])) {
             $this->setCenterId(new \CenterID(strval($data['centerId'])));
         }
         if (isset($data['parentContainerId'])) {
             $this->setParentContainerId((int) $data['parentContainerId']);
+        }
+        if (isset($data['parentContainerBarcode'])) {
+            $this->setParentContainerBarcode((string) $data['parentContainerBarcode']);
         }
         if (isset($data['childContainerIds'])) {
             $this->setChildContainerIds($data['childContainerIds']);
@@ -529,22 +557,23 @@ class Container implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\S
         }
 
         return [
-            'id'                => $this->id,
-            'barcode'           => $this->barcode,
-            'specimenId'        => $this->specimenId,
-            'typeId'            => $this->typeId,
-            'dimensionId'       => $this->dimensionId,
-            'temperature'       => $this->temperature,
-            'statusId'          => $this->statusId,
-            'projectIds'        => $this->projectIds,
-            'shipmentBarcodes'  => $this->shipmentBarcodes,
-            'centerId'          => $this->centerId->__toString(),
-            'parentContainerId' => $this->parentContainerId,
-            'childContainerIds' => $this->childContainerIds,
-            'coordinate'        => $this->coordinate,
-            'lotNumber'         => $this->lotNumber,
-            'expirationDate'    => $expirationDate,
-            'comments'          => $this->comments,
+            'id'                     => $this->id,
+            'barcode'                => $this->barcode,
+            'specimenId'             => $this->specimenId,
+            'typeId'                 => $this->typeId,
+            'dimensionId'            => $this->dimensionId,
+            'temperature'            => $this->temperature,
+            'statusId'               => $this->statusId,
+            'shipmentBarcodes'       => $this->shipmentBarcodes,
+            'projectIds'             => $this->projectIds,
+            'centerId'               => $this->centerId,
+            'parentContainerId'      => $this->parentContainerId,
+            'parentContainerBarcode' => $this->parentContainerBarcode,
+            'childContainerIds'      => $this->childContainerIds,
+            'coordinate'             => $this->coordinate,
+            'lotNumber'              => $this->lotNumber,
+            'expirationDate'         => $expirationDate,
+            'comments'               => $this->comments,
         ];
     }
 

@@ -58,11 +58,11 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
      * @param int $id Value of the $id for the Specimen that will be
      *                instantiated
      *
-     * @return Specimen $specimen Specimen Instance.
+     * @return ?Specimen $specimen Specimen Instance.
      */
-    public function getInstanceFromId(int $id) : Specimen
+    public function getInstanceFromId(int $id) : ?Specimen
     {
-        return $this->selectInstances([['column'=>'SpecimenID', 'value'=>$id]])[$id];
+        return $this->selectInstances([['column'=>'bs.SpecimenID', 'value'=>$id]])[$id];
     }
 
     /**
@@ -83,6 +83,24 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         return $this->db->pselectcol($query, ['i' => $id]);
     }
 
+    /**                                                                         
+     * Returns an array of all the Project IDs associated with the given        
+     * Specimen from the biobank_specimen_project_rel table.               
+     *                                                                          
+     * @param ?int $id                                       
+     *                                                                          
+     * @return $projectIds 
+     */                                                                         
+    private function _getProjectIds(?int $id) : array                           
+    {                                                                           
+        $query      = 'SELECT ProjectID                                         
+                  FROM biobank_specimen_project_rel                            
+                  WHERE SpecimenID=:i';                                        
+        $projectIds = $this->db->pselectCol($query, ['i' => $id]);              
+                                                                                
+        return $projectIds;                                                     
+    }  
+
     /**
      * This will select all specimens from the database that match the
      * attribute values passed by $conditions and will return an array
@@ -97,20 +115,26 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         ?array $conditions = [],
         string $operator = 'AND'
     ) : array {
-        $query = "SELECT bs.SpecimenID,
+        $query = "SELECT
+                      bs.SpecimenID,
                       bs.ContainerID,
+                      bc.Barcode,
                       bs.SpecimenTypeID,
                       bs.Quantity,
                       bs.UnitID,
-                      bc.CenterID as ContainerCenterID,
+                      bc.CenterID,
+                      GROUP_CONCAT(DISTINCT(bsprr.ProjectID)) as ProjectIDs,
                       bsf.FreezeThawCycle,
-                      GROUP_CONCAT(bspa.ParentSpecimenID) as ParentSpecimenIDs,
+                      GROUP_CONCAT(DISTINCT bspa.ParentSpecimenID) as ParentSpecimenIDs,
+                      GROUP_CONCAT(DISTINCT bc2.Barcode) as ParentSpecimenBarcodes,
                       s.CandID as CandidateID,
+                      c.PSCID as CandidatePSCID,
                       bs.SessionID,
+                      s.CenterID as SessionCenterID,
                       (
                         SELECT FLOOR(DATEDIFF(s.Date_visit, c.DoB)/365.25)
                       ) as CandidateAge,
-                      bspr.PoolID,
+                      bspor.PoolID,
                       bsc.SpecimenProtocolID as CollectionProtocolID,
                       bsc.Quantity as CollectionQuantity,
                       bsc.UnitID as CollectionUnitID,
@@ -135,23 +159,30 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       bsa.Comments as AnalysisComments,
                       bsa.Data as AnalysisData
                FROM biobank_specimen bs
-               JOIN biobank_container bc USING (ContainerID)
+               INNER JOIN biobank_container bc
+                 ON bs.ContainerID=bc.ContainerID
+               LEFT JOIN biobank_specimen_project_rel bsprr
+                 ON bs.SpecimenID=bsprr.SpecimenID
                LEFT JOIN biobank_specimen_freezethaw bsf
-                 USING (SpecimenID)
+                 ON bs.SpecimenID=bsf.SpecimenID
                LEFT JOIN session s
                  ON bs.SessionID=s.ID
                LEFT JOIN candidate c
                  ON s.CandID=c.CandID
-               LEFT JOIN biobank_specimen_pool_rel bspr
-                 USING (SpecimenID)
+               LEFT JOIN biobank_specimen_pool_rel bspor
+                 ON bs.SpecimenID=bspor.SpecimenID
                LEFT JOIN biobank_specimen_collection bsc
-                 USING (SpecimenID)
+                 ON bs.SpecimenID=bsc.SpecimenID
                LEFT JOIN biobank_specimen_preparation bsp
-                 USING (SpecimenID)
+                 ON bs.SpecimenID=bsp.SpecimenID
                LEFT JOIN biobank_specimen_analysis bsa
-                 USING (SpecimenID)
+                 ON bs.SpecimenID=bsa.SpecimenID
                LEFT JOIN biobank_specimen_parent bspa
-                 USING (SpecimenID)";
+                 ON bs.SpecimenID=bspa.SpecimenID
+               LEFT JOIN biobank_specimen bs2
+                 ON bspa.ParentSpecimenID=bs2.SpecimenID
+               LEFT JOIN biobank_container bc2
+                ON bs2.ContainerID=bc2.ContainerID";
         if (!empty($conditions)) {
             $whereClause = [];
             foreach ($conditions as $condition) {
@@ -165,23 +196,11 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         }
         $query       .= " GROUP BY bs.SpecimenID";
         $specimenRows = $this->db->pselectWithIndexKey($query, [], 'SpecimenID');
-
         $specimens = [];
-        if (!empty($specimenRows)) {
-            foreach ($specimenRows as $id => $specimenRow) {
-                $parentSpecimenIds = $specimenRow['ParentSpecimenIDs']
-                    ? explode(',', $specimenRow['ParentSpecimenIDs'])
-                    : [];
-
-                $specimen = $this->_getInstanceFromSQL(
-                    $specimenRow,
-                    $parentSpecimenIds
-                );
-
-                $specimens[$id] = $specimen;
-            }
+        foreach ($specimenRows as $id => $specimenRow) {
+            $specimens[$id] = $this->_getInstanceFromSQL($specimenRow);
         }
-
+        
         return $specimens;
     }
 
@@ -524,8 +543,38 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
             );
         }
 
+        // Prepare project data and sent it to be saved.
+        foreach ($data['biobank_specimen_project_rel'] as $i => $insert) {    
+            $projInsert =& $data['biobank_specimen_project_rel'][$i];
+            $projInsert['SpecimenID'] = $specimen->getId();                     
+        }                                                                       
+        $this->_saveProject($specimen, $data);    
+
         return $this->getInstanceFromId($specimen->getId());
     }
+
+    /**                                                                         
+     * Saves the Specimen Project to the database.                           
+     *                                                                          
+     * @param Specimen $specimen 
+     * @param array    $data      The data to save                             
+     *                                                                          
+     * @return void                                                             
+     */                                                                         
+    private function _saveProject(Specimen $specimen, array $data)                            
+    {                                                                           
+        // insert on update biobank_specimen_project_rel with relevant data.   
+        $this->db->delete(                                                      
+            'biobank_specimen_project_rel',                                    
+            ['SpecimenID' => $specimen->getId()]                              
+        );                                                                      
+        foreach ($data['biobank_specimen_project_rel'] as $insert) {           
+            $this->db->insert(                                                  
+                'biobank_specimen_project_rel',                                
+                $insert                                                         
+            );                                                                  
+        }                                                                       
+    }      
 
     /**
      * This function takes a Specimen Instance and prepares the data to be
@@ -605,12 +654,18 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                 json_encode($analysis->getData()) : null;
         }
 
+        $specimenProjectData = [];                                            
+        foreach ($specimen->getProjectIds() as $id) {                         
+            $specimenProjectData[] = ['ProjectID' => $id];
+        }
+
         return [
-            'biobank_specimen'             => $specimenData,
-            'biobank_specimen_freezethaw'  => $freezeThawData,
-            'biobank_specimen_collection'  => $collectionData,
-            'biobank_specimen_preparation' => $preparationData,
-            'biobank_specimen_analysis'    => $analysisData,
+            'biobank_specimen'              => $specimenData,
+            'biobank_specimen_freezethaw'   => $freezeThawData,
+            'biobank_specimen_collection'   => $collectionData,
+            'biobank_specimen_preparation'  => $preparationData,
+            'biobank_specimen_analysis'     => $analysisData,
+            'biobank_specimen_project_rel'  => $specimenProjectData,
         ];
     }
 
@@ -619,13 +674,11 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
      * instantiates it as a Specimen Object.
      *
      * @param array $data              Values to be converted to array.
-     * @param array $parentSpecimenIds IDs of the parent Specimen.
      *
      * @return Specimen
      */
     private function _getInstanceFromSQL(
         array $data,
-        array $parentSpecimenIds
     ) : Specimen {
         $specimen = new Specimen($this->loris);
         if (isset($data['SpecimenID'])) {
@@ -634,32 +687,46 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         if (isset($data['ContainerID'])) {
             $specimen->setContainerId((int) $data['ContainerID']);
         }
+        if (isset($data['Barcode'])) {
+            $specimen->setBarcode((string) $data['Barcode']);
+        }
         if (isset($data['SpecimenTypeID'])) {
             $specimen->setTypeId((int) $data['SpecimenTypeID']);
         }
-
         if (isset($data['Quantity'])) {
             $specimen->setQuantity((string) $data['Quantity']);
         }
-
         if (isset($data['UnitID'])) {
             $specimen->setUnitId((int) $data['UnitID']);
         }
-        if (isset($data['ContainerCenterID'])) {
-            $specimen->setContainerCenterId(new \CenterID(strval($data['ContainerCenterID'])));
+        if (isset($data['CenterID'])) {
+            $specimen->setCenterId(new \CenterID($data['CenterID']));
+        }
+        if (isset($data['ProjectIDs'])) {
+            $projectIds = array_map(fn($id) => new \ProjectID($id),
+                explode(',', $data['ProjectIDs']));
+            $specimen->setProjectIds($projectIds);
         }
         if (isset($data['FreezeThawCycle'])) {
             $specimen->setFTCycle((int) $data['FreezeThawCycle']);
         }
-
-        if (!empty($parentSpecimenIds)) {
+        if (!empty($data['ParentSpecimenIDs'])) {
+            $parentSpecimenIds = explode(',', $data['ParentSpecimenIDs']);
             $specimen->setParentSpecimenIds($parentSpecimenIds);
         } else {
             $specimen->setParentSpecimenIds([]);
         }
-
+        if (!empty($data['ParentSpecimenBarcodes'])) {
+            $parentSpecimenBarcodes = explode(',', $data['ParentSpecimenBarcodes']);
+            $specimen->setParentSpecimenBarcodes($parentSpecimenBarcodes);
+        } else {
+            $specimen->setParentSpecimenBarcodes([]);
+        }
         if (isset($data['CandidateID'])) {
             $specimen->setCandidateId((int) $data['CandidateID']);
+        }
+        if (isset($data['CandidatePSCID'])) {
+            $specimen->setCandidatePSCID((string) $data['CandidatePSCID']);
         }
 
         if (isset($data['CandidateAge'])) {
@@ -667,6 +734,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         }
         if (isset($data['SessionID'])) {
             $specimen->setSessionId((int) $data['SessionID']);
+        }
+        if (isset($data['SessionID'])) {
+            $specimen->setSessionCenterId(new \CenterID($data['SessionCenterID']));
         }
         if (isset($data['PoolID'])) {
             $specimen->setPoolId((int) $data['PoolID']);

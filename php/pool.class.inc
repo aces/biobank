@@ -29,7 +29,10 @@ namespace LORIS\biobank;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyEntities\SiteHaver
+class Pool implements
+    \JsonSerializable,
+    \LORIS\Data\DataInstance,
+    \LORIS\StudyEntities\SiteHaver
 {
     /**
      * Persistent Instance variables.
@@ -41,10 +44,13 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyE
      * @var float     $quantity
      * @var int       $unitId
      * @var array     $specimenIds
+     * @var array     $specimenBarcodes
      * @var int       $candidateId
+     * @var string    $candidatePSCID
      * @var int       $sessionId
      * @var int       $typeId
      * @var \CenterID $centerId
+     * @var array     $projectIds
      * @var \DateTime $date
      * @var \DateTime $time
      */
@@ -53,10 +59,13 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyE
     private $quantity;
     private $unitId;
     private $specimenIds;
+    private array $specimenBarcodes;
     private $candidateId;
+    private string $candidatePSCID;
     private $sessionId;
     private $typeId;
     private \CenterID $centerId;
+    private array $projectIds;
     private $date;
     private $time;
 
@@ -182,6 +191,28 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyE
     }
 
     /**
+     * Sets the Specimen Barcodes of the pool
+     *
+     * @param array $specimenBarcodes Specimen Barcodes of the pool
+     *
+     * @return void
+     */
+    public function setSpecimenBarcodes(array $specimenBarcodes) : void
+    {
+        $this->specimenBarcodes = $specimenBarcodes;
+    }
+
+    /**
+     * Gets the Specimen Barcodess of the pool
+     *
+     * @return array
+     */
+    public function getSpecimenBarcodes() : array
+    {
+        return $this->specimenBarcodes;
+    }
+
+    /**
      * Sets the Candidate ID of the pool
      *
      * @param int $candidateId Candidate ID of the pool
@@ -203,6 +234,28 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyE
     public function getCandidateId() : ?int
     {
         return $this->candidateId;
+    }
+
+    /**
+     * Sets the Candidate PSCID of the pool
+     *
+     * @param int $candidateId Candidate ID of the pool
+     *
+     * @return void
+     */
+    public function setCandidatePSCID(string $candidatePSCID) : void
+    {
+        $this->candidatePSCID = $candidatePSCID;
+    }
+
+    /**
+     * Gets the Candidate PSCID of the pool
+     *
+     * @return string
+     */
+    public function getCandidatePSCID() : string
+    {
+        return $this->candidatePSCID;
     }
 
     /**
@@ -270,11 +323,32 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyE
      *
      * @return \CenterID
      */
-    public function getCenterID() : \CenterID
+    public function getCenterId() : \CenterID
     {
         return $this->centerId;
     }
 
+    /**
+     * Sets the Project IDs of the constituent specimens
+     *
+     * @param array $projectIds Project IDs of the pool
+     *
+     * @return void
+     */
+    public function setProjectIds(array $projectIds) : void
+    {
+         $this->projectIds = $projectIds;
+    }
+
+    /**
+     * Gets the Project IDs of the pool
+     *
+     * @return array
+     */
+    public function getProjectIds() : array
+    {
+        return $this->projectIds;
+    }
     /**
      * Sets the date at which the pool was created.
      *
@@ -343,8 +417,14 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyE
         if (isset($data['specimenIds'])) {
             $this->setSpecimenIds($data['specimenIds']);
         }
+        if (isset($data['specimenBarcodes'])) {
+            $this->setSpecimenBarcodes($data['specimenBarcodes']);
+        }
         if (isset($data['candidateId'])) {
             $this->setCandidateId((int) $data['candidateId']);
+        }
+        if (isset($data['candidatePSCID'])) {
+            $this->setCandidatePSCID((string) $data['candidatePSCID']);
         }
         if (isset($data['sessionId'])) {
             $this->setSessionId((int) $data['sessionId']);
@@ -354,6 +434,9 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyE
         }
         if (isset($data['centerId'])) {
             $this->setCenterId(new \CenterID(strval($data['centerId'])));
+        }
+        if (isset($data['projectIds'])) {
+            $this->setProjectIds($data['projectIds']);
         }
         if (isset($data['date'])) {
             $this->setDate(new \DateTime($data['date']));
@@ -386,17 +469,20 @@ class Pool implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyE
         // TODO: Date and Time formats should be gotten from some sort of
         // config setting.
         return [
-            'id'          => $this->id,
-            'label'       => $this->label,
-            'quantity'    => $this->quantity,
-            'unitId'      => $this->unitId,
-            'specimenIds' => $this->specimenIds,
-            'candidateId' => $this->candidateId,
-            'sessionId'   => $this->sessionId,
-            'typeId'      => $this->typeId,
-            'centerId'    => $this->centerId->__toString(),
-            'date'        => $this->date->format('d-m-Y'),
-            'time'        => $this->time->format('H:i'),
+            'id'               => $this->id,
+            'label'            => $this->label,
+            'quantity'         => $this->quantity,
+            'unitId'           => $this->unitId,
+            'specimenIds'      => $this->specimenIds,
+            'specimenBarcodes' => $this->specimenBarcodes,
+            'candidateId'      => $this->candidateId,
+            'candidatePSCID'   => $this->candidatePSCID,
+            'sessionId'        => $this->sessionId,
+            'typeId'           => $this->typeId,
+            'centerId'         => $this->centerId,
+            'projectIds'       => $this->projectIds,
+            'date'             => $this->date->format('d-m-Y'),
+            'time'             => $this->time->format('H:i'),
         ];
     }
 

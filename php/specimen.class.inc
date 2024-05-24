@@ -29,7 +29,10 @@ namespace LORIS\biobank;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\StudyEntities\SiteHaver
+class Specimen implements
+    \JsonSerializable,
+    \LORIS\Data\DataInstance,
+    \LORIS\StudyEntities\SiteHaver
 {
     /**
      * Persistent Instance variables.
@@ -38,15 +41,20 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
      *
      * @var int         $id
      * @var int         $containerId
+     * @var string      $barcode
      * @var int         $typeId
      * @var string      $quantity
      * @var int         $unitId
-     * @var \CenterID   $containerCenterId
+     * @var \CenterID   $CenterId
+     * @var array       $ProjectIds
      * @var int         $fTCycle
      * @var array       $parentSpecimenIds
+     * @var array       $parentSpecimenBarcodes
      * @var int         $candidateId
+     * @var string      $candidatePSCID
      * @var int         $candidateAge
      * @var int         $sessionId
+     * @var \CenterID   $sessionCenterId
      * @var int         $poolId
      * @var Collection  $collection
      * @var Preparation $preparation
@@ -54,30 +62,24 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
      */
     private $id;
     private $containerId;
+    private string $barcode;
     private $typeId;
     private $quantity;
     private $unitId;
     private $fTCycle;
-    private \CenterID $containerCenterId;
+    private \CenterID $centerId;
+    private $projectIds;
     private $parentSpecimenIds;
+    private $parentSpecimenBarcodes;
     private $candidateId;
+    private $candidatePCSID;
     private $candidateAge;
     private $sessionId;
+    private $sessionCenterId;
     private $poolId;
     private $collection;
     private $preparation;
     private $analysis;
-
-    private $loris;
-    /**
-     * Initiliazes a new instance of the Specimen Class
-     *
-     * @param \LORIS\LorisInstance $loris The LORIS instance with the specimen
-     */
-    function __construct(\LORIS\LorisInstance $loris)
-    {
-        $this->loris = $loris;
-    }
 
     /**
      * Sets the specimen's ID.
@@ -125,6 +127,28 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
     public function getContainerId() : ?int
     {
         return $this->containerId;
+    }
+
+    /**
+     * Sets the specimen's barcode
+     *
+     * @param string $barcode
+     *
+     * @return void
+     */
+    public function setBarcode($barcode) : void
+    {
+        $this->barcode = $barcode;
+    }
+
+    /**
+     * Gets the specimen's barcode
+     *
+     * @return string
+     */
+    public function getBarcode() : string
+    {
+        return $this->barcode;
     }
 
     /**
@@ -244,6 +268,28 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
     }
 
     /**
+     * Sets the parent specimen's barcodes.
+     *
+     * @param array $parentSpecimenBarocdes the parent specimen's Barcodes
+     *
+     * @return void
+     */
+    public function setParentSpecimenBarcodes(array $parentSpecimenBarcodes) : void
+    {
+        $this->parentSpecimenBarcodes = $parentSpecimenBarcodes;
+    }
+
+    /**
+     * Gets the parent specimen's barcodes.
+     *
+     * @return ?array
+     */
+    public function getParentSpecimenBarcodes() : ?array
+    {
+        return $this->parentSpecimenBarcodes;
+    }
+
+    /**
      * Sets the ID of the candidate to which the specimen belongs
      *
      * @param int $candidateId ID of the specimen's donor
@@ -265,6 +311,28 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
     public function getCandidateId() : ?int
     {
         return $this->candidateId;
+    }
+
+    /**
+     * Sets the PSCID of the candidate to which the specimen belongs
+     *
+     * @param string $pscid of the specimen's donor
+     *
+     * @return void
+     */
+    public function setCandidatePSCID(string $candidatePSCID) : void
+    {
+        $this->candidatePSCID = $candidatePSCID;
+    }
+
+    /**
+     * Gets the PSCID of the candidate to which the specimen belongs
+     *
+     * @return string
+     */
+    public function getCandidatePSCID() : string
+    {
+        return $this->candidatePSCID;
     }
 
     /**
@@ -315,6 +383,30 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
     public function getSessionId() : ?int
     {
         return $this->sessionId;
+    }
+
+    /**
+     * Sets the Centeer of the candidate's session/timepoint in which the specimen
+     * was collected.
+     *
+     * @param \CenterID $sessionsCenterId the Center of the specimen's session of collection
+     *
+     * @return void
+     */
+    public function setSessionCenterId(\CenterID $sessionCenterId) : void
+    {
+        $this->sessionCenterId = $sessionCenterId;
+    }
+
+    /**
+     * Gets the Center of the candidate's session/timepoint in which the specimen
+     * was collected.
+     *
+     * @return ?\CenterID
+     */
+    public function getSessionCenterId() : ?\CenterID
+    {
+        return $this->sessionCenterId;
     }
 
     /**
@@ -408,34 +500,34 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
         return $this->analysis;
     }
 
-    public function setContainerCenterId(\CenterID $containerCenterId)
+    public function setCenterId(\CenterID $centerId)
     {
-        $this->containerCenterId = $containerCenterId;
+        $this->centerId = $centerId;
     }
 
-    // FIXME: THIS IS A MASSIVE HACK. Specimens should not be provisioned if
-    // their Container is not provisioned. Therefore, a check must be made that
-    // the Container's Center ID is accesibile by the current User. This function
-    // allows this check to happen upon provisioner filtering.
     /**
      * Return Center ID of affiliated specimen container.
      *
      * @return \CenterID
      */
-    public function getCenterID() : \CenterID
+    public function getCenterId() : \CenterID
     {
-        // NOTE: with the introduction of setContainerCenterId, this has been
-        // temporarily disabled to fix performance issues. A more permanent
-        // fix should be issued that considers container and specimen object
-        // design
+        return $this->centerId;
+    }
 
-        // $db           = \Database::singleton();
-        // $containerDAO = new ContainerDAO($db);
-        // $containerId  = $this->getContainerId();
-        // $container    = $containerDAO->getInstanceFromId($containerId);
-        // return $container->getCenterId();
+    public function setProjectIds(array $projectIds)
+    {
+        $this->projectIds = $projectIds;
+    }
 
-        return $this->containerCenterId;
+    /**
+     * Return Project ID of affiliated specimen container.
+     *
+     * @return \ProjectID[]
+     */
+    public function getProjectIds() : array
+    {
+        return $this->projectIds;
     }
 
     /**
@@ -453,6 +545,9 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
         if (isset($data['containerId'])) {
             $this->setContainerId((int) $data['containerId']);
         }
+        if (isset($data['barcode'])) {
+            $this->setBarcode((string) $data['barcode']);
+        }
         if (isset($data['typeId'])) {
             $this->setTypeId((int) $data['typeId']);
         }
@@ -462,8 +557,11 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
         if (isset($data['unitId'])) {
             $this->setUnitId((int) $data['unitId']);
         }
-        if (isset($data['containerCenterId'])) {
-            $this->setContainerCenterId(new \CenterID(strval($data['containerCenterId'])));
+        if (isset($data['centerId'])) {
+            $this->setCenterId(new \CenterID(strval($data['centerId'])));
+        }
+        if (isset($data['projectIds'])) {
+            $this->setProjectIds($data['projectIds']);
         }
         if (isset($data['fTCycle'])) {
             $this->setFTCycle((int) $data['fTCycle']);
@@ -471,14 +569,23 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
         if (isset($data['parentSpecimenIds'])) {
             $this->setParentSpecimenIds($data['parentSpecimenIds']);
         }
+        if (isset($data['parentSpecimenBarocdes'])) {
+            $this->setParentSpecimenBarcodes($data['parentSpecimenBarcodes']);
+        }
         if (isset($data['candidateId'])) {
             $this->setCandidateId((int) $data['candidateId']);
+        }
+        if (isset($data['candidatePSCID'])) {
+            $this->setCandidatePSCID((string) $data['candidatePSCID']);
         }
         if (isset($data['candidateAge'])) {
             $this->setCandidateAge((int) $data['candidateAge']);
         }
         if (isset($data['sessionId'])) {
             $this->setSessionId((int) $data['sessionId']);
+        }
+        if (isset($data['sessionCenterId'])) {
+            $this->setSessionCenterId(new \CenterId(strval($data['sessionCenterId'])));
         }
         if (isset($data['poolId'])) {
             $this->setPoolId((int) $data['poolId']);
@@ -523,19 +630,24 @@ class Specimen implements \JsonSerializable, \LORIS\Data\DataInstance, \LORIS\St
     public function jsonSerialize() : array
     {
         $array = [
-            'id'                => $this->id,
-            'containerId'       => $this->containerId,
-            'typeId'            => $this->typeId,
-            'quantity'          => $this->quantity,
-            'unitId'            => $this->unitId,
-            'containerCenterId' => $this->containerCenterId->__toString(),
-            'fTCycle'           => $this->fTCycle,
-            'parentSpecimenIds' => $this->parentSpecimenIds,
-            'candidateId'       => $this->candidateId,
-            'candidateAge'      => $this->candidateAge,
-            'sessionId'         => $this->sessionId,
-            'poolId'            => $this->poolId,
-            'collection'        => $this->collection->jsonSerialize(),
+            'id'                     => $this->id,
+            'containerId'            => $this->containerId,
+            'barcode'                => $this->barcode,
+            'typeId'                 => $this->typeId,
+            'quantity'               => $this->quantity,
+            'unitId'                 => $this->unitId,
+            'centerId'               => $this->centerId,
+            'projectIds'             => $this->projectIds,
+            'fTCycle'                => $this->fTCycle,
+            'parentSpecimenIds'      => $this->parentSpecimenIds,
+            'parentSpecimenBarcodes' => $this->parentSpecimenBarcodes,
+            'candidateId'            => $this->candidateId,
+            'candidatePSCID'         => $this->candidatePSCID,
+            'candidateAge'           => $this->candidateAge,
+            'sessionId'              => $this->sessionId,
+            'sessionCenterId'        => $this->sessionCenterId,
+            'poolId'                 => $this->poolId,
+            'collection'             => $this->collection->jsonSerialize(),
         ];
         if ($this->preparation) {
             $array['preparation'] = $this->preparation->jsonSerialize();

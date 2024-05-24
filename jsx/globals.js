@@ -212,16 +212,16 @@ function Globals(props) {
     </InlineField>
   );
 
-  const projectField = (
+  const projectField = () => specimen && (
     <InlineField
       loading={props.loading}
       label='Projects'
       clearAll={props.clearAll}
-      updateValue={updateContainer}
+      updateValue={()=>props.updateSpecimen(current.specimen)}
       edit={() => props.edit('project')}
-      editValue={editContainer}
-      value={container.projectIds.length !== 0 ?
-       container.projectIds
+      editValue={() => props.editSpecimen(specimen)}
+      value={specimen.projectIds.length !== 0 ?
+       specimen.projectIds
          .map((id) => options.projects[id])
          .join(', ') : 'None'}
       editable={editable.project}
@@ -229,11 +229,11 @@ function Globals(props) {
       <SelectElement
         name='projectIds'
         options={props.options.projects}
-        onUserInput={props.setContainer}
+        onUserInput={props.setSpecimen}
         multiple={true}
         emptyOption={false}
-        value={props.current.container.projectIds}
-        errorMessage={props.errors.container.projectIds}
+        value={props.current.specimen.projectIds}
+        errorMessage={props.errors.specimen.projectIds}
       />
     </InlineField>
   );
@@ -266,21 +266,23 @@ function Globals(props) {
   };
 
   const parentSpecimenField = () => {
-    if ((specimen||{}).parentSpecimenIds) {
-      const parentSpecimenBarcodes = Object.values(specimen.parentSpecimenIds)
-      .map((id) => {
-        const barcode = data.containers[data.specimens[id].containerId].barcode;
-        return <Link to={`/barcode=${barcode}`}>{barcode}</Link>;
-      })
-      .reduce((prev, curr) => [prev, ', ', curr], []);
-
-      return (
-        <InlineField
-          label={'Parent Specimen'}
-          value={parentSpecimenBarcodes || 'None'}
-        />
-      );
+    if (!specimen) {
+      return null;
     }
+  
+    const { parentSpecimenIds, parentSpecimenBarcodes } = specimen;
+    const value = parentSpecimenIds.length === 0
+      ? 'None'
+      : parentSpecimenBarcodes
+          .map(barcode => <Link to={`/barcode=${barcode}`}>{barcode}</Link>)
+          .reduce((prev, curr, index) => [prev, index == 0 ? '' : ', ', curr]);
+
+    return (
+      <InlineField
+        label="Parent Specimen"
+        value={value}
+      />
+    );
   };
 
   // TODO: Find a way to make this conform to the GLOBAL ITEM structure.
@@ -289,10 +291,11 @@ function Globals(props) {
       // Set Parent Container Barcode Value if it exists
       const parentContainerBarcodeValue = () => {
         if (container.parentContainerId) {
-          const barcode = data.containers[
-                          container.parentContainerId
-                        ].barcode;
-          return <Link to={`/barcode=${barcode}`}>{barcode}</Link>;
+          const barcode = container.parentContainerBarcode;
+          if (data.containers[container.parentContainerId]) {
+            return <Link to={`/barcode=${barcode}`}>{barcode}</Link>;
+          }
+          return <div>{barcode}</div>;
         }
       };
 
@@ -384,7 +387,7 @@ function Globals(props) {
         {fTCycleField()}
         {temperatureField}
         {statusField}
-        {projectField}
+        {projectField()}
         {drawField}
         {centerField}
         {shipmentField()}

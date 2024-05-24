@@ -76,7 +76,7 @@ function ContainerParentForm(props) {
     .reduce((result, id) => {
       const container = data.containers[id];
       if (container.coordinate) {
-        result[container.coordinate] = id;
+          result[container.coordinate] = id;
       }
       return result;
     }, {});

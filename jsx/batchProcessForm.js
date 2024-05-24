@@ -74,7 +74,6 @@ class BatchProcessForm extends React.PureComponent {
 
     // Set current global values.
     current.typeId = specimen.typeId;
-    current.centerId = container.centerId;
 
     // Set list values.
     list[count] = {specimen, container};
@@ -135,6 +134,7 @@ class BatchProcessForm extends React.PureComponent {
       Swal.fire('Oops!', 'Specimens must be of the same Type', 'warning');
       return Promise.reject();
     }
+
     return Promise.resolve();
   }
 
@@ -258,7 +258,7 @@ class BatchProcessForm extends React.PureComponent {
             <StaticElement
               label='Processing Note'
               text="Select or Scan the specimens to be prepared. Specimens must
-                    have a Status of 'Available', and share the same Type. 
+                    have a Status of 'Available', and share the same Type.
                     Any previous value associated with a Specimen will be
                     overwritten if one is added on this form."
             />
@@ -308,6 +308,7 @@ class BatchProcessForm extends React.PureComponent {
         specimen.preparation.centerId = item.container.centerId;
         return specimen;
       });
+      console.log(prepList);
 
       return new Promise((resolve, reject) => {
         this.validateList(list)
