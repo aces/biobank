@@ -119,6 +119,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       bs.SpecimenID,
                       bs.ContainerID,
                       bc.Barcode,
+                      LPAD(bs.SampleNumber, 3, '0') AS SampleNumber,
                       bs.SpecimenTypeID,
                       bs.Quantity,
                       bs.UnitID,
@@ -576,6 +577,21 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         }                                                                       
     }      
 
+    private function getSampleNumber($candId)
+    {
+        // Query to get the maximum SampleNumber for the given candidate
+        $query = "
+            SELECT IFNULL(MAX(bs.SampleNumber), 0) AS max_sample_number
+            FROM biobank_specimen bs
+            JOIN session s ON bs.SessionID = s.ID
+            WHERE s.CandID = :candId
+        ";
+    
+        $sampleNumber = $this->db->pselectOneInt($query, ['candId' => $candId]);
+    
+        return $sampleNumber + 1;
+    }
+
     /**
      * This function takes a Specimen Instance and prepares the data to be
      * inserted into the database by converting it to a data array. This one to
@@ -588,6 +604,8 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
      */
     private function _getSQLFromInstance(Specimen $specimen) : array
     {
+        $sampleNumber = $this->getSampleNumber($specimen->getCandidateId());
+
         $specimenData = [
             'SpecimenID'     => $specimen->getId(),
             'ContainerID'    => $specimen->getContainerId(),
@@ -595,6 +613,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
             'Quantity'       => $specimen->getQuantity(),
             'UnitID'         => $specimen->getUnitId(),
             'SessionID'      => $specimen->getSessionId(),
+            'SampleNumber'   => $sampleNumber,
         ];
 
         $freezeThawData = [
@@ -689,6 +708,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         }
         if (isset($data['Barcode'])) {
             $specimen->setBarcode((string) $data['Barcode']);
+        }
+        if (isset($data['SampleNumber'])) {
+            $specimen->setSampleNumber((string) $data['SampleNumber']);
         }
         if (isset($data['SpecimenTypeID'])) {
             $specimen->setTypeId((int) $data['SpecimenTypeID']);
