@@ -5,14 +5,14 @@
  *
  * PHP Version 7.2
  *
- * @category   Controller
+ * @category   Service
  * @package    Loris
  * @subpackage Biobank
  * @author     Henri Rabalais <henri.rabalais@mcin.ca>
  * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
  * @link       http://www.github.com/aces/Lors/
  */
-namespace LORIS\biobank;
+namespace LORIS\biobank\services;
 
 /**
  * This class features the code that enables access to the Specimens of the LORIS
@@ -20,149 +20,71 @@ namespace LORIS\biobank;
  *
  * PHP Version 7.2
  *
- * @category   Controller
+ * @category   Service
  * @package    Loris
  * @subpackage Biobank
  * @author     Henri Rabalais <henri.rabalais@mcin.ca>
  * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
  * @link       http://www.github.com/aces/Lors/
  */
-class SpecimenController
+class SpecimenService
 {
-    /**
-     * Private instances of the Database, User and ContainerDAO classes
-     *
-     * @var \LORIS\LorisInstance $loris
-     * @var \Database   $db
-     * @var \User       $user
-     * @var SpecimenDAO $dao
-     */
-    private $loris;
-    private $db;
-    private $user;
     private SpecimenDAO $dao;
 
-    /**
-     * Specimen Controller Class constructor
-     *
-     * @param \LORIS\LorisInstance $loris Loris instance
-     * @param \User                $user  User Instance.
-     */
-    function __construct(\LORIS\LorisInstance $loris, \User $user)
+    function __construct(SpecimenDAO $dao)
     {
-        $this->loris = $loris;
-        $this->db    = $loris->getDatabaseConnection();
-        $this->user  = $user;
-        $this->dao   = $this->_getDataProvisioner();
+        $this->dao = $dao;
     }
 
-    /**
-     * Get all Specimen Objects permitted by the Specimen Data Provisioner (DAO).
-     *
-     * @return array
-     */
     public function getInstances() : array
     {
-        $this->_validatePermission('view');
-        $specimens  = [];
-        // $this->dao = $this->dao
-        //   ->filter(new \LORIS\Data\Filters\UserProjectOrSiteMatch());
-        $specimenIt = $this->dao->execute($this->user);
-        foreach ($specimenIt as $id => $specimen) {
-            $specimens[$id] = $specimen;
-        }
-        return $specimens;
+        return $this->dao->getAllInstances();
     }
 
-    public function getInstanceByBarcode($barcode) : array                      
+    public function getInstanceById(string $id) : array                      
     {                                                                           
-        return array_values($this->dao->selectInstances(                        
-            [                                                                   
-                ['column'=>'bc.Barcode', 'value'=>$barcode],                    
-            ],                                                                  
-        ));                                                                     
-    }  
-
-    /**
-     * This method takes in a list of specimen and container arrays from the
-     * front-end. The specimens are validated while the containers are
-     * sent to their respective controller to be validated and saved. The ids of
-     * the saved containers are set to the specimen instances which are then
-     * sent to the DAO to be saved.
-     *
-     * @param array $list a list of specimen and container arrays to be created.
-     *
-     * @return array $specimen a list of specimen objects that were created.
-     */
-    public function createInstances(array $list) : array
-    {
-        $this->_validatePermission('create');
-
-        $containerList = [];
-        $specimenList  = [];
-        foreach (array_values($list) as $specimen) {
-            $containerList[] = $specimen['container'];
-            $specimenList[]  = $this->_prepare($specimen);
+        $specimen = $this->dao->find($id);
+        if (!$specimen) {
+            throw new Exception("Specimen not found");
         }
-
-        $contController = new ContainerController($this->loris, $this->user);
-        $containers     = $contController->createInstances($containerList);
-        if ($containers[0]->getParentContainerId()) {
-            $containers[] = $contController->dao->getInstanceFromId(
-                $containers[0]->getParentContainerId()
-            );
-        }
-
-        $specimens = [];
-        foreach ($specimenList as $i => $specimen) {
-            $specimen->setContainerId($containers[$i]->getId());
-            $specimens[] = $this->dao->saveInstance($specimen);
-            $containers[$i]->setSpecimenId($specimen->getId());
-        }
-
-        return ['specimens' => $specimens, 'containers' => $containers];
-    }
-
-    /**
-     * This method takes in a specimen array from the front-end, validates it,
-     * instantiates it and then sends it to the DAO to be saved to the
-     * database.
-     *
-     * @param array $specimenArray specimen array to be created
-     *
-     * @return Specimen updated Specimen
-     */
-    public function updateInstance(array $specimenArray) : Specimen
-    {
-        $this->_validatePermission('update');
-        $specimen = $this->_prepare($specimenArray);
-        return $this->dao->saveInstance($specimen);
-    }
-
-    /**
-     * Converts data into a specimen intance validates the specimen.
-     *
-     * @param array $specimenArray Specimen data to be instantiated
-     *
-     * @return Specimen $specimen to be submitted
-     */
-    private function _prepare(array $specimenArray) : Specimen
-    {
-        $specimen = (new Specimen($this->loris))->fromArray($specimenArray);
-        $this->_validateInstance($specimen);
-
         return $specimen;
     }
 
-    /**
-     * Get all data associated with the Specimen entity. This is used for
-     * front-end mapping and populating form options.
-     *
-     * @return array Associative array of option data.
-     */
+    public function createInstances(array $list) : array
+    {
+        $this->dao->db->beginTransaction();
+        try {
+            $specimens = [];
+            foreach (array_values($list) as $i => $specimen) {
+                $specimen = (new Specimen())->fromArray($specimenArray);
+                $this->_validateInstance($specimen);
+                $specimens[]  = $this->dao->saveInstance($specimen);
+            }
+            $this->dao->db->commit();
+            return $specimens;
+        } catch (Exception $e) {
+            $this->dao->db->rollback();
+            throw $e;
+        }
+    }
+
+    public function updateInstance(array $specimenArray) : Specimen
+    {
+        $this->dao->db->beginTransaction();
+        try {
+            $specimen = (new Specimen())->fromArray($specimenArray);
+            $this->_validateInstance($specimen);
+            $updatedSpecimen = $this->dao->saveInstance($specimen);
+            $this->dao->db->commit();
+            return $updateSpecimen;
+        } catch (Exception $e) {
+            $this->dao->db->rollback();
+            throw $e;
+        }
+    }
+
     public function getFields() : array
     {
-        $this->_validatePermission('view');
         return [
             'types'              => $this->dao->getTypes(),
             'processes'          => $this->dao->getProcesses(),
@@ -182,52 +104,6 @@ class SpecimenController
 
     }
 
-    /**
-     * Treats the Specimen DAO as a Provisioner that can be iteratated
-     * through to provide the permissable Specimen Objects for the current User.
-     *
-     * @return SpecimenDAO
-     */
-    private function _getDataProvisioner() : SpecimenDAO
-    {
-        return new SpecimenDAO($this->loris);
-    }
-
-    /**
-     * Checks User Permissions for creating or updating Specimen Objects.
-     *
-     * @param string $method User requested action
-     *
-     * @return void
-     */
-    private function _validatePermission(string $method) : void
-    {
-        switch ($method) {
-        case 'view':
-            if (!$this->user->hasPermission('biobank_specimen_view')) {
-                throw new Forbidden('Specimen: View Permission Denied');
-            }
-            break;
-        case 'update':
-            if (!$this->user->hasPermission('biobank_specimen_update')) {
-                throw new Forbidden('Specimen: Update Permission Denied');
-            }
-            break;
-        case 'create':
-            if (!$this->user->hasPermission('biobank_specimen_create')) {
-                throw new Forbidden('Specimen: Create Permission Denied');
-            }
-            break;
-        }
-    }
-
-    /**
-     * Validates Specimen Data before being saved
-     *
-     * @param Specimen $specimen Specimen to be validated.
-     *
-     * @return void
-     */
     private function _validateInstance(Specimen $specimen) : void
     {
         $this->_validateTypeId($specimen);

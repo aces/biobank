@@ -12,6 +12,8 @@
  * @link       http://www.github.com/aces/Loris/
  */
 namespace LORIS\biobank;
+
+use \LORIS\Http\Endpoint;
 use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Server\RequestHandlerInterface;
 use \Psr\Http\Message\ResponseInterface;
@@ -28,7 +30,7 @@ use \Psr\Http\Message\ResponseInterface;
  * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
  * @link       http://www.github.com/aces/Loris/
  */
-class Containers extends \NDB_Page implements RequestHandlerInterface
+class Containers extends Endpoint
 {
     /**
      * Returns true if user has access to this endpoint.
@@ -71,25 +73,6 @@ class Containers extends \NDB_Page implements RequestHandlerInterface
     ) : void {
     }
 
-    /**
-     * This function passes the request to the handler. This is necessary since
-     * the Endpoint bypass the Module class.
-     *
-     * XXX: This function should be extracted to a parent class.
-     *
-     * @param ServerRequestInterface  $request The PSR7 request.
-     * @param RequestHandlerInterface $handler The request handler.
-     *
-     * @return ResponseInterface The outgoing PSR7 response.
-     */
-    public function process(
-        ServerRequestInterface $request,
-        RequestHandlerInterface $handler
-    ) : ResponseInterface {
-        return $handler->handle($request);
-    }
-
-
 
 // XXX: Idea for routing library
 // // Define a route to get all containers
@@ -120,7 +103,6 @@ class Containers extends \NDB_Page implements RequestHandlerInterface
         $uri      = $request->getUri()->getPath();
         $segments = explode('/', trim($uri, '/'));
         $secondLastSegment = count($segments) > 1 ? $segments[count($segments) - 2] : null;
-
 
         // TODO: this needs to be workshopped...
         $limit = null;
