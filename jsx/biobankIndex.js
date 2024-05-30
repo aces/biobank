@@ -372,7 +372,7 @@ class BiobankIndex extends React.Component {
               return this.printLabel(labelParams);
             }
           })
-          .then(() => resolve());
+          .then(() => resolve())
           .catch((error) => {
             console.error('Printing error:', error);
             resolve();
