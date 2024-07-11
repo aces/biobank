@@ -3,6 +3,6 @@ import { Pool } from '../entities';
 
 export default class PoolAPI extends BaseAPI<Pool> {
   constructor() {
-    super('/biobank/pools');
+    super('/pools');
   }
 }

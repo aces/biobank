@@ -28,7 +28,7 @@ export default class BaseAPI<T> {
   protected baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = loris.BaseURL+'/api/v0.0.3'+baseUrl;
+    this.baseUrl = loris.BaseURL+'/biobank'+baseUrl;
   }
 
   async getAll(): Promise<T[]> {

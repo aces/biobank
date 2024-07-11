@@ -15,9 +15,9 @@ export const CoordinateLabel: React.FC<{
   if (!dimension) return null;                                               
                                                                               
   const formatCoordinate = (x: number, y: number, dimension: Dimension): string => {
-    const xVal = dimension.xNum === 1 ? x : String.fromCharCode(64 + x);     
-    const yVal = dimension.yNum === 1 ? y : String.fromCharCode(64 + y);     
-    return dimension.xNum === 1 && dimension.yNum === 1                     
+    const xVal = dimension.xNum === true ? x : String.fromCharCode(64 + x);     
+    const yVal = dimension.yNum === true ? y : String.fromCharCode(64 + y);     
+    return dimension.xNum === true && dimension.yNum === true                    
       ? `${x + (dimension.x * (y - 1))}`                                     
       : `${yVal}${xVal}`;                                                     
   }                                                                           

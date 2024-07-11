@@ -12,10 +12,11 @@
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris-Trunk/
  */
-namespace LORIS\Biobank;
+namespace LORIS\biobank;
 
 use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Message\ResponseInterface;
+use \LORIS\biobank\endpoints;
 
 /**
  * Class module implements the basic LORIS module functionality
@@ -49,6 +50,46 @@ class Module extends \Module
     }
 
     /**
+     * The default handler for a module routes to a page of the first component of
+     * the URL's name, or the same name as the module if serving the root of the
+     * module.
+     *
+     * Modules extend PrefixRouter, so that the parent handler knows that the
+     * css, static, and js routes should be routed through the file system to
+     * retrieve the files before trying to load any specific pages.
+     *
+     * @param ServerRequestInterface $request The incoming PSR7 request
+     *
+     * @return ResponseInterface The outgoing PSR7 response
+     */
+    public function handle(ServerRequestInterface $request) : ResponseInterface
+    {
+        // Get the stripped path from the request URI
+        $user = $request->getAttribute('user');
+        $db = \NDB_Factory::singleton()->database();
+
+        $path = trim($request->getURI()->getPath(), "/");
+        $pathparts = explode('/', $path);
+
+        // Determine the handler based on the stripped path
+        $handler = match ($pathparts[0]) {
+            'specimens' => new endpoints\Specimens($user, $db),
+            'containers' => new endpoints\Containers($user, $db),
+            'shipments' => new endpoints\Shipments($user, $db),
+            'pools' => new endpoints\Pools($user, $db),
+            default => null
+        };
+
+        // If handler is a ResponseInterface, return it directly
+        if ($handler === null) {
+            return parent::handle($request);
+        }
+
+        // Process the request with the determined handler
+        return $handler->process($request, $handler);
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @return string The menu category for this module
@@ -66,5 +107,15 @@ class Module extends \Module
     public function getLongName() : string
     {
         return "Biobank";
+    }
+
+        /**
+     * {@inheritDoc}
+     *
+     * @return bool Whether an api schema is available fro this module.
+     */
+    public function hasAPISpecification(): bool
+    {
+        return false;
     }
 }

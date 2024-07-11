@@ -2,9 +2,9 @@ export type Dimension = {
   y: number,                                                                    
   x: number,                                                                    
   z: number,                                                                    
-  xNum: number,                                                                 
-  yNum: number,                                                                 
-  zNum: number,                                                                 
+  xNum: boolean,                                                                 
+  yNum: boolean,                                                                 
+  zNum: boolean,                                                                 
 }; 
 
 export interface IContainer {                                    
