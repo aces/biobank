@@ -347,21 +347,28 @@ class BarcodeInput extends PureComponent {
     // Create options for barcodes based on match typeId
     const barcodesPrimary = Object.values(data.containers)
     .reduce((result, container) => {
+
+      // Check if container is of type primary
       if (options.container.types[container.typeId].primary == 1) {
         const specimen = data.specimens[container.specimenId];
-        const availableId = Object.keys(options.container.stati).find(
-          (key) => options.container.stati[key].label == 'Available'
-        );
-        const protocolExists = Object.values(options.specimen.protocols).find(
-          (protocol) => protocol.typeId == specimen.typeId
-        );
-        const inList = Object.values(list)
-        .find((i) => i.container.id == container.id);
 
-        if (container.statusId == availableId && protocolExists && !inList) {
-          result[container.id] = container.barcode;
+        // Check if specimen is accessible before proceeding
+        if (specimen) {
+          const availableId = Object.keys(options.container.stati).find(
+            (key) => options.container.stati[key].label == 'Available'
+          );
+          const protocolExists = Object.values(options.specimen.protocols).find(
+            (protocol) => protocol.typeId == specimen.typeId
+          );
+          const inList = Object.values(list)
+          .find((i) => i.container.id == container.id);
+
+          if (container.statusId == availableId && protocolExists && !inList) {
+            result[container.id] = container.barcode;
+          }
         }
       }
+
       return result;
     }, {});
 
