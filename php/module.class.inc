@@ -68,6 +68,9 @@ class Module extends \Module
         $user = $request->getAttribute('user');
         $db = \NDB_Factory::singleton()->database();
 
+        // Set the session variable for group_concat_max_len
+        $db->run("SET SESSION group_concat_max_len = 536870912;");
+
         $path = trim($request->getURI()->getPath(), "/");
         $pathparts = explode('/', $path);
 

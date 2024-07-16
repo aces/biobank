@@ -71,6 +71,7 @@ class ContainerSchema extends AbstractSchema
                 to: new schema\TableKey(
                     table: new schema\Table(
                         name: 'biobank_container_parent', 
+                        alias: 'container_parent',
                     ),
                     key: self::getId()
                 )                
@@ -80,6 +81,7 @@ class ContainerSchema extends AbstractSchema
                 to: new schema\TableKey( 
                     table: new schema\Table(
                         name: 'biobank_container_parent', 
+                        alias: 'container_children'
                     ),
                     key: new schema\Key(name: 'ParentContainerID')
                 ),
@@ -89,6 +91,7 @@ class ContainerSchema extends AbstractSchema
                 to: new schema\TableKey(
                     table: new schema\Table(
                         name: 'biobank_container_shipment_rel', 
+                        alias: 'container_shipments'
                     ),
                     key: self::getId()
                 )                
@@ -100,19 +103,20 @@ class ContainerSchema extends AbstractSchema
     {
         return [
             'type' => new schema\Relation(
+                alias: 'type',
                 from: new schema\TableKey(
                     table: self::getTable(), 
                     key: new schema\Key('ContainerTypeID')
                 ),
-                to: container\TypeSchema::lazy()
+                to: container\TypeSchema::eager()
             ),
-            'center' => new schema\Relation(
-                from: new schema\TableKey(
-                    table: self::getTable(), 
-                    key: new schema\Key('CenterID')
-                ),
-                to: CenterSchema::lazy()
-            ),
+            // 'center' => new schema\Relation(
+            //     from: new schema\TableKey(
+            //         table: self::getTable(), 
+            //         key: new schema\Key('CenterID')
+            //     ),
+            //     to: CenterSchema::lazy()
+            // ),
             'parent' => new schema\Relation(
                 from: new schema\TableKey(
                     table: self::getJoins()['container_parent']->to->table, 

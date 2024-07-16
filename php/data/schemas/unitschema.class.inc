@@ -10,18 +10,38 @@ use LORIS\biobank\data\schema\ColumnType;
 
 class UnitSchema extends AbstractSchema
 {
-    protected function initialize(): void {
+    public static function getTable(): Table
+    {
+        return new Table(name: 'biobank_unit');
+    }
 
-        // Define table and primary key
-        $this->table = new Table(name: 'biobank_unit');
-        $this->id = new Key('UnitID');
+    public static function getId(): Key
+    {
+        return new Key('UnitID');
+    }
 
-        // Define columns
-        $this->columns = [
+    public static function getLabel(): string
+    {
+        return 'label';
+    }
+
+    public static function getColumns(): array
+    {
+        return [
             'label' => new Column(
                 name: 'Label',
                 type: ColumnType::VARCHAR
             ),
         ];
+    }
+
+    public static function getJoins(): array
+    {
+        return [];
+    }
+
+    public static function getRelations(): array                                
+    {                                                                           
+        return [];
     }
 }

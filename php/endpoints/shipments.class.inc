@@ -11,10 +11,10 @@ use LORIS\biobank\Permission;
                                                                                    
 class Shipments extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user)                                       
+    public function __construct(\User $user, \Database $db)                                       
     {                                                                              
         $controller = new Controller(                                              
-            new ShipmentService(),                                                
+            new ShipmentService($db),                                                
             new Factory(Shipment::class)                                          
         );                                                                         
                                                                                    

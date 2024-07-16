@@ -9,6 +9,7 @@ class Relation
     public function __construct(
         public TableKey $from,
         public Schema $to,
+        public ?string $alias = null,
         public ?bool $many = false
     ) {}
 }

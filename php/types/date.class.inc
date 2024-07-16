@@ -1,4 +1,6 @@
-<?php
+<?php declare(strict_types=1); 
+
+namespace LORIS\biobank\types;
 
 class Date implements JsonSerializable {
     private \DateTime $date;

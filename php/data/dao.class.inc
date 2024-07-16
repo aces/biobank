@@ -2,10 +2,13 @@
 
 namespace LORIS\biobank\data;
 
-use LORIS\Data\ProvisionerInstance;
+use LORIS\biobank\data\query\Condition;
+
 use LORIS\biobank\Model;
+use LORIS\biobank\Factory;
 use LORIS\biobank\data\query\QueryBuilder;
 use LORIS\biobank\data\query\QueryParams;
+use LORIS\Data\ProvisionerInstance;
 
 class DAO extends ProvisionerInstance
 {
@@ -15,7 +18,8 @@ class DAO extends ProvisionerInstance
 
     public function __construct(
         protected \Database $db, 
-        protected Schema $schema
+        protected Schema $schema,
+        protected Factory $factory
     ) 
     {
         $this->queryBuilder = new QueryBuilder($schema);
@@ -23,12 +27,36 @@ class DAO extends ProvisionerInstance
 
     protected function getAllInstances() : \Traversable
     {
-        $query = $this->queryBuilder->build();
-        return $this->db->pselect($query->toString(), $query->getParams());
+        return $this->find(new QueryParams());
     }
 
-    public function find(QueryParams $queryParams)
+    private function decodeNestedJson($data) {
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                if (is_string($value)) {
+                    // Try decoding the string value as JSON
+                    do {
+                        $decodedValue = json_decode($value, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $value = $decodedValue; // Successfully decoded, replace the value
+                        }
+                    } while (json_last_error() === JSON_ERROR_NONE && is_string($value));
+    
+                    // Set the final value
+                    $data[$key] = $value;
+                } elseif (is_array($value)) {
+                    // Recursively decode nested arrays
+                    $data[$key] = $this->decodeNestedJson($value);
+                }
+            }
+        }
+        return $data;
+    }    
+
+    public function find(QueryParams $queryParams): array //Model[]
     {
+
+        $this->queryBuilder->reset();
         $query = $this->queryBuilder
             ->select(...$queryParams->fields)
             ->where(...$queryParams->conditions)
@@ -36,36 +64,66 @@ class DAO extends ProvisionerInstance
             ->offset($queryParams->offset)
             ->build();
 
-        return $this->db->pselect($query->toString(), $query->getParams());
+        error_log('QUERY: '.$query->toString());
+        $rows = $this->db->pselect($query->toString(), $query->getParams());
+
+        error_log('ROWS: '.count($rows));
+        
+        $models = [];
+        foreach ($rows as $row) {
+            if (isset($row['data'])) {
+                //error_log("Length of data field: " . strlen($row['data']));
+                $data = json_decode($row['data'], true);
+                error_log(print_r($data, true));
+        
+                if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
+                    // $data = $this->decodeNestedJson($data); // Decode nested JSON strings
+                    $models[] = $this->factory->create($data);
+                } else {
+                    error_log("JSON decode error: " . json_last_error_msg());
+                    // Log the specific portion of data causing issues
+                    $snippet_length = 20000; // Increase the length for better context
+                    error_log("Problematic data snippet: " . substr($row['data'], 0, $snippet_length));
+                }
+            } else {
+                error_log("Data field is missing in the row: " . print_r($row, true));
+            }
+        }
+        error_log('MODELS: '.count($models));
+
+        return $models;
     }
 
-    public function findById(string $id): ?Model
-    {
-        $query = $this->queryBuilder
-            ->where(new Condition(field: 'id', value: $id))
-            ->build();
 
-        return $this->db->pselectRow($query->toString(), $query->getParams());
-    }
+    // public function findById(string $id): ?Model
+    // {
+    //     $query = $this->queryBuilder
+    //         ->where(new Condition(field: 'id', value: $id))
+    //         ->build();
+
+    //     return $this->db->pselectRow($query->toString(), $query->getParams());
+    // }
 
     public function findByLabel(string $label): ?Model
     {
-        $query = $this->queryBuilder
-            ->where(new Condition(field: 'label', value: $label))
-            ->build();
-
-        return $this->db->pselectRow($query->toString(), $query->getParams());
+        return $this->find(
+            new QueryParams(
+                conditions: [
+                    new Condition(field: $this->schema->getLabel(), value: $label)
+                ]
+            )
+        )[0];
     }
 
-    protected function getIdbyLabel(string $label): int
-    {
-        $query = $this->queryBuilder 
-             ->select('id')
-             ->where(new Condition(field: 'label', value: $label))
-             ->build();
+    // protected function getIdbyLabel(string $label): int
+    // {
+    //     $query = $this->queryBuilder 
+    //          ->select('id')
+    //          ->where(new Condition(field: 'label', value: $label))
+    //          ->build();
 
-        $this->db->pselectOne($query, $this->queryBuilder->getParams());
-    }
+    //     $this->db->pselectOne($query, $this->queryBuilder->getParams());
+    // }
 
     protected function mapInstanceToRow(Model $entity): array
     {

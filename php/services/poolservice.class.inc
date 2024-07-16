@@ -16,6 +16,7 @@ namespace LORIS\biobank\services;
 
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
+use LORIS\biobank\Factory;
 use LORIS\biobank\data\DAO;
 use LORIS\biobank\data\schemas\PoolSchema;
 use LORIS\biobank\validators\PoolValidator;
@@ -37,9 +38,10 @@ use LORIS\Data\Filters\UserProjectMatch;
  */
 class PoolService extends Service
 {
-    public function __construct()
+    public function __construct(\Database $db)
     {
-        $dao = (new DAO(\NDB_Factory::singleton()->database(), PoolSchema::eager()))->filter(new UserProjectMatch()); 
+        $dao = (new DAO($db, PoolSchema::eager(), new Factory(Pool::class)))
+            ->filter(new UserProjectMatch()); 
         $validator = new PoolValidator($dao);
 
         parent::__construct($dao, $validator);
@@ -53,7 +55,7 @@ class PoolService extends Service
     protected function handlePostSave(Model $instance): void
     {
         if (!$instance instanceof Pool) {
-            throw new \InvalidArgumentException('Expected instance of Container');
+            throw new \InvalidArgumentException('Expected instance of Pool');
         }
 
         // TODO: Implement post-save logic specific to Container

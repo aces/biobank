@@ -8,7 +8,6 @@ final class QueryParamsHandler
 
     public function __construct(array $queryParams)
     {
-        error_log("Query Params: " . print_r($queryParams, true));
         $this->queryParams = $queryParams;
     }
 
@@ -26,7 +25,9 @@ final class QueryParamsHandler
 
     protected function parseFields(): array
     {
-        return explode(',', $this->queryParams['fields'] ?? '');
+        return !empty($this->queryParams['fields']) ? 
+            explode(',', $this->queryParams['fields']) :
+            [];
     }
 
     protected function parseConditions(): array

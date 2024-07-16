@@ -6,5 +6,8 @@ class Table
 {                                                                                  
     public function __construct(                                                   
         public string $name,                                                       
-    ) {}                                                                           
+        public ?string $alias = null
+    ) {
+        $this->alias = $alias ?? $name;
+    }                                                                           
 }  

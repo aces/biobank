@@ -17,10 +17,8 @@
 namespace LORIS\biobank\models;
 
 use LORIS\biobank\Model;
-use LORIS\biobank\models\Container;
-use LORIS\biobank\models\Shipment;
-use LORIS\biobank\models\Center;
-use LORIS\biobank\type\Date;
+use LORIS\biobank\models\container\Type;
+use LORIS\biobank\types\Date;
 
 /**
  * Container Object Class
@@ -39,18 +37,18 @@ use LORIS\biobank\type\Date;
 class Container extends Model implements \LORIS\StudyEntities\SiteHaver
 {
     public function __construct(
-        private int $id,
-        public string $barcode,
-        public Container\Type $type,
-        public float $temperature,
-        public ?Shipments $shipments,
-        public Center $center,
-        public ?Container $parent,
-        public ?Containers $children,
-        public ?int $coordinate,
-        public ?string $lotNumber,
-        public Date $expirationDate,
-        public ?string $comments,
+        private ?int $id = null,
+        public ?string $barcode = null,
+        public ?float $temperature = null,
+        public ?Type $type = null,
+        public ?Center $center = null,
+        public ?Shipments $shipments = null, //Shipments[]
+        public ?Container $parent = null,
+        public ?Containers $children = null, //Containers[]
+        public ?int $coordinate = null,
+        public ?string $lotNumber = null,
+        public ?Date $expirationDate = null,
+        public ?string $comments = null,
     ) {}
 
     public function getCenterID(): \CenterID

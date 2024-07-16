@@ -1,39 +1,39 @@
-namespace LORIS\biobank\Models;
+<?php declare(strict_types=1);
 
-class Models implements \IteratorAggregate, \Countable, \JsonSerializable
+namespace LORIS\biobank;
+
+use ArrayObject;
+use InvalidArgumentException;
+
+class Models extends ArrayObject
 {
-    private array $models;
+    protected string $modelClass;
 
-    public function __construct(array $models)
+    public function __construct(array $items = [])
     {
-        $this->models = $models;
+        parent::__construct([], ArrayObject::ARRAY_AS_PROPS);
+
+        foreach ($items as $item) {
+            if (!$item instanceof $this->modelClass) {
+                throw new InvalidArgumentException("Expected instance of {$this->modelClass}");
+            }
+            $this[] = $item;
+        }
     }
 
-    public static function fromArray(array $data, string $modelClass): Models
+    public function offsetSet($key, $value): void
     {
-        $models = array_map([$modelClass, 'fromArray'], $data);
-        return new Models($models);
+        if (!$value instanceof $this->modelClass) {
+            throw new InvalidArgumentException("Expected instance of {$this->modelClass}");
+        }
+        parent::offsetSet($key, $value);
     }
 
-    public function getIterator(): \ArrayIterator
+    public function append($value): void
     {
-        return new \ArrayIterator($this->models);
-    }
-
-    public function count(): int
-    {
-        return count($this->models);
-    }
-
-    public function jsonSerialize(): array
-    {
-        return array_map(function($model) {
-            return $model->toArray();
-        }, $this->models);
-    }
-
-    public function toArray(): array
-    {
-        return $this->jsonSerialize();
+        if (!$value instanceof $this->modelClass) {
+            throw new InvalidArgumentException("Expected instance of {$this->modelClass}");
+        }
+        parent::append($value);
     }
 }

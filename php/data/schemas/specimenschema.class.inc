@@ -39,39 +39,52 @@ use LORIS\biobank\data\schema\Join;
  * @link       https://www.github.com/aces/Loris/
  */
 class SpecimenSchema extends AbstractSchema {
-    protected function initialize(): void {
-        // Define table, primary key, label, and table key
-        $this->table = new Table(name: 'biobank_specimen');
-        $this->id = new Key('SpecimenID');
+    public static function getTable(): Table
+    {
+        return new Table(name: 'biobank_specimen');
+    }
 
-        // Define columns
-        $this->columns = [
+    public static function getId(): Key                                            
+    {                                                                              
+        return new Key('SpecimenID');                                                  
+    }        
+
+    public static function getLabel(): string                                      
+    {                                                                              
+        return 'barcode';                                                            
+    }   
+
+    public static function getColumns(): array
+    {
+        return [
             'quantity' => new Column(name: 'Quantity', type: ColumnType::DECIMAL),
             'sampleNumber' => new Column(name: 'SampleNumber', type: ColumnType::INT),
         ];
+    }
 
-        // Define joins
-        $this->joins = [
+    public static function getJoins(): array
+    {
+        return [
             'specimen_pool' => new Join(
-                from: $this->getIdKey(),
+                from: self::getIdKey(),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_pool_rel',
                     ),
-                    column: $this->id
+                    column: self::getId
                 )
             ),
             'specimen_parents' => new Join(
-                from: $this->tableKey,
+                from: self::getIdKey(),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_parent',
                     ),
-                    column: $this->id
+                    column: self::getId
                 )
             ),
             'specimen_children' => new Join(
-                from: $this->tableKey,
+                from: self::getIdKey(),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_parent',
@@ -83,17 +96,17 @@ class SpecimenSchema extends AbstractSchema {
                 )
             ),
             'specimen_projects' => new Join(
-                from: $this->tableKey,
+                from: self::getTableKey(),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_project_rel',
                     ),
-                    column: $this->id
+                    column: self::getId()
                 )
             ),
             'session' => new Join(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::getTable(),
                     column: new Column(
                         name: 'SessionID',
                         type: ColumnType::INT
@@ -105,64 +118,66 @@ class SpecimenSchema extends AbstractSchema {
                 )
             ),
         ];
+    }
 
-        // Define relations
-        $this->relations = [
+    public static function getRelations(): array                                   
+    {                                                                              
+        return [
             'container' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::getTable(),
                     key: new Key('ContainerID')
                 ),
                 to: ContainerSchema::eager(),
             ),
             'type' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::getTable(),
                     key: new Key('SpecimenTypeID')
                 ),
                 to: specimen\TypeSchema::eager(),
             ),
             'unit' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::getTable(),
                     key: new Key('UnitID')
                 ),
                 to: UnitSchema::eager(),
             ),
             'freezethaw' => new Relation(
-                from: $this->tableKey,
+                from: self::getIdKey(),
                 to: specimen\FreezethawSchema::eager(),
             ),
             'collection' => new Relation(
-                from: $this->tableKey,
+                from: self::getIdKey(),
                 to: specimen\CollectionSchema::eager(),
             ),
             'preparation' => new Relation(
-                from: $this->tableKey,
+                from: self::getIdKey(),
                 to: specimen\PreparationSchema::eager(),
             ),
             'analysis' => new Relation(
-                from: $this->tableKey,
+                from: self::getIdKey(),
                 to: Secimen\CollectionSchema::eager(),
             ),
             'pool' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['specimen_pool'],
+                    table: self::getJoins()['specimen_pool'],
                     key: new Key('PoolID')
                 ),
                 to: PoolSchema::lazy(),
             ),
             'children' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['specimen_children']->to,
-                    key: $this->id
+                    table: self::getJoins()['specimen_children']->to->table,
+                    key: self::getId()
                 ),
                 to: self::lazy(),
                 many: true
             ),
             'parents' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['specimen_parents']->to,
+                    table: self::getJoin()['specimen_parents']->to->table,
                     key: new Key('ParentSpecimenID')
                 ),
                 to: self::lazy(),
@@ -170,21 +185,21 @@ class SpecimenSchema extends AbstractSchema {
             ),
             'session' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::getTable(),
                     key: new Key('SessionID')
                 ),
-                to: SessionSchema::class,
+                to: SessionSchema::lazy(),
             ),
             'candidate' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['specimen_session'],
+                    table: self::getJoins()['specimen_session'],
                     key: new Key('CandidateID')
                 ),
-                to: CandidateSchema::class,
+                to: CandidateSchema::lazy(),
             ),
             'projects' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['specimen_projects']->to,
+                    table: self::getJoins()['specimen_projects']->to->table,
                     key: new Key('ProjectID')
                 ),
                 to: ProjectSchema::lazy(),

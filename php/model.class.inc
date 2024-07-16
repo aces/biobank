@@ -2,6 +2,9 @@
 
 namespace LORIS\biobank;
 
+use ReflectionClass;
+use ReflectionProperty;
+
 abstract class Model implements \LORIS\Data\DataInstance
 {
     protected array $setProperties = [];
@@ -51,7 +54,9 @@ abstract class Model implements \LORIS\Data\DataInstance
             $key = $prop->getName();
             $value = $prop->getValue($this);
 
-            $data[$key] = $value;
+            if (!is_null($value)) {
+                $data[$key] = $value;
+            }
         }
     
         return $data;

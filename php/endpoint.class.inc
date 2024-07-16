@@ -26,7 +26,7 @@ use LORIS\biobank\data\query\QueryParamsHandler;
  * @license  http://www.gnu.org/licenses/gpl-3.0.text GPLv3
  * @link     http://www.github.com/aces/Lors/
  */
-abstract class Endpoint extends LORISEndpoint implements \LORIS\Middleware\ETagCalculator
+abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ETagCalculator
 {
     /**
      * A cache of the results of the projects/ endpoint, so that it doesn't
@@ -74,7 +74,7 @@ abstract class Endpoint extends LORISEndpoint implements \LORIS\Middleware\ETagC
         ServerRequestInterface $request
     ) : ResponseInterface
     {
-        // ini_set('memory_limit', '-1');
+        ini_set('memory_limit', '-1');
 
         return match ($request->getMethod()) {
             'GET' => $this->_handleGET($request),
@@ -101,19 +101,20 @@ abstract class Endpoint extends LORISEndpoint implements \LORIS\Middleware\ETagC
         $queryParams = (new QueryParamsHandler($request->getQueryParams()))->parse();
 
         if (count($pathparts) === 1) {
-            if (isset($this->_cache)) {
-                return $this->_cache;
-            }
+            // if (isset($this->_cache)) {
+            //     return $this->_cache;
+            // }
 
             $result = $this->controller->get($queryParams);
 
-            $this->_cache = new \LORIS\Http\Response\OK($result);
+            $this->_cache = new \LORIS\Http\Response\JSON\OK($result);
 
             return $this->_cache;
         } else {
-            $id  = $pathparts[1];                                 
-            $result = $this->controller->getById($id, $queryParams);     
-            return new \LORIS\Http\Response\JSON\OK($result);        
+            error_log('TWO PATH');
+            $label  = $pathparts[1];                                 
+            $result = $this->controller->getByLabel($label);     
+            return new \LORIS\Http\Response\JSON\OK([$result]);        
         }
 
         // XXX: might be needed to properly send data....
@@ -191,8 +192,8 @@ abstract class Endpoint extends LORISEndpoint implements \LORIS\Middleware\ETagC
      *
      * @return string etag summarizing value of this request.
      */
-    public function ETag(ServerRequestInterface $request) : string
-    {
-        return md5(json_encode($this->_handleGET($request)->getBody()));
-    }
+    // public function ETag(ServerRequestInterface $request) : string
+    // {
+    //     return md5(json_encode($this->_handleGET($request)->getBody()));
+    // }
 }

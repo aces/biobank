@@ -18,13 +18,13 @@ abstract class AbstractSchema implements Schema {
     abstract public static function getRelations(): array;
     abstract public static function getJoins(): array;
 
-    public function getFields(): array {
-        $fields = array_keys(static::getColumns());
-        if ($this->loadingStrategy === LoadingStrategy::EAGER) {
-            $fields = array_merge($fields, array_keys(static::getRelations()));
-        }
-        return $fields;
-    }
+    // public function getFields(): array {
+    //     $fields = array_keys(static::getColumns());
+    //     if ($this->isEager()) {
+    //         $fields = array_merge($fields, array_keys(static::getRelations()));
+    //     }
+    //     return $fields;
+    // }
 
     public static function getIdKey(): TableKey {
         return new TableKey(

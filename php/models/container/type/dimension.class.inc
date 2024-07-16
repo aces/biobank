@@ -7,12 +7,12 @@ use LORIS\biobank\Model;
 class Dimension extends Model
 {
     public function __construct(
-        private int $id,
-        public int $x,
-        public bool $xNumerical,
-        public int $y,
-        public bool $yNumerical,
-        public int $z,
-        public bool $zNumerical
+        public ?int $x = null,
+        public ?bool $xNumerical = null,
+        public ?int $y = null,
+        public ?bool $yNumerical = null,
+        public ?int $z = null,
+        public ?bool $zNumerical = null,
+        private ?int $id = null,
     ) {}
 }

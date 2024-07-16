@@ -12,4 +12,18 @@ enum Operator: string
     case LESS_THAN_OR_EQUALS = 'lte';      // Less than or equals
     case LIKE = 'like';                    // Like (pattern match)
     case IN = 'in';                        // In (value in set)
+
+    public function toSql(): string
+    {
+        return match($this) {
+            self::EQUALS => '=',
+            self::NOT_EQUALS => '!=',
+            self::GREATER_THAN => '>',
+            self::LESS_THAN => '<',
+            self::GREATER_THAN_OR_EQUALS => '>=',
+            self::LESS_THAN_OR_EQUALS => '<=',
+            self::LIKE => 'LIKE',
+            self::IN => 'IN',
+        };
+    }
 }

@@ -4,6 +4,7 @@ namespace LORIS\biobank\services;
 
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
+use LORIS\biobank\Factory;
 use LORIS\biobank\data\DAO;
 use LORIS\biobank\models\Shipment;
 use LORIS\biobank\validators\ShipmentValidator;
@@ -17,9 +18,9 @@ use LORIS\biobank\schemas\ShipmentSchema;
  */
 class ShipmentService extends Service
 {
-    function __construct()
+    function __construct(\Database $db)
     {
-        $dao = new DAO(\NDB_Factory::singleton()->database(), ShipmentSchema::eager());
+        $dao = new DAO($db, ShipmentSchema::eager(), new Factory(Shipment::class));
         $validator = new ContainerValidator($dao);
         parent::__construct($dao, $validator);
     }

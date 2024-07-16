@@ -4,17 +4,17 @@ namespace LORIS\biobank\Endpoints;
                                                                                 
 use LORIS\biobank\Endpoint;                                                     
 use LORIS\biobank\Controller;                                     
-use LORIS\biobank\Permission;
+use LORIS\biobank\services\PoolService;
 use LORIS\biobank\Factory;
 use LORIS\biobank\models\Pool;
-use LORIS\biobank\services\PoolService;
+use LORIS\biobank\Permission;
                                                                                 
 class Pools extends Endpoint                                                
 {                                                                               
-    public function __construct(\User $user)                      
+    public function __construct(\User $user, \Database $db)                      
     {                                                                           
         $controller = new Controller(
-            new PoolService(),
+            new PoolService($db),
             new Factory(Pool::class)
         );
 

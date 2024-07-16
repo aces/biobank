@@ -37,12 +37,12 @@ use LORIS\biobank\models\shipment\Type;
 class Shipment extends Model implements \LORIS\StudyEntities\MultiSiteHaver
 {
     public function __construct(
-        private int $id,
         public string $barcode,
         public Type $type,
         public Center $destinationCenter,
         public Containers $containers,
-        public Logs $logs
+        public Logs $logs,
+        private ?int $id = null,
     ) {}
 
     public function getOriginCenter(): ?Center

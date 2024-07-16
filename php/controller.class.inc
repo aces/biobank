@@ -13,13 +13,15 @@ class Controller {
     }
 
     // Abstract methods for handling requests
-    public function get(QueryParams $params): array {
-        $this->service->getInstances($params);
+    public function get(QueryParams $params): array //Model[]
+    {
+        return $this->service->getInstances($params);
     }
 
     // Abstract methods for handling requests
-    public function getByLabel($label, QueryParams $params): array {
-        $this->service->getInstanceByLabel($label, $params);
+    public function getByLabel($label): Model
+    {
+        return $this->service->getInstanceByLabel($label);
     }
 
     public function create(array $data): array

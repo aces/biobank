@@ -5,7 +5,7 @@ namespace LORIS\biobank\data\query;
 class QueryParams {
     public function __construct(
         public ?array $fields = [],
-        public ?array $conditions = [],
+        public ?array $conditions = [], //Condition[]
         public ?array $excludeConditions = [],
         public ?int $limit = null,
         public ?int $offset = null,

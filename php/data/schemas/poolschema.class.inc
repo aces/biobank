@@ -42,13 +42,24 @@ use LORIS\biobank\data\schema\Relation;
 
 class PoolSchema extends AbstractSchema
 {
-    protected function initialize(): void
+    public static function getTable(): Table
     {
-        $this->table = new Table(name: 'biobank_pool');
-        $this->id = new Key('PoolId');
+        return new Table(name: 'biobank_pool');
+    }
 
-        // Define columns
-        $this->columns = [
+    public static function getId(): Key
+    {
+        return new Key('PoolID');
+    }
+
+    public static function getLabel(): string                                      
+    {                                                                              
+        return 'label';                                                          
+    }   
+
+    public static function getColumns(): array
+    {
+        return [
             'label' => new Column(
                 name: 'Label', 
                 type: ColumnType::VARCHAR
@@ -66,16 +77,18 @@ class PoolSchema extends AbstractSchema
                 type: ColumnType::TIME
             ),
         ];
+    }
 
-        // Define joins
-        $this->joins = [
+    public static function getJoins(): array
+    {
+        return [
             'specimen_pool' => new Join(
-                from: $this->getIdKey(),
+                from: self::getIdKey(),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_pool_rel', 
                     ),
-                    key: $this->id
+                    key: self::getId()
                 )
             )
         ];
@@ -86,14 +99,14 @@ class PoolSchema extends AbstractSchema
         return [
             'unit' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::getTable(),
                     key: new Key('UnitID')
                 ),
                 to: UnitSchema::lazy()
             ),
             'specimen' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['specimen_pool']->to->table,
+                    table: self::getJoins()['specimen_pool']->to->table,
                     key: new Key('SpecimenID')
                 ),
                 to: SpecimenSchema::lazy(),

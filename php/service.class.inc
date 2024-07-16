@@ -2,10 +2,8 @@
 
 namespace LORIS\biobank;
 
-use LORIS\biobank\Model;
 use LORIS\biobank\data\DAO;
 use LORIS\biobank\data\query\QueryParams;
-use LORIS\biobank\Validator;
 
 abstract class Service {
 
@@ -22,14 +20,14 @@ abstract class Service {
         $this->validator = $validator;
     }
 
-    public function getInstances(QueryParams $params)
+    public function getInstances(QueryParams $params): array //Model[]
     {
         return $this->dao->find($params);
     }
 
-    public function getInstanceByLabel(string $label, QueryParams $params) : array
+    public function getInstanceByLabel(string $label) : Model
     {
-        $instance = $this->dao->findByLabel($label, $params->fields);
+        $instance = $this->dao->findByLabel($label);
         if (!$instance) {
             throw new Exception("Instance not found");
         }

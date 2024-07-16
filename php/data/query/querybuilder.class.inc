@@ -21,6 +21,17 @@ final class QueryBuilder
         $this->schema = $schema;
     }
 
+    public function reset(): self
+    {
+        $this->selectFields = [];
+        $this->conditions = [];
+        $this->limit = null;
+        $this->offset = null;
+        $this->params = [];
+        $this->queryString = '';
+        return $this;
+    }
+
     public function select(string ...$fields): self
     {
         $this->selects = $fields;
@@ -32,6 +43,7 @@ final class QueryBuilder
         foreach ($conditions as $condition) {
             $this->conditions[] = $condition;
         }
+
         return $this;
     }
 
@@ -59,10 +71,10 @@ final class QueryBuilder
         $query .= "SELECT {$this->buildFields()} FROM {$this->schema::getTable()->name}";
         $query .= $this->buildJoins();
         $query .= $this->buildWhere();
-        $query .= !is_null($this->groupBy) ? " GROUP BY " . $this->groupBy : '';
+        //$query .= !is_null($this->groupBy) ? " GROUP BY " . $this->groupBy : '';
+        $query .= " GROUP BY {$this->schema::getTable()->name}.{$this->schema::getId()->name}";
         $query .= !is_null($this->limit) ? " LIMIT " . $this->limit : '';
         $query .= !is_null($this->offset) ? " OFFSET " . $this->offset : '';
-        error_log($query);
 
         return new Query(string: $query, params: $this->params);
     }
@@ -90,6 +102,7 @@ final class QueryBuilder
 
             // Recursively build relations for nested DAOs
             $queryBuilder = new QueryBuilder($schema);
+            // foreach($this->where)
 
             $nestedCommonTables = $queryBuilder->buildCommonTables();
             foreach ($nestedCommonTables as $nestedCommonTable) {
@@ -99,6 +112,8 @@ final class QueryBuilder
             }
 
             $commonTable = $queryBuilder->buildCommonTable();
+            // $queryBuilder->where
+            // $queryBuilder->buildWhere()
             $commonTables[] = "$name AS ($commonTable)";
         }
 
@@ -111,6 +126,7 @@ final class QueryBuilder
         return "
             SELECT
                 {$schema::getTable()->name}.{$schema::getId()->name},
+                {$this->buildFilterable()},
                 {$this->buildFields()}
             FROM
                 {$schema::getTable()->name}
@@ -118,18 +134,36 @@ final class QueryBuilder
         ";
     }
 
+    public function buildFilterable(): string
+    {
+        $schema = $this->schema;
+        $columns = $schema::getColumns();
+        $fields = [];
+    
+        foreach ($columns as $alias => $column) {
+            $fields[] = "{$schema::getTable()->name}.{$column->name} AS $alias";
+        }
+    
+        return implode(", ", $fields);
+    }
+
     public function buildFields(): string
     {
         $schema = $this->schema;
-        $columns = $schema->getFields();
-        if (empty($this->selects)) {
-            $this->selects = $columns;
-        }
-    
+
+        $columns = $schema::getColumns();
+        $relations = $schema->isEager() ? $schema::getRelations() : [];
+
+        // If no selects are specified, select all columns and relations.
+        $selects = empty($this->selects)
+            ? array_merge(array_keys($columns), array_keys($relations))
+            : $this->selects;
+
         $fields = [];
-    
-        foreach ($this->selects as $select) {
+
+        foreach ($selects as $select) {
             if (array_key_exists($select, $columns)) {
+                // Select column from columns
                 $column = $columns[$select]->name;
                 $fields[] = "'{$select}', {$schema::getTable()->name}.{$column}";
             }
@@ -138,36 +172,37 @@ final class QueryBuilder
                 continue;
             }
 
-            $relations = $schema::getRelations();
             if (array_key_exists($select, $relations)) {
+                // Select from relations
                 $fields[] = $relations[$select]->many
                     ? "'{$select}', JSON_ARRAYAGG($select.data)"
                     : "'{$select}', $select.data";
             }
         }
     
-        return "JSON_OBJECT(" . implode(",\n", $fields) . ") AS data";
+        return "JSON_OBJECT(" . implode(", ", $fields) . ") AS data";
     }
 
     protected function buildJoins(): string
     {
-        if (empty($this->schema::getJoins())) {
-            return '';
-        }
+        // if (empty($this->schema::getJoins() && !$this->schema->isEager())) {
+        //     return '';
+        // }
 
         $joinClauses = [];
 
         foreach ($this->schema::getJoins() as $name => $join) {
-            $joinClauses[] = " {$join->type->value} JOIN {$join->to->table->name} $name
-                ON {$join->from->table->name}.{$join->from->key->name} = $name.{$join->to->key->name}";
+            $joinClauses[] = " {$join->type->value} JOIN
+                {$join->to->table->name} {$join->to->table->alias} ON
+                {$join->from->table->name}.{$join->from->key->name} =
+                {$join->to->table->alias}.{$join->to->key->name}";
         }
 
         if ($this->schema->isEager()) {
             foreach ($this->schema::getRelations() as $name => $relation) {
                 $joinClauses[] = " LEFT JOIN {$name} ON 
-                    {$relation->from->table->name}.
-                    {$relation->from->key->name} =
-                    $name.{$relation->to::getTable()->name}
+                    {$relation->from->table->alias}.{$relation->from->key->name} =
+                    $name.{$relation->to::getId()->name}
                 ";
             }
         }
@@ -188,16 +223,27 @@ final class QueryBuilder
         foreach ($this->conditions as $index => $condition) {
             $field = $condition->field;
             $value = $condition->value;
+            $relation = $condition->relation;
 
             if ($value === null) {
                 continue;
             }
 
-            $comparisonOperator = $condition->operator->value;
+            $comparisonOperator = $condition->operator->toSql();
             $logicalOperator = $condition->logicalOperator->value;
             $placeholder = ":param{$index}";
 
-            $clause .= "$field $comparisonOperator $placeholder";
+            // Prefix the field with the relation alias if it exists
+            if ($relation) {
+                $field = "{$relation->alias}.{$field}";
+            }
+
+            $clause = "$field $comparisonOperator $placeholder";
+
+            // Add the logical operator for all clauses except the first one
+            if (!empty($whereClauses)) {
+                $clause = "{$logicalOperator} {$clause}";
+            }
             $whereClause[] = $clause;
             $queryParams[$placeholder] = $value;
         }
@@ -205,6 +251,6 @@ final class QueryBuilder
         $whereClauseStr = ' WHERE '.implode('', $whereClause);
 
         $this->params = $queryParams;
-        return $whereClnuseStr;
+        return $whereClauseStr;
     }
 }

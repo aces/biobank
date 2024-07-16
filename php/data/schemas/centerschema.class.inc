@@ -38,6 +38,7 @@ class CenterSchema extends AbstractSchema
 
     public static function getColumns(): array {
         return [
+            'id' => self::getId(),
             'label' => new Column(
                 name: 'Name',
                 type: ColumnType::VARCHAR

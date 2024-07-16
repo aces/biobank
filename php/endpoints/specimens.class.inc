@@ -11,10 +11,10 @@ use LORIS\biobank\Permission;
                                                                                    
 class Specimens extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user)                                       
+    public function __construct(\User $user, \Database $db)                                       
     {                                                                              
         $controller = new Controller(                                              
-            new SpecimenService(),                                                
+            new SpecimenService($db),                                                
             new Factory(Specimen::class)                                          
         );                                                                         
                                                                                    

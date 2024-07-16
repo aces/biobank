@@ -21,17 +21,22 @@ use LORIS\biobank\data\AbstractSchema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class DimensionSchema extends AbstractSchema
+final class DimensionSchema extends AbstractSchema
 {
-    public function getTable(): Table {
+    public static function getTable(): Table {
         return new Table(name: 'biobank_container_dimension');
     }
 
-    public function getId(): Key {
+    public static function getId(): Key {
         return new Key(name: 'ContainerDimensionID');
     }
 
-    public function getColumns(): array {
+    public static function getLabel(): string
+    {
+        return '';
+    }
+
+    public static function getColumns(): array {
         return [
             'x' => new Column(
                 name: 'X',
@@ -60,11 +65,11 @@ class DimensionSchema extends AbstractSchema
         ];
     }
 
-    public function getRelations(): array {
+    public static function getRelations(): array {
         return []; // Add relation definitions if needed
     }
 
-    public function getJoins(): array {
+    public static function getJoins(): array {
         return []; // Add join definitions if needed
     }
 }

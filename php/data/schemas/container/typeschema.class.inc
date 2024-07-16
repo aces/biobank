@@ -8,6 +8,7 @@ use LORIS\biobank\data\schema\TableKey;
 use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;
 use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\schemas\container;
 use LORIS\biobank\data\AbstractSchema;
 
 /**
@@ -46,7 +47,8 @@ final class TypeSchema extends AbstractSchema
                 name: 'Label',
                 type: ColumnType::VARCHAR
             ),
-            'primary' => new Column(
+            // primary is a reserved word in sql
+            'prime' => new Column( 
                 name: 'Primary',
                 type: ColumnType::BOOLEAN
             ),
@@ -68,14 +70,14 @@ final class TypeSchema extends AbstractSchema
                     table: self::getTable(),
                     key: new Key(name: 'ContainerCapacityID')
                 ),
-                to: \LORIS\biobank\data\type\CapacitySchema::eager()
+                to: container\type\CapacitySchema::eager()
             ),
             'dimension' => new Relation(
                 from: new TableKey(
                     table: self::getTable(),
                     key: new Key(name: 'ContainerDimensionID')
                 ),
-                to: \LORIS\biobank\data\type\DimensionSchema::eager()
+                to: container\type\DimensionSchema::eager()
             )
         ];
     }

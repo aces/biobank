@@ -4,10 +4,13 @@ namespace LORIS\biobank\services;
 
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
+use LORIS\biobank\Factory;
 use LORIS\biobank\data\DAO;
+use LORIS\biobank\data\query\QueryParams;
+use LORIS\biobank\data\query\Condition;
+use LORIS\biobank\data\schemas\ContainerSchema;
 use LORIS\biobank\models\Container;
 use LORIS\biobank\validators\ContainerValidator;
-use LORIS\biobank\data\schemas\ContainerSchema;
 use LORIS\Data\Filters\UserSiteMatch;
 
 /**
@@ -20,16 +23,35 @@ class ContainerService extends Service
 {
     function __construct(\Database $db)
     {
-        $dao = new DAO($db, ContainerSchema::eager());
+        $dao = new DAO($db, ContainerSchema::eager(), new Factory(Container::class));
         $validator = new ContainerValidator($dao);
         $dao->filter(new UserSiteMatch());
         parent::__construct($dao, $validator);
     }
 
     /**
+     * Finds containers based on the provided query parameters, always including only primary type containers.
+     *
+     * @param QueryParams $queryParams The query parameters to use for finding containers.
+     * @return array An array of Model instances representing the found containers.
+     */
+    public function getInstances(QueryParams $queryParams): array
+    {
+        // Always add the 'primary' condition
+        $queryParams->conditions[] = new Condition(
+            field: 'prime',
+            relation: ContainerSchema::getRelations()['type'],
+            value: 0
+        );
+
+        return parent::getInstances($queryParams);
+    }
+
+   /**
      * Handles actions to be performed after saving a Container.
      *
      * @param Model $instance The saved Container instance.
+     * @throws \InvalidArgumentException If the provided instance is not a Container.
      */
     protected function handlePostSave(Model $instance): void
     {
