@@ -1,4 +1,13 @@
 -- Update foreign keys referencing biobank_container
+ALTER TABLE biobank_specimen
+DROP FOREIGN KEY FK_biobank_specimen_ContainerID;
+
+ALTER TABLE biobank_specimen
+ADD CONSTRAINT FK_biobank_specimen_ContainerID
+FOREIGN KEY (ContainerID)
+REFERENCES biobank_container(ContainerID)
+ON DELETE CASCADE;
+
 ALTER TABLE biobank_container_shipment_rel
 DROP FOREIGN KEY FK_shipment_log_ContainerID;
 
