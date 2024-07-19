@@ -9,7 +9,7 @@ use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;                                          
 use LORIS\biobank\data\schema\Relation;                                            
 use LORIS\biobank\data\schema\Join;                                                
-use LORIS\biobank\data\AbstractSchema;                                             
+use LORIS\biobank\data\Schema;                                             
                                                                                    
 /**                                                                                
  * User Schema Class                                                    
@@ -25,21 +25,21 @@ use LORIS\biobank\data\AbstractSchema;
  * @link       https://www.github.com/aces/Loris/                                  
  */                                                                                
                                                                                    
-class UserSchema extends AbstractSchema                                          
+class UserSchema extends Schema                                          
 {                                                                                  
-    public function getTable(): Table {                                            
+    protected function getTable(): Table {                                            
         return new Table(name: 'users');                                 
     }                                                                              
                                                                                    
-    public function getId(): Key {                                                 
+    protected function getId(): Key {                                                 
         return new Key(name: 'ID');                                          
     }                                                                              
                                                                                    
-    public function getLabel(): string {                                           
+    protected function getLabel(): string {                                           
         return 'name';                                                            
     }                                                                              
                                                                                    
-    public function getColumns(): array {                                          
+    protected function getColumns(): array {                                          
         return [                                                                   
             'name' => new Column(                                                 
                 name: 'Real_name',                                                     
@@ -48,11 +48,11 @@ class UserSchema extends AbstractSchema
         ];                                                                         
     }                                                                              
                                                                                    
-    public function getRelations(): array {                                        
+    protected function getRelations(): array {                                        
         return [];                                                                 
     }                                                                              
                                                                                    
-    public function getJoins(): array {                                            
+    protected function getJoins(): array {                                            
         return [];                                                                 
     }                                                                              
 }      

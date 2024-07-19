@@ -23,7 +23,9 @@ use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;
 use LORIS\biobank\data\schema\Join;
 use LORIS\biobank\data\schema\Relation;
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\schema\LoadingStrategy;
+use LORIS\biobank\data\schemas\shipment;
+use LORIS\biobank\data\Schema;
 
 /**
  * Shipment Data Access Object (DAO) Class
@@ -40,21 +42,21 @@ use LORIS\biobank\data\AbstractSchema;
  * @link       https://www.github.com/aces/Loris/
  */
 
-class ShipmentSchema extends AbstractSchema
+class ShipmentSchema extends Schema
 {
-    public static function getTable(): Table {
+    protected function getTable(): Table {
         return new Table(name: 'shipment');
     }
 
-    public static function getId(): Key {
+    protected function getId(): Key {
         return new Key(name: 'ShipmentID');
     }
 
-    public static function getLabel(): string {
+    protected function getLabel(): string {
         return 'barcode';
     }
 
-    public static function getColumns(): array {
+    protected function getColumns(): array {
         return [
             'barcode' => new Column(
                 name: 'Barcode',
@@ -63,40 +65,43 @@ class ShipmentSchema extends AbstractSchema
         ];
     }
 
-    public static function getJoins(): array {
+    protected function getJoins(): array {
         return [
             'shipment_containers' => new Join(
-                from: self::getIdKey(),
+                from: $this->idKey,
                 to: new TableKey(
                     table: new Table(name: 'biobank_container_shipment_rel'),
-                    key: self::getId()
+                    key: $this->id
                 )
             ),
         ];
     }
 
-    public static function getRelations(): array {
+    protected function getRelations(): array {
         return [
             'type' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key(name: 'ShipmentTypeID')
                 ),
-                to: ShipmentTypeSchema::eager()
+                to: shipment\TypeSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
             'destinationCenter' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key(name: 'DestinationCenterID')
                 ),
-                to: CenterSchema::lazy()
+                to: CenterSchema::class,
+                strategy: LoadingStrategy::LAZY,
             ),
             'containers' => new Relation(
                 from: new TableKey(
-                    table: new Table(name: 'biobank_container_shipment_rel'),
+                    table: $this->joins['shipment_containers']->to->table,
                     key: new Key(name: 'ContainerID')
                 ),
-                to: ContainerSchema::lazy(),
+                to: ContainerSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
         ];

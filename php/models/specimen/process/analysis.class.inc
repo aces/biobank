@@ -14,7 +14,9 @@
  * @link       https://www.github.com/aces/Loris/
  */
 
-namespace LORIS\biobank\Models;
+namespace LORIS\biobank\models\specimen\process;
+
+use LORIS\biobank\models\specimen\Process;
 
 /**
  * Specimen Analysis Class
@@ -31,7 +33,7 @@ namespace LORIS\biobank\Models;
  * @link       https://www.github.com/aces/Loris/
  */
 
-class Analysis extends Process
+final class Analysis extends Process
 {
 }
 

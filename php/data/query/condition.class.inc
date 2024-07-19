@@ -2,7 +2,7 @@
 
 namespace LORIS\biobank\data\query;
 
-use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\Schema;
 
 class Condition
 {
@@ -11,7 +11,7 @@ class Condition
         public $value,
         public ?Operator $operator = Operator::EQUALS,
         public ?LogicalOperator $logicalOperator = LogicalOperator::AND,
-        public ?Relation $relation = null
+        public ?Schema $relation = null
     )
     {}
 }

@@ -2,7 +2,7 @@
 
 namespace LORIS\biobank\types;
 
-class Date implements JsonSerializable {
+class Date implements \JsonSerializable {
     private \DateTime $date;
 
     public function __construct(string $dateStr) {

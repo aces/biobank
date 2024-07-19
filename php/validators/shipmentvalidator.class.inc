@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\validators;
 
+use LORIS\biobank\Model;
 use LORIS\biobank\Validator;
 use LORIS\biobank\models\Shipment;
 
@@ -26,7 +27,12 @@ class ShipmentValidator extends Validator
         ];
     }
 
-    private function validateFields(Shipment $shipment) : void
+    protected function getRequiredIfFields(): array
+    {
+        return [];
+    }
+
+    protected function validateFields(Model $shipment) : void
     {
         $this->validateBarcode($shipment);
         $this->validateLogs($shipment);

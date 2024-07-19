@@ -16,7 +16,7 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\schema\Table;
 use LORIS\biobank\data\schema\Key;
 use LORIS\biobank\data\schema\Column;
@@ -24,6 +24,7 @@ use LORIS\biobank\data\schema\ColumnType;
 use LORIS\biobank\data\schema\TableKey;
 use LORIS\biobank\data\schema\Join;
 use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\schema\LoadingStrategy;
 
 /**
  * Pool Data Access Object (DAO) Class
@@ -40,24 +41,24 @@ use LORIS\biobank\data\schema\Relation;
  * @link       https://www.github.com/aces/Loris/
  */
 
-class PoolSchema extends AbstractSchema
+class PoolSchema extends Schema
 {
-    public static function getTable(): Table
+    protected function getTable(): Table
     {
         return new Table(name: 'biobank_pool');
     }
 
-    public static function getId(): Key
+    protected function getId(): Key
     {
         return new Key('PoolID');
     }
 
-    public static function getLabel(): string                                      
+    protected function getLabel(): string                                      
     {                                                                              
         return 'label';                                                          
     }   
 
-    public static function getColumns(): array
+    protected function getColumns(): array
     {
         return [
             'label' => new Column(
@@ -79,37 +80,39 @@ class PoolSchema extends AbstractSchema
         ];
     }
 
-    public static function getJoins(): array
+    protected function getJoins(): array
     {
         return [
-            'specimen_pool' => new Join(
-                from: self::getIdKey(),
+            'specimen_rel' => new Join(
+                from: $this->idKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_pool_rel', 
                     ),
-                    key: self::getId()
+                    key: $this->id
                 )
             )
         ];
     }
 
-    public static function getRelations(): array
+    protected function getRelations(): array
     {
         return [
             'unit' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key('UnitID')
                 ),
-                to: UnitSchema::lazy()
+                to: UnitSchema::class,
+                strategy: LoadingStrategy::LAZY,
             ),
-            'specimen' => new Relation(
+            'specimens' => new Relation(
                 from: new TableKey(
-                    table: self::getJoins()['specimen_pool']->to->table,
+                    table: $this->joins['specimen_rel']->to->table,
                     key: new Key('SpecimenID')
                 ),
-                to: SpecimenSchema::lazy(),
+                to: SpecimenSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
         ];

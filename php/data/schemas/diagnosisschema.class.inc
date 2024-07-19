@@ -2,7 +2,7 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\schema;
 
 /**
@@ -18,7 +18,7 @@ use LORIS\biobank\data\schema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class DiagnosisSchema extends AbstractSchema
+class DiagnosisSchema extends Schema
 {
     protected function initialize(): void
     {

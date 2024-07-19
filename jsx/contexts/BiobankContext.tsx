@@ -25,6 +25,8 @@ export interface BiobankContextType {
                                                                                 
 const BiobankContext = React.createContext(undefined);
 
+// TODO: optionsDef and options in general to be removed with calls being made to
+// relevant endpoints.
 const optionsDef = {
   candidates: {},
   diagnoses: {},

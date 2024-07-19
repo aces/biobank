@@ -9,7 +9,7 @@ use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;
 use LORIS\biobank\data\schema\Relation;
 use LORIS\biobank\data\schema\Join;
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
 
 /**
  * Log Schema Class
@@ -24,21 +24,21 @@ use LORIS\biobank\data\AbstractSchema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class LogSchema extends AbstractSchema
+class LogSchema extends Schema
 {
-    public function getTable(): Table {
+    protected function getTable(): Table {
         return new Table(name: 'shipment_log');
     }
 
-    public function getId(): Key {
+    protected function getId(): Key {
         return new Key(name: 'ShipmentID');
     }
 
-    public function getLabel(): string {
+    protected function getLabel(): string {
         return '';
     }
 
-    public function getColumns(): array {
+    protected function getColumns(): array {
         return [
             'temperature' => new Column(
                 name: 'Temperature',
@@ -59,33 +59,36 @@ class LogSchema extends AbstractSchema
         ];
     }
 
-    public function getRelations(): array {
+    protected function getRelations(): array {
         return [
             'center' => new Relation(
                 from: new TableKey(
-                    table: $this->getTable(),
+                    table: $this->table,
                     key: new Key(name: 'CenterID')
                 ),
-                to: CenterSchema::lazy()
+                to: CenterSchema::class,
+                strategy: LoadingStrategy::LAZY
             ),
             'status' => new Relation(
                 from: new TableKey(
-                    table: $this->getTable(),
+                    table: $this->table,
                     key: new Key(name: 'StatusID')
                 ),
-                to: StatusSchema::eager()
+                to: StatusSchema::class,
+                strategy: LoadingStrategy::EAGER
             ),
             'user' => new Relation(
                 from: new TableKey(
-                    table: $this->getTable(),
+                    table: $this->table,
                     key: new Key(name: 'UserID')
                 ),
-                to: LORIS\biobank\data\schemas\UserSchema::lazy()
+                to: LORIS\biobank\data\schemas\UserSchema::class,
+                strategy: LoadingStrategy::LAZY
             ),
         ];
     }
 
-    public function getJoins(): array {
+    protected function getJoins(): array {
         return []; // Add join definitions if needed
     }
 }

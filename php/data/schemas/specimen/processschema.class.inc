@@ -2,69 +2,80 @@
 
 namespace LORIS\biobank\data\schemas\specimen;
 
-use LORIS\biobank\data\AbstractSchema;
-use LORIS\biobank\data\schema;
+use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\schemas;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\TableKey;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
+use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\schema\LoadingStrategy;
 
-class ProcessSchema extends AbstractSchema {
-    protected function initialize(): void {
-        // Define table and primary key
-        $this->table = new schema\Table(name: 'biobank_specimen_collection');
-        $this->id = new schema\Key('SpecimenID');
+abstract class ProcessSchema extends Schema {
+    protected function getId(): Key                                            
+    {                                                                              
+        return new Key('SpecimenID');                                          
+    }              
 
-        // Define columns
-        $this->columns = [
-            'quantity' => new schema\Column(
-                name: 'Quantity',
-                type: schema\ColumnType::DECIMAL
-            ),
-            'date' => new schema\Column(
+    protected function getLabel(): string                                      
+    {                                                                              
+        return '';                                                            
+    }            
+
+    protected function getColumns(): array                                     
+    {    
+        return [
+            'date' => new Column(
                 name: 'Date',
-                type: schema\ColumnType::DATE
+                type: ColumnType::DATE
             ),
             'time' => new Column(
                 name: 'Time',
-                type: schema\ColumnType::TIME
+                type: ColumnType::TIME
             ),
             'comments' => new Column(
                 name: 'Comments',
-                type: schema\ColumnType::VARCHAR
+                type: ColumnType::VARCHAR
             ),
             'data' => new Column(
                 name: 'Data',
-                type: schema\ColumnType::LONGTEXT
+                type: ColumnType::LONGTEXT
             )
         ];
+    }
 
-        // Define foreign keys
-        $this->foreignKeys = [
-            'specimenProtocolID' => new schema\TableKey(
-                table: $this->table,
-                key: new Key('SpecimenProtocolID')
-            ),
-            'centerID' => new schema\TableKey(
-                table: $this->table,
-                key: new Key('CenterID')
-            ),
-            'examinerID' => new schema\TableKey(
-                table: $this->table,
-                key: new Key('ExaminerID')
-            )
-        ];
+    protected function getJoins(): array                                     
+    {    
+        return [];
+    }
 
-        // Define relations
-        $this->relations = [
-            'specimenProtocol' => new schema\Relation(
-                from: $this->foreignKeys['specimenProtocolID'],
-                to: ProtocolSchema::class
+    protected function getRelations(): array
+    {
+        return [
+            'protocol' => new Relation(
+                from: new TableKey(
+                    table: $this->table,
+                    key: new Key('SpecimenProtocolID')
+                ),
+                to: ProtocolSchema::class,
+                strategy: LoadingStrategy::LAZY
             ),
-            'center' => new schema\Relation(
-                from: $this->foreignKeys['centerID'],
-                to: schemas\CenterSchema::class
+            'center' => new Relation(
+                from: new TableKey(
+                    table: $this->table,
+                    key: new Key('CenterID')
+                ),
+                to: schemas\CenterSchema::class,
+                strategy: LoadingStrategy::LAZY
             ),
-            'examiner' => new schema\Relation(
-                from: $this->foreignKeys['examinerID'],
-                to: schemas\ExaminerSchema::class
+            'examiner' => new Relation(
+                from: new TableKey(
+                    table: $this->table,
+                    key: new Key('ExaminerID')
+                ),
+                to: schemas\ExaminerSchema::class,
+                strategy: LoadingStrategy::LAZY
             )
         ];
     }

@@ -15,6 +15,7 @@
  */
 namespace LORIS\biobank\models;
 
+use LORIS\biobank\Model;
 use LORIS\biobank\models\Center;
 use LORIS\biobank\models\Containers;
 use LORIS\biobank\models\shipment\Logs;
@@ -37,12 +38,12 @@ use LORIS\biobank\models\shipment\Type;
 class Shipment extends Model implements \LORIS\StudyEntities\MultiSiteHaver
 {
     public function __construct(
-        public string $barcode,
-        public Type $type,
-        public Center $destinationCenter,
-        public Containers $containers,
-        public Logs $logs,
         private ?int $id = null,
+        public ?string $barcode = null,
+        public ?Type $type = null,
+        public ?Center $destinationCenter = null,
+        public ?Containers $containers = null,
+        public ?Logs $logs = null,
     ) {}
 
     public function getOriginCenter(): ?Center
@@ -79,9 +80,9 @@ class Shipment extends Model implements \LORIS\StudyEntities\MultiSiteHaver
     public function toJSON(): array 
     {
         return [
-            'originCenter' => getOriginCenter(),
-            'status' => getStatus(),
-            'active' => isActive(),
+            'originCenter' => $this->getOriginCenter(),
+            'status' => $this->getStatus(),
+            'active' => $this->isActive(),
         ];
     }
 }

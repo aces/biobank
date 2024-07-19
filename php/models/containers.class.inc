@@ -6,5 +6,5 @@ use LORIS\biobank\Models;
 
 class Containers extends Models
 {
-    protected string $modelClass = Container::class;
+    public static string $model = Container::class;    
 }

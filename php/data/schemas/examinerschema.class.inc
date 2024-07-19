@@ -2,8 +2,11 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\schema;
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
 
 /**
  * Examiner Schema Class
@@ -18,26 +21,40 @@ use LORIS\biobank\data\AbstractSchema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class ExaminerSchema extends AbstractSchema
+class ExaminerSchema extends Schema
 {
-    protected function initialize(): void
+    protected function getTable(): Table
     {
-        // Define table and primary key
-        $this->table = new schema\Table(name: 'examiners');
-        $this->primaryKey = new schema\TableKey(
-            table: $this->table,
-            column: new schema\Key('examinerID')
-        );
+        return new Table(name: 'examiners');
+    }
 
-        // Define label column
-        $this->label = new schema\Column(
-            name: 'full_name',
-            type: schema\ColumnType::VARCHAR
-        );
+    protected function getId(): Key
+    {
+        return new Key('examinerID');
+    }
 
-        // Define columns
-        $this->columns = [
-            'label' => $this->label,
+    protected function getLabel(): string
+    {
+        return 'label';
+    }
+
+    protected function getColumns(): array
+    {
+        return [
+            'label' => new Column(
+                name: 'full_name',
+                type: ColumnType::VARCHAR
+            ),
         ];
+    }
+
+    protected function getJoins(): array
+    {
+        return [];
+    }
+
+    protected function getRelations(): array
+    {
+        return [];
     }
 }

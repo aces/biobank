@@ -9,35 +9,28 @@ enum LoadingStrategy: string
 }
 
 trait LoadingStrategyTrait {
-    protected LoadingStrategy $loadingStrategy;
-
-    private function setLoadingStrategy(LoadingStrategy $strategy) {
-        $this->loadingStrategy = $strategy;
-    }
+    //protected LoadingStrategy $strategy;
 
     public function getLoadingStrategy(): LoadingStrategy {
-        return $this->loadingStrategy;
+        return $this->strategy;
     }
 
     public function isEager(): bool
     {
-        return $this->loadingStrategy === LoadingStrategy::EAGER;
+        return $this->strategy === LoadingStrategy::EAGER;
     }
 
     public function isLazy(): bool
     {
-        return $this->loadingStrategy === LoadingStrategy::LAZY;
+        return $this->strategy === LoadingStrategy::LAZY;
     }
 
-    public static function eager(): static {
-        $instance = new static();
-        $instance->setLoadingStrategy(LoadingStrategy::EAGER);
-        return $instance;
-    }
+    //public static function eager(): static {
+    //    return new static(LoadingStrategy::EAGER);
+    //    $instance->setLoadingStrategy(LoadingStrategy::EAGER);
+    //}
 
-    public static function lazy(): static {
-        $instance = new static();
-        $instance->setLoadingStrategy(LoadingStrategy::LAZY);
-        return $instance;
-    }
+    //public static function lazy(): static {
+    //    return new static(LoadingStrategy::LAZY);
+    //}
 }

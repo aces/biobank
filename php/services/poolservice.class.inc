@@ -19,6 +19,7 @@ use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
 use LORIS\biobank\data\DAO;
 use LORIS\biobank\data\schemas\PoolSchema;
+use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\validators\PoolValidator;
 use LORIS\biobank\models\Pool;
 use LORIS\Data\Filters\UserProjectMatch; 
@@ -40,7 +41,11 @@ class PoolService extends Service
 {
     public function __construct(\Database $db)
     {
-        $dao = (new DAO($db, PoolSchema::eager(), new Factory(Pool::class)))
+        $dao = (new DAO($db,
+            new PoolSchema(
+                name: 'pool',
+                strategy: LoadingStrategy::EAGER
+            ), new Factory(Pool::class)))
             ->filter(new UserProjectMatch()); 
         $validator = new PoolValidator($dao);
 

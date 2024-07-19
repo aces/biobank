@@ -6,7 +6,7 @@ use LORIS\biobank\data\schema\Table;
 use LORIS\biobank\data\schema\Key;
 use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
 
 
 /**
@@ -22,23 +22,23 @@ use LORIS\biobank\data\AbstractSchema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class CenterSchema extends AbstractSchema
+class CenterSchema extends Schema
 {
-    public static function getTable(): Table {
+    protected function getTable(): Table {
         return new Table(name: 'psc');
     }
 
-    public static function getId(): Key {
+    protected function getId(): Key {
         return new Key(name: 'CenterID');
     }
 
-    public static function getLabel(): string {
+    protected function getLabel(): string {
         return 'label';
     }
 
-    public static function getColumns(): array {
+    protected function getColumns(): array {
         return [
-            'id' => self::getId(),
+            'id' => $this->id,
             'label' => new Column(
                 name: 'Name',
                 type: ColumnType::VARCHAR
@@ -46,11 +46,11 @@ class CenterSchema extends AbstractSchema
         ];
     }
 
-    public static function getRelations(): array {
+    protected function getRelations(): array {
         return []; // Add relation definitions if needed
     }
 
-    public static function getJoins(): array {
+    protected function getJoins(): array {
         return []; // Add join definitions if needed
     }
 }

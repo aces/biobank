@@ -2,7 +2,7 @@
 
 namespace LORIS\biobank\data\schemas\specimen\process;
 
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\schema;
 
 /**
@@ -18,7 +18,7 @@ use LORIS\biobank\data\schema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class ProcessSchema extends AbstractSchema {
+class ProcessSchema extends Schema {
     protected function initialize(): void {
         // Define table and primary key
         $this->table = new schema\Table(

@@ -1,6 +1,8 @@
-<?php
+<?php declare(strict_types=1);  
 
-class TimeValue implements JsonSerializable {
+namespace LORIS\biobank\types;
+
+class Time implements \JsonSerializable {
     private \DateTime $time;
 
     public function __construct(string $timeStr) {

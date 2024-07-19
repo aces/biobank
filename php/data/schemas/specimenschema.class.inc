@@ -15,14 +15,16 @@
  */
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\schemas\specimen;
 use LORIS\biobank\data\schema\Table;
 use LORIS\biobank\data\schema\Key;
 use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
 use LORIS\biobank\data\schema\TableKey;
 use LORIS\biobank\data\schema\Relation;
 use LORIS\biobank\data\schema\Join;
+use LORIS\biobank\data\schema\LoadingStrategy;
 
 /**
  * Specimen Data Access Object (DAO) Class
@@ -38,171 +40,193 @@ use LORIS\biobank\data\schema\Join;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class SpecimenSchema extends AbstractSchema {
-    public static function getTable(): Table
+class SpecimenSchema extends Schema
+{
+    protected function getTable(): Table
     {
         return new Table(name: 'biobank_specimen');
     }
 
-    public static function getId(): Key                                            
+    protected function getId(): Key                                            
     {                                                                              
         return new Key('SpecimenID');                                                  
     }        
 
-    public static function getLabel(): string                                      
+    protected function getLabel(): string                                      
     {                                                                              
         return 'barcode';                                                            
     }   
 
-    public static function getColumns(): array
+    protected function getColumns(): array
     {
         return [
+            //TODO may need to change column to 'TableColumn' and include table
+            //name or alias so that properties can be pulled from other tables
+            //into the main entity (e.g. barcode). -> not sure about it thought
             'quantity' => new Column(name: 'Quantity', type: ColumnType::DECIMAL),
             'sampleNumber' => new Column(name: 'SampleNumber', type: ColumnType::INT),
         ];
     }
 
-    public static function getJoins(): array
+    protected function getJoins(): array
     {
         return [
-            'specimen_pool' => new Join(
-                from: self::getIdKey(),
+            'pool_rel' => new Join(
+                from: $this->idKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_pool_rel',
+                        alias: 'pool_rel',
                     ),
-                    column: self::getId
+                    key: $this->id
                 )
             ),
-            'specimen_parents' => new Join(
-                from: self::getIdKey(),
+            'parents_rel' => new Join(
+                from: $this->idKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_parent',
+                        alias: 'parents_rel',
                     ),
-                    column: self::getId
+                    key: $this->id
                 )
             ),
-            'specimen_children' => new Join(
-                from: self::getIdKey(),
+            'children_rel' => new Join(
+                from: $this->idKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_parent',
+                        alias: 'children_rel',
                     ),
-                    column: new Column(
-                        name: 'ParentSpecimenID',
-                        type: ColumnType::INT
+                    key: new Key(
+                        name: 'ParentSpecimenID'
                     )
                 )
             ),
-            'specimen_projects' => new Join(
-                from: self::getTableKey(),
+            'projects_rel' => new Join(
+                from: $this->idKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_project_rel',
+                        alias: 'projects_rel',
                     ),
-                    column: self::getId()
+                    key: $this->id
                 )
             ),
-            'session' => new Join(
+            'session_rel' => new Join(
                 from: new TableKey(
-                    table: self::getTable(),
-                    column: new Column(
+                    table: $this->table,
+                    key: new Key(
                         name: 'SessionID',
-                        type: ColumnType::INT
                     )
                 ),
                 to: new TableKey(
-                    table: new Table(name: 'session'),
-                    column: new Column(name: 'ID', type: ColumnType::INT)
+                    table: new Table(
+                        name: 'session',
+                        alias: 'session_rel'
+                    ),
+                    key: new Key(name: 'ID')
                 )
             ),
         ];
     }
 
-    public static function getRelations(): array                                   
+    protected function getRelations(): array                                   
     {                                                                              
         return [
             'container' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key('ContainerID')
                 ),
-                to: ContainerSchema::eager(),
+                to: ContainerSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
             'type' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key('SpecimenTypeID')
                 ),
-                to: specimen\TypeSchema::eager(),
+                to: specimen\TypeSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
             'unit' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key('UnitID')
                 ),
-                to: UnitSchema::eager(),
+                to: UnitSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
             'freezethaw' => new Relation(
-                from: self::getIdKey(),
-                to: specimen\FreezethawSchema::eager(),
+                from: $this->idKey,
+                to: specimen\FreezethawSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
             'collection' => new Relation(
-                from: self::getIdKey(),
-                to: specimen\CollectionSchema::eager(),
+                from: $this->idKey,
+                to: specimen\process\CollectionSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
             'preparation' => new Relation(
-                from: self::getIdKey(),
-                to: specimen\PreparationSchema::eager(),
+                from: $this->idKey,
+                to: specimen\process\PreparationSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
             'analysis' => new Relation(
-                from: self::getIdKey(),
-                to: Secimen\CollectionSchema::eager(),
+                from: $this->idKey,
+                to: specimen\process\AnalysisSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
             'pool' => new Relation(
                 from: new TableKey(
-                    table: self::getJoins()['specimen_pool'],
+                    table: $this->joins['pool_rel']->to->table,
                     key: new Key('PoolID')
                 ),
-                to: PoolSchema::lazy(),
+                to: PoolSchema::class,
+                strategy: LoadingStrategy::LAZY,
             ),
             'children' => new Relation(
                 from: new TableKey(
-                    table: self::getJoins()['specimen_children']->to->table,
-                    key: self::getId()
+                    table: $this->joins['children_rel']->to->table,
+                    key: $this->id
                 ),
-                to: self::lazy(),
+                to: self::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
             'parents' => new Relation(
                 from: new TableKey(
-                    table: self::getJoin()['specimen_parents']->to->table,
+                    table: $this->joins['parents_rel']->to->table,
                     key: new Key('ParentSpecimenID')
                 ),
-                to: self::lazy(),
+                to: self::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
             'session' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key('SessionID')
                 ),
-                to: SessionSchema::lazy(),
+                to: SessionSchema::class,
+                strategy: LoadingStrategy::LAZY,
             ),
             'candidate' => new Relation(
                 from: new TableKey(
-                    table: self::getJoins()['specimen_session'],
-                    key: new Key('CandidateID')
+                    table: $this->joins['session_rel']->to->table,
+                    key: new Key('CandID')
                 ),
-                to: CandidateSchema::lazy(),
+                to: CandidateSchema::class,
+                strategy: LoadingStrategy::LAZY,
             ),
             'projects' => new Relation(
                 from: new TableKey(
-                    table: self::getJoins()['specimen_projects']->to->table,
+                    table: $this->joins['projects_rel']->to->table,
                     key: new Key('ProjectID')
                 ),
-                to: ProjectSchema::lazy(),
+                to: ProjectSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
         ];

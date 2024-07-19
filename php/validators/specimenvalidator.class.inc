@@ -3,6 +3,7 @@
 namespace LORIS\biobank\validators;
 
 use LORIS\biobank\Validator;
+use LORIS\biobank\Model;
 use LORIS\biobank\models\Specimen;
 
 class SpecimenValidator extends Validator
@@ -25,7 +26,13 @@ class SpecimenValidator extends Validator
         ];
     }
 
-    private function _validateInstance(Specimen $specimen) : void
+    protected function getRequiredIfFields() : array
+    {
+        return [];
+    }
+
+    protected function validateFields(Model $specimen) : void
+    {
         $this->validateTypeId($specimen);
         $this->validateQuantity($specimen);
         $this->validateUnitId($specimen);

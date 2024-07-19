@@ -1,34 +1,34 @@
-<?php declare(strict_types=1);  
-
-namespace LORIS\biobank\data;
-
-use LORIS\biobank\data\query\Condition;
-
-use LORIS\biobank\Model;
-use LORIS\biobank\Factory;
-use LORIS\biobank\data\query\QueryBuilder;
-use LORIS\biobank\data\query\QueryParams;
-use LORIS\Data\ProvisionerInstance;
-
-class DAO extends ProvisionerInstance
-{
-    use Transactions; 
-
-    protected QueryBuilder $queryBuilder;
-
-    public function __construct(
-        protected \Database $db, 
-        protected Schema $schema,
-        protected Factory $factory
-    ) 
-    {
-        $this->queryBuilder = new QueryBuilder($schema);
-    }
-
-    protected function getAllInstances() : \Traversable
-    {
-        return $this->find(new QueryParams());
-    }
+<?php declare(strict_types=1);                                                     
+                                                                                   
+namespace LORIS\biobank\data;                                                      
+                                                                                   
+                                                                                   
+use LORIS\biobank\Model;                                                           
+use LORIS\biobank\Factory;                                                         
+use LORIS\biobank\data\query\QueryBuilder;                                         
+use LORIS\biobank\data\query\QueryParams;                                          
+use LORIS\biobank\data\query\Condition;                                            
+use LORIS\Data\ProvisionerInstance;                                                
+                                                                                   
+class DAO extends ProvisionerInstance                                              
+{                                                                                  
+    use Transactions;                                                              
+                                                                                   
+    protected QueryBuilder $queryBuilder;                                          
+                                                                                   
+    public function __construct(                                                   
+        protected \Database $db,                                                   
+        protected Schema $schema,                                                  
+        protected Factory $factory                                                 
+    )                                                                              
+    {                                                                              
+        $this->queryBuilder = new QueryBuilder($schema);                           
+    }                                                                              
+                                                                                   
+    protected function getAllInstances() : \Traversable                            
+    {                                                                              
+        return $this->find(new QueryParams());                                     
+    }                                                                              
 
     private function decodeNestedJson($data) {
         if (is_array($data)) {
@@ -52,48 +52,43 @@ class DAO extends ProvisionerInstance
         }
         return $data;
     }    
-
-    public function find(QueryParams $queryParams): array //Model[]
-    {
-
-        $this->queryBuilder->reset();
-        $query = $this->queryBuilder
-            ->select(...$queryParams->fields)
-            ->where(...$queryParams->conditions)
-            ->limit($queryParams->limit)
-            ->offset($queryParams->offset)
-            ->build();
-
-        error_log('QUERY: '.$query->toString());
-        $rows = $this->db->pselect($query->toString(), $query->getParams());
-
-        error_log('ROWS: '.count($rows));
-        
-        $models = [];
-        foreach ($rows as $row) {
-            if (isset($row['data'])) {
-                //error_log("Length of data field: " . strlen($row['data']));
-                $data = json_decode($row['data'], true);
-                error_log(print_r($data, true));
-        
+                                                                                   
+    public function find(QueryParams $queryParams): array //Model[]                
+    {                                                                              
+                                                                                   
+        $this->queryBuilder->reset();                                              
+                                                                                   
+        // TODO: ideally this would be $query = $this->queryBuilder($queryParams)->build();
+        //                                                                         
+        $query = $this->queryBuilder                                               
+            ->select(...$queryParams->fields)                                      
+            ->where(...$queryParams->conditions)                                   
+            ->limit($queryParams->limit)                                           
+            ->offset($queryParams->offset)                                         
+            ->build();                                                             
+                                                                                   
+        $rows = $this->db->pselect($query->toString(), $query->getParams());       
+                                                                                   
+        $models = [];                                                              
+        foreach ($rows as $row) {                                                  
+            if (isset($row['json'])) {                                             
+                $data = json_decode($row['json'], true);                           
                 if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
-                    // $data = $this->decodeNestedJson($data); // Decode nested JSON strings
+                    $data = $this->decodeNestedJson($data); // Decode nested JSON strings
                     $models[] = $this->factory->create($data);
                 } else {
                     error_log("JSON decode error: " . json_last_error_msg());
                     // Log the specific portion of data causing issues
                     $snippet_length = 20000; // Increase the length for better context
-                    error_log("Problematic data snippet: " . substr($row['data'], 0, $snippet_length));
+                    error_log("Problematic data snippet: " . substr($row['json'], 0, $snippet_length));
                 }
-            } else {
+            } else {                                                               
                 error_log("Data field is missing in the row: " . print_r($row, true));
-            }
-        }
-        error_log('MODELS: '.count($models));
-
-        return $models;
-    }
-
+            }                                                                      
+        }                                                                          
+                                                                                   
+        return $models;                                                            
+    }                                                                              
 
     // public function findById(string $id): ?Model
     // {

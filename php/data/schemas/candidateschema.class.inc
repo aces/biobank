@@ -2,8 +2,15 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\AbstractSchema;
-use LORIS\biobank\data\schema;
+use LORIS\biobank\data\Schema;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\TableKey;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
+use LORIS\biobank\data\schema\Join;
+use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\schema\LoadingStrategy;
 
 /**
  * Candidate Schema Class
@@ -18,72 +25,82 @@ use LORIS\biobank\data\schema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class CandidateSchema extends AbstractSchema
+class CandidateSchema extends Schema
 {
-    protected function initialize(): void
+    protected function getTable(): Table
     {
-        // Define table and primary key
-        $this->table = new schema\Table(name: 'candidate');
-        $this->id = new schema\TableKey(
-            table: $this->table,
-            key: new schema\Key(name: 'CandID')
-        );
+        return new Table(name: 'candidate');
+    }
 
-        // Define label column
-        $this->label = new schema\Column(
-            name: 'PSCID',
-            type: schema\ColumnType::VARCHAR
-        );
+    protected function getId(): Key
+    {
+        return new Key('CandID');
+    }
 
-        // Define columns
-        $this->columns = [
-            'pscid' => $this->label,
-            'dob' => new schema\Column(
-                name: 'DoB',
-                type: schema\ColumnType::DATE
+    protected function getLabel(): string
+    {
+        return 'label';
+    }
+
+    protected function getColumns(): array
+    {
+        return [
+            'label' => new Column(
+                name: 'PSCID',
+                type: ColumnType::VARCHAR
             ),
-            'sex' => new schema\Column(
+            'dob' => new Column(
+                name: 'DoB',
+                type: ColumnType::DATE
+            ),
+            'sex' => new Column(
                 name: 'Sex',
-                type: schema\ColumnType::ENUM,
+                type: ColumnType::ENUM,
             ),
         ];
+    }
 
-        // Define joins
-        $this->joins = [
-            'diagnosis' => new schema\Join(
-                from: $this->getIdKey(),
-                to: new schema\TableKey(
-                    table: new schema\Table(
+    protected function getJoins(): array
+    {
+        return [
+            'diagnosis' => new Join(
+                from: $this->idKey,
+                to: new TableKey(
+                    table: new Table(
                         name: 'candidate_diagnosis_rel'
                     ),
-                    key: new schema\Key('CandID')
+                    key: new Key('CandID')
                 ),
             ),
-            'session' => new schema\Join(
-                from: $this->getIdKey(),
-                to: new schema\TableKey(
-                    table: SessionSchema::getTable(),
-                    key: new schema\Key('CandID')
+            'session' => new Join(
+                from: $this->idKey,
+                to: new TableKey(
+                    table: new Table(name: 'session'), // to be replaced with call to sesion schema once table name is a static property
+                    key: new Key('CandID')
                 )
             ),
         ];
+    }
 
-        // Define relations
-        $this->relations = [
-            'diagnoses' => new schema\Relation(
-                from: new schema\TableKey(
-                    table: $this->join['diagnosis']
+    protected function getRelations(): array
+    {
+        return [
+            'diagnoses' => new Relation(
+                from: new TableKey(
+                    table: $this->joins['diagnosis'],
                     key: new Key(name: 'DiagnosisID')
                 ),
-                to: schema\DiagnosisSchema::lazy(),
+                to: DiagnosisSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
-            'sessions' => new schema\Relation(
-                from: new schema\TableKey(
-                    table: $this->table
-                    key: schema\SessionSchema::getIdKey()->key
+            'sessions' => new Relation(
+                from: new TableKey(
+                    table: $this->table,
+                    key: SessionSchema::getIdKey()->key
                 ),
-                to: schema\SessionSchema::lazy(),
+                to: SessionSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
         ];

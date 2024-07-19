@@ -3,7 +3,7 @@
  * This serves as a hint to LORIS that this module is a real module.
  * It does nothing but implement the module class in the module's namespace.
  *
- * PHP Version 7.2
+ * PHP Version 8.3
  *
  * @category   Module
  * @package    Main
@@ -69,6 +69,11 @@ class Module extends \Module
         $db = \NDB_Factory::singleton()->database();
 
         // Set the session variable for group_concat_max_len
+        ini_set('memory_limit', '-1');
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
+        error_reporting(E_ALL);
+
         $db->run("SET SESSION group_concat_max_len = 536870912;");
 
         $path = trim($request->getURI()->getPath(), "/");

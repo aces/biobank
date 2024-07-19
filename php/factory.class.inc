@@ -6,69 +6,112 @@ use ReflectionClass;
 use ReflectionNamedType;
 use InvalidArgumentException;
 
+/**
+ * Class Factory
+ *
+ * Handles the creation of model instances from arrays of data.
+ *
+ * @category   Factory
+ * @package    Biobank
+ * @subpackage Services
+ * @author     Henri Rabalais <henri.rabalais@mcgill.ca>
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
+ * @link       https://www.github.com/aces/Loris-Trunk/
+ */
 class Factory
 {
     public function __construct(
         private string $model
     ) {}
 
-    public function create(array $data): object
+    /**
+     * Creates an instance of the model class with provided data
+     *
+     * @param array $data Data to instantiate the model
+     *
+     * @return object The instantiated model object
+     */
+    public function create(?array $data): object
     {
         $reflectionClass = new ReflectionClass($this->model);
         $constructor = $reflectionClass->getConstructor();
         $parameters = $constructor->getParameters();
-
-        $args = [];
-        foreach ($parameters as $parameter) {
+    
+        $args = array_map(function ($parameter) use ($data) {
             $name = $parameter->getName();
             $type = $parameter->getType();
             $typeName = $type ? $type->getName() : null;
-
-            // error_log('MODEL: ' . $this->model);
-            // error_log('NAME: ' . $name);
+    
+            // Type checking and casting
             if (isset($data[$name])) {
-                $value = $data[$name];
-                // error_log($name . ": " . print_r($value, true));
-
-                // Type checking and casting
-                $value = $this->handleType($type, $value);
-                $args[] = $value;
-            } else {
-                if ($parameter->isOptional()) {
-                    $args[] = $parameter->getDefaultValue();
-                } else {
-                    throw new InvalidArgumentException("Missing required parameter: {$name}");
-                }
+                return $this->handleType($type, $data[$name]);
             }
-        }
-
+    
+            // Use default value if parameter is optional
+            if ($parameter->isOptional()) {
+                return $parameter->getDefaultValue();
+            }
+    
+            throw new InvalidArgumentException("Missing required parameter: {$name}");
+        }, $parameters);
+    
         return $reflectionClass->newInstanceArgs($args);
-    }
+    }    
 
+    /**
+     * Handles type conversion and instantiation for the provided value
+     *
+     * @param ReflectionNamedType|null $type  The type of the parameter
+     * @param mixed                    $value The value to be handled
+     *
+     * @return mixed The processed value
+     */
     private function handleType(?ReflectionNamedType $type, $value)
     {
-        if ($type) {
-            $typeName = $type->getName();
-            if ($type->isBuiltin()) {
-                return $this->castToBuiltinType($typeName, $value);
-            } elseif (class_exists($typeName) && !is_object($value)) {
-                // Recursively instantiate nested objects
-                $subFactory = new self($typeName);
-                return $subFactory->create($value);
-            } elseif (!$type->isBuiltin() && is_array($value)) {
-                // Handle array of objects
-                return array_map(function ($item) use ($typeName) {
-                    if (class_exists($typeName) && !is_object($item)) {
-                        $subFactory = new self($typeName);
-                        return $subFactory->create($item);
-                    }
-                    return $item;
-                }, $value);
-            }
+        if (!$type) {
+            return $value;
         }
-        return $value;
+    
+        $typeName = $type->getName();
+        // error_log('Creating ' . $typeName . ' with value: ' . var_export($value, true));
+    
+        // Handle built-in types
+        if ($type->isBuiltin()) {
+            return $this->castToBuiltinType($typeName, $value);
+        }
+    
+        // Handle class types
+        if (!class_exists($typeName)) {
+            throw new InvalidArgumentException("Unable to handle type $typeName: $type");
+        }
+    
+    
+        // Handle classes extending Model
+        if (is_subclass_of($typeName, Model::class)) {
+            $subFactory = new self($typeName);
+            return $subFactory->create($value);
+        }
+    
+        // Handle classes extending Models
+        if (is_subclass_of($typeName, Models::class)) {
+            $subFactory = new self($typeName::$model);
+            return new $typeName(array_map([$subFactory, 'create'], $value));
+        }
+    
+        // Directly instantiate non-Model classes
+        return new $typeName($value);        
     }
 
+    /**
+     * Casts the provided value to the specified built-in type
+     *
+     * @param string $typeName The name of the type to cast to
+     * @param mixed  $value    The value to be casted
+     *
+     * @return mixed The casted value
+     *
+     * @throws InvalidArgumentException If the type is not supported
+     */
     private function castToBuiltinType(string $typeName, $value)
     {
         switch ($typeName) {
@@ -80,22 +123,10 @@ class Factory
                 return (string) $value;
             case 'bool':
                 return (bool) $value;
+            case 'array':
+                return (array) $value;
             default:
                 throw new InvalidArgumentException("Unsupported built-in type: {$typeName}");
         }
     }
-
-    // public static function createMany(array $models): Models
-    // {
-    //     $modelClass = get_class(reset($models));
-    //     $collectionClass = $modelClass . 's'; // Assuming collection classes follow this naming convention
-
-    //     if (!class_exists($collectionClass)) {
-    //         throw new InvalidArgumentException(
-    //             "Collection class does not exist: {$collectionClass}"
-    //         );
-    //     }
-
-    //     return new $collectionClass($models);
-    // }
 }

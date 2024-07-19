@@ -19,10 +19,8 @@ use LORIS\biobank\data\schemas\specimen\ProcessSchema;
  * @link       https://www.github.com/aces/Loris/
  */
 class AnalysisSchema extends ProcessSchema {
-    protected function initialize(): void {
-        $this->table = new schema\Table(
-            name: 'biobank_specimen_analysis', 
-        );
-        parent::initialize();
+    protected function getTable(): schema\Table
+    {
+        return new schema\Table(name: 'biobank_specimen_analysis');
     }
 }

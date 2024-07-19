@@ -2,8 +2,15 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\AbstractSchema;
-use LORIS\biobank\data\schema;
+use LORIS\biobank\data\Schema;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\TableKey;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
+use LORIS\biobank\data\schema\Join;
+use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\data\schemas\container;
 
 /**
@@ -20,124 +27,128 @@ use LORIS\biobank\data\schemas\container;
  * @link       https://www.github.com/aces/Loris/
  */
 
-class ContainerSchema extends AbstractSchema
+class ContainerSchema extends Schema
 {
-    public static function getTable(): schema\Table
+    protected function getTable(): Table
     {
-        return new schema\Table(name: 'biobank_container');
+        return new Table(name: 'biobank_container');
     }
 
-    public static function getId(): schema\Key
+    protected function getId(): Key
     {
-        return new schema\Key('ContainerID');
+        return new Key('ContainerID');
     }
 
-    public static function getLabel(): string
+    protected function getLabel(): string
     {
         return 'barcode';
     }
 
-    public static function getColumns(): array
+    protected function getColumns(): array
     {
         return [
-            'barcode' => new schema\Column(
+            'barcode' => new Column(
                 name: 'Barcode', 
-                type: schema\ColumnType::VARCHAR
+                type: ColumnType::VARCHAR
             ),
-            'temperature' => new schema\Column(
+            'temperature' => new Column(
                 name: 'Temperature', 
-                type: schema\ColumnType::DECIMAL
+                type: ColumnType::DECIMAL
             ),
-            'lotNumber' => new schema\Column(
+            'lotNumber' => new Column(
                 name: 'LotNumber', 
-                type: schema\ColumnType::VARCHAR
+                type: ColumnType::VARCHAR
             ),
-            'expirationDate' => new schema\Column(
+            'expirationDate' => new Column(
                 name: 'ExpirationDate', 
-                type: schema\ColumnType::DATE
+                type: ColumnType::DATE
             ),
-            'comments' => new schema\Column(
+            'comments' => new Column(
                 name: 'Comments', 
-                type: schema\ColumnType::VARCHAR
+                type: ColumnType::VARCHAR
             ),
         ];
     }
 
-    public static function getJoins(): array
+    protected function getJoins(): array
     {
         return [
-            'container_parent' => new schema\Join(
-                from: self::getIdKey(),
-                to: new schema\TableKey(
-                    table: new schema\Table(
+            'parent_rel' => new Join(
+                from: $this->idKey,
+                to: new TableKey(
+                    table: new Table(
                         name: 'biobank_container_parent', 
-                        alias: 'container_parent',
+                        alias: 'parent_rel',
                     ),
-                    key: self::getId()
+                    key: $this->id
                 )                
             ),
-            'container_children' => new schema\Join(
-                from: self::getIdKey(),
-                to: new schema\TableKey( 
-                    table: new schema\Table(
+            'children_rel' => new Join(
+                from: $this->idKey,
+                to: new TableKey( 
+                    table: new Table(
                         name: 'biobank_container_parent', 
-                        alias: 'container_children'
+                        alias: 'children_rel'
                     ),
-                    key: new schema\Key(name: 'ParentContainerID')
+                    key: new Key(name: 'ParentContainerID')
                 ),
             ),
-            'container_shipments' => new schema\Join(
-                from: self::getIdKey(),
-                to: new schema\TableKey(
-                    table: new schema\Table(
+            'shipments_rel' => new Join(
+                from: $this->idKey,
+                to: new TableKey(
+                    table: new Table(
                         name: 'biobank_container_shipment_rel', 
-                        alias: 'container_shipments'
+                        alias: 'shipments_rel'
                     ),
-                    key: self::getId()
+                    key: $this->id
                 )                
             )
         ];
     }
 
-    public static function getRelations(): array
+    protected function getRelations(): array
     {
         return [
-            'type' => new schema\Relation(
-                alias: 'type',
-                from: new schema\TableKey(
-                    table: self::getTable(), 
-                    key: new schema\Key('ContainerTypeID')
+            'type' => new Relation(
+                from: new TableKey(
+                    table: $this->table, 
+                    key: new Key('ContainerTypeID')
                 ),
-                to: container\TypeSchema::eager()
+                to: container\TypeSchema::class,
+                strategy: LoadingStrategy::EAGER,
             ),
-            // 'center' => new schema\Relation(
-            //     from: new schema\TableKey(
-            //         table: self::getTable(), 
-            //         key: new schema\Key('CenterID')
-            //     ),
-            //     to: CenterSchema::lazy()
-            // ),
-            'parent' => new schema\Relation(
-                from: new schema\TableKey(
-                    table: self::getJoins()['container_parent']->to->table, 
-                    key: new schema\Key('ParentContainerID')
+            'center' => new Relation(
+                from: new TableKey(
+                    table: $this->table, 
+                    key: new Key('CenterID')
                 ),
-                to: self::lazy(),
+                to: CenterSchema::class,
+                strategy: LoadingStrategy::LAZY,
             ),
-            'children' => new schema\Relation(
-                from: new schema\TableKey(
-                    table: self::getJoins()['container_children']->to->table, 
-                    key: new schema\Key('ContainerID')
+            'parent' => new Relation(
+                from: new TableKey(
+                    table: $this->joins['parent_rel']->to->table, 
+                    key: new Key('ParentContainerID')
                 ),
-                to: self::lazy(),
+                to: self::class,
+                strategy: LoadingStrategy::LAZY,
+            ),
+            'children' => new Relation(
+                from: new TableKey(
+                    table: $this->joins['children_rel']->to->table, 
+                    key: new Key('ContainerID')
+                ),
+                to: self::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
-            'shipments' => new schema\Relation(
-                from: new schema\TableKey(
-                    table: self::getJoins()['container_shipments']->to->table, 
-                    key: new schema\Key('ShipmentID')
+           'shipments' => new Relation(
+                from: new TableKey(
+                    table: $this->joins['shipments_rel']->to->table, 
+                    key: new Key('ShipmentID')
                 ),
-                to: ShipmentSchema::lazy(),
+                to: ShipmentSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             )
         ];

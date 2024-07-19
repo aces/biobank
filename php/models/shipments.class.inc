@@ -4,7 +4,7 @@ namespace LORIS\biobank\models;
 
 use LORIS\biobank\Models;
 
-class Shipments extends Models
+final class Shipments extends Models
 {
-    protected string $modelClass = Shipment::class;
+    public static string $model = Shipment::class;
 }

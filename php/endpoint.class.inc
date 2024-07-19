@@ -74,8 +74,6 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
         ServerRequestInterface $request
     ) : ResponseInterface
     {
-        ini_set('memory_limit', '-1');
-
         return match ($request->getMethod()) {
             'GET' => $this->_handleGET($request),
             'POST' => $this->_handlePOST($request),

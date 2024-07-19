@@ -8,16 +8,29 @@ use LORIS\biobank\data\schema\Key;
 use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;
 
-final class UnitSchema extends Schema
+/**
+ * Project Schema Class
+ * 
+ * This class defines the schema for the `projects` table.
+ * 
+ * PHP Version 7.2
+ * 
+ * @category   Data
+ * @package    Loris
+ * @subpackage Biobank
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
+ * @link       https://www.github.com/aces/Loris/
+ */
+class ProjectSchema extends Schema
 {
-    protected function getTable(): Table
+        protected function getTable(): Table
     {
-        return new Table(name: 'biobank_unit');
+        return new Table(name: 'Project');
     }
 
     protected function getId(): Key
     {
-        return new Key('UnitID');
+        return new Key('ProjectID');
     }
 
     protected function getLabel(): string
@@ -29,7 +42,7 @@ final class UnitSchema extends Schema
     {
         return [
             'label' => new Column(
-                name: 'Label',
+                name: 'Alias',
                 type: ColumnType::VARCHAR
             ),
         ];
@@ -40,8 +53,8 @@ final class UnitSchema extends Schema
         return [];
     }
 
-    protected function getRelations(): array                                
-    {                                                                           
+    protected function getRelations(): array
+    {
         return [];
     }
 }

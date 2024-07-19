@@ -9,7 +9,8 @@ use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;
 use LORIS\biobank\data\schema\Relation;
 use LORIS\biobank\data\schemas\container;
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\schema\LoadingStrategy;
+use LORIS\biobank\data\Schema;
 
 /**
  * Type Schema Class
@@ -24,24 +25,24 @@ use LORIS\biobank\data\AbstractSchema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-final class TypeSchema extends AbstractSchema
+final class TypeSchema extends Schema
 {
-    public static function getTable(): Table
+    protected function getTable(): Table
     {
         return new Table(name: 'biobank_container_type');
     }
 
-    public static function getId(): Key
+    protected function getId(): Key
     {
         return new Key(name: 'ContainerTypeID');
     }
 
-    public static function getLabel(): string
+    protected function getLabel(): string
     {
         return 'label';
     }
 
-    public static function getColumns(): array {
+    protected function getColumns(): array {
         return [
             'label' => new Column(
                 name: 'Label',
@@ -49,7 +50,7 @@ final class TypeSchema extends AbstractSchema
             ),
             // primary is a reserved word in sql
             'prime' => new Column( 
-                name: 'Primary',
+                name: 'Prime',
                 type: ColumnType::BOOLEAN
             ),
             'brand' => new Column(
@@ -63,26 +64,28 @@ final class TypeSchema extends AbstractSchema
         ];
     }
 
-    public static function getRelations(): array {
+    protected function getRelations(): array {
         return [
             'capacity' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key(name: 'ContainerCapacityID')
                 ),
-                to: container\type\CapacitySchema::eager()
+                to: container\type\CapacitySchema::class,
+                strategy: LoadingStrategy::EAGER
             ),
             'dimension' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key(name: 'ContainerDimensionID')
                 ),
-                to: container\type\DimensionSchema::eager()
+                to: container\type\DimensionSchema::class,
+                strategy: LoadingStrategy::EAGER
             )
         ];
     }
 
-    public static function getJoins(): array {
+    protected function getJoins(): array {
         return []; // Add join definitions if needed
     }
 }

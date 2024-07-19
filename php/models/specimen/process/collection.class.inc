@@ -13,7 +13,10 @@
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-namespace LORIS\biobank\Models;
+namespace LORIS\biobank\models\specimen\process;
+
+use LORIS\biobank\models\Unit;
+use LORIS\biobank\models\specimen\Process;
 
 /**
  * Collection Object Class
@@ -29,7 +32,7 @@ namespace LORIS\biobank\Models;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Collection extends Process
+final class Collection extends Process
 {
     public function __construct(
         public float $quantity,

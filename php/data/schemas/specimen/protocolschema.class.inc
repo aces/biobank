@@ -2,63 +2,86 @@
 
 namespace LORIS\biobank\data\schemas\specimen;
 
-use LORIS\biobank\data\AbstractSchema;
-use LORIS\biobank\data\schema;
+use LORIS\biobank\data\Schema;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\TableKey;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
+use LORIS\biobank\data\schema\Join;
+use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\schema\LoadingStrategy;
 
-
-class ProtocolSchema extends AbstractSchema {
-    protected function initialize(): void {
-        // Define table and primary key
-        $this->table = new schema\Table(name: 'biobank_specimen_protocol');
-        $this->id = new schema\Key('SpecimenProtocolID');
-
-        // Define columns
-        $this->columns = [
-            'label' => new schema\Column(
+final class ProtocolSchema extends Schema
+{
+    protected function getTable(): Table                                       
+    {                                                                              
+        return new Table(name: 'biobank_specimen_protocol');                                    
+    }                                                                              
+                                                                                   
+    protected function getId(): Key                                            
+    {                                                                              
+        return new Key('SpecimenProtocolID');                                                  
+    }                                                                              
+                                                                                   
+    protected function getLabel(): string                                      
+    {                                                                              
+        return 'label';                                                            
+    }                                                                              
+                                                                                   
+    protected function getColumns(): array                                     
+    {                                                                              
+        return [                                                                   
+            'label' => new Column(
                 name: 'Label',
-                type: schema\ColumnType::VARCHAR
+                type: ColumnType::VARCHAR
             ),
-            'specimenProcessID' => new schema\Key('SpecimenProcessID'),
-            'specimenTypeID' => new schema\Key('SpecimenTypeID')
-        ];
-
-        // Define joins
-        $this->joins = [
-            'protocol_attribute' => new schema\Join(
-                from: $this->tableKey,
-                to: new schema\TableKey(
-                    table: new schema\Table(
+        ];                                                                         
+    }                                                                              
+                                                                                   
+    protected function getJoins(): array                                       
+    {                                                                              
+        return [                                                                 
+            'protocol_attribute' => new Join(
+                from: $this->idKey,
+                to: new TableKey(
+                    table: new Table(
                         name: 'biobank_specimen_protocol_attribute_rel',
                     ),
                     key: $this->id
                 )
             )
         ];
-
-        // Define relations
-        $this->relations = [
-            'attributes' => new schema\Relation(
-                from: new schema\TableKey(
+    }                                                                              
+                                                                                   
+    protected function getRelations(): array                                   
+    {                                                                              
+        return [                                                                 
+            'attributes' => new Relation(
+                from: new TableKey(
                     table: $this->joins['protocol_attribute']->to->table,
-                    key: new schema\Key('SpecimenAttributeID')
+                    key: new Key('SpecimenAttributeID')
                 ),
-                to: AttributeSchema::eager(),
+                to: AttributeSchema::class,
+                strategy: LoadingStrategy::EAGER,
                 many: true
             ),
-            'specimenType' => new schema\Relation(
-                from: new schema\TableKey(
+            'specimenType' => new Relation(
+                from: new TableKey(
                     table: $this->table,
-                    key: new schema\Key('SpecimenTypeID')
+                    key: new Key('SpecimenTypeID')
                 ),
-                to: TypeSchema::lazy()
+                to: TypeSchema::class,
+                strategy: LoadingStrategy::LAZY
             ),
-            'processType' => new schema\Relation(
-                from: new schema\TableKey(
+            'processType' => new Relation(
+                from: new TableKey(
                     table: $this->table,
-                    key: new schema\Key('SpecimenProcessID')
+                    key: new Key('SpecimenProcessID')
                 ),
-                to: ProcessSchema::lazy()
+                to: ProcessSchema::class,
+                strategy: LoadingStrategy::LAZY
             ),
         ];
-    }
+    }       
 }

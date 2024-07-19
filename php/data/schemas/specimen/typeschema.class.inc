@@ -2,90 +2,115 @@
 
 namespace LORIS\biobank\data\schemas\specimen;
 
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\schemas;
-use LORIS\biobank\data\schema;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\TableKey;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
+use LORIS\biobank\data\schema\Join;
+use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\schema\LoadingStrategy;
 
-class TypeSchema extends AbstractSchema {
-    protected function initialize(): void {
-        // Define table and primary key
-        $this->table = new schema\Table(
-            name: 'biobank_specimen_type',
-        );
-        $this->primary = new schema\Key('SpecimenTypeID');
+class TypeSchema extends Schema
+{
+    protected function getTable(): Table
+    {
+        return new Table(name: 'biobank_specimen_type');
+    }
 
-        // Define columns
-        $this->columns = [
-            'label' => new schema\Column(
+    protected function getId(): Key
+    {
+        return new Key('SpecimenTypeID');
+    }
+
+    protected function getLabel(): string
+    {
+        return 'label';
+    }
+
+    protected function getColumns(): array
+    {
+        return [
+            'label' => new Column(
                 name: 'Label',
-                type: schema\ColumnType::VARCHAR
+                type: ColumnType::VARCHAR
             ),
-            'freezeThaw' => new schema\Column(
+            'freezeThaw' => new Column(
                 name: 'FreezeThaw',
-                type: schema\ColumnType::TINYINT
+                type: ColumnType::TINYINT
             ),
         ];
+    }
 
-        // Define joins
-        $this->joins = [
+    protected function getJoins(): array                                       
+    {               
+        return [
             'type_unit' => new Join(
-                from: $this->getIdKey(),
-                to: new schema\TableKey(
-                    table: new schema\Table(
+                from: $this->idKey,
+                to: new TableKey(
+                    table: new Table(
                         name: 'biobank_specimen_type_unit_rel', 
                     ),
-                    key: $this->primary
+                    key: $this->id
                 )
             ),
-            'type_container' => new schema\Join(
-                from: $this->getIdKey(),
-                to: new schema\TableKey(
-                    table: new schema\Table(
+            'type_container' => new Join(
+                from: $this->idKey,
+                to: new TableKey(
+                    table: new Table(
                         name: 'biobank_specimen_type_container_type_rel', 
                     ),
-                    key: $this->primary
+                    key: $this->id
                 )
             ),
-            'type_parent' => new schema\Join(
-                from: $this->getIdKey(),
-                to: new schema\TableKey(
-                    table: new schema\Table(
+            'type_parent' => new Join(
+                from: $this->idKey,
+                to: new TableKey(
+                    table: new Table(
                         name: 'biobank_specimen_type_parent', 
                     ),
-                    key: $this->primary
+                    key: $this->id
                 )
             )
         ];
+    }
 
-        // Define relations
-        $this->relations = [
-            'unit' => new schema\Relation(
-                from: new schema\TableKey(
+    protected function getRelations(): array                                   
+    { 
+        return [
+            'unit' => new Relation(
+                from: new TableKey(
                     table: $this->joins['type_unit']->to->table,
-                    key: new schema\Key('UnitID')
+                    key: new Key('UnitID')
                 ),
-                to: schemas\UnitSchema::lazy(),
+                to: schemas\UnitSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
-            'container' => new schema\Relation(
-                from: new schema\TableKey(
+            'container' => new Relation(
+                from: new TableKey(
                     table: $this->joins['type_container']->to->table,
-                    key: new schema\Key('ContainerTypeID')
+                    key: new Key('ContainerTypeID')
                 ),
-                to: schemas\ContainerSchema::lazy(),
+                to: schemas\ContainerSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
-            'parent' => new schema\Relation(
-                from: new schema\TableKey(
+            'parent' => new Relation(
+                from: new TableKey(
                     table: $this->joins['type_parent']->to->table,
-                    key: new schema\Key('ParentSpecimenTypeID')
+                    key: new Key('ParentSpecimenTypeID')
                 ),
-                to: TypeSchema::lazy(),
+                to: TypeSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
-            'protocols' => new schema\Relation(
-                from: $this->getIdKey(),
-                to: ProtocolSchema::lazy(),
+            'protocols' => new Relation(
+                from: $this->idKey,
+                to: ProtocolSchema::class,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
         ];

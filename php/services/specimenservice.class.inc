@@ -6,9 +6,10 @@ use LORIS\biobank\Service;
 use LORIS\biobank\Model;                                                           
 use LORIS\biobank\Factory;
 use LORIS\biobank\data\DAO;                                                        
+use LORIS\biobank\data\schemas\SpecimenSchema;                                         
+use LORIS\biobank\data\schema\LoadingStrategy;                                         
 use LORIS\biobank\models\Specimen;                                                
 use LORIS\biobank\validators\SpecimenValidator;                                   
-use LORIS\biobank\schemas\SpecimenSchema;                                         
 use LORIS\Data\Filters\UserSiteMatch;                                              
                                                                                    
 /**                                                                                
@@ -21,7 +22,10 @@ class SpecimenService extends Service
 {                                                                                  
     function __construct(\Database $db)                                                         
     {                                                                              
-        $dao = new DAO($db, SpecimenSchema::eager(), new Factory(Specimen::class));
+        $dao = new DAO($db, new SpecimenSchema(
+            name: 'specimen',
+            strategy: LoadingStrategy::EAGER
+        ), new Factory(Specimen::class));
         $validator = new SpecimenValidator($dao);                                 
         $dao->filter(new UserSiteMatch());                                         
         parent::__construct($dao, $validator);                                     

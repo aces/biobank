@@ -20,27 +20,32 @@ use LORIS\biobank\data\schemas\specimen\ProcessSchema;
  * @link       https://www.github.com/aces/Loris/
  */
 class CollectionSchema extends ProcessSchema {
-    protected function initialize(): void {
-        $this->table = new schema\Table(
-            name: 'biobank_specimen_collection', 
-        );
-        $this->columns['quantity'] = new schema\Column(
-            name: 'Quantity', 
-            type: schema\ColumnType::DECIMAL
-        );
-        $this->columns['unitID'] = new schema\Key('UnitID');
+    protected function getTable(): schema\Table
+    {
+        return new schema\Table(name: 'biobank_specimen_collection');
+    }
 
-        // Define foreign keys
-        $this->foreignKeys['unitID'] = new schema\TableKey(
-            table: $this->table,
-            key: new schema\Key('UnitID')
-        );
+    protected function getColumns(): array
+    {
+        return parent::getColumns() + [
+            'quantity' => new schema\Column(
+                name: 'Quantity', 
+                type: schema\ColumnType::DECIMAL
+            )
+        ];
+    }
 
-        $this->relations['unit'] = new schema\Relation(
-            from: $this->foreignKeys['unitID'],
-            to: schemas\UnitSchema::class
-        );
-
-        parent::initialize();
+    protected function getRelations(): array
+    {
+        return parent::getRelations() + [
+            'unit' => new schema\Relation(
+                from: new schema\TableKey(
+                    table: $this->table,
+                    key: new schema\Key('UnitID')
+                ),
+                to: schemas\UnitSchema::class,
+                strategy: schema\LoadingStrategy::LAZY
+            )
+        ];
     }
 }

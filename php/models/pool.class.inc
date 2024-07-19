@@ -13,15 +13,10 @@
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-namespace LORIS\biobank\Models;
+namespace LORIS\biobank\models;
 
-use LORIS\biobank\models\Unit;
-use LORIS\biobank\models\Specimens;
-use LORIS\biobank\models\Canditate;
-use LORIS\biobank\models\Session;
+use LORIS\biobank\Model;
 use LORIS\biobank\models\container\Type;
-use LORIS\biobank\models\Center;
-use LORIS\biobank\models\Projects;
 use LORIS\biobank\types\Date;
 use LORIS\biobank\types\Time;
 
@@ -39,26 +34,25 @@ use LORIS\biobank\types\Time;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Pool extends Model implements \LORIS\StudyEntities\SiteHaver
+final class Pool extends Model implements \LORIS\StudyEntities\SiteHaver
 {
      public function __construct(
-        private int $id,
-        public string $label,
-        public float $quantity,
-        public Unit $unit,
-        public Specimens $specimens,
-        public Date $date,
-        public Time $time
+        public readonly string $label,
+        public readonly float $quantity,
+        public readonly Date $date,
+        public readonly Time $time,
+        private readonly ?int $id = null,
+        public readonly ?Unit $unit = null,
+        public readonly ?Specimens $specimens = null,
     ) {}
 
-    public getCenterID(): \CenterID
+    public function getCenterID(): \CenterID
     {
         return $this->specimens[0]->center->id;
     }
 
-    public getProjectIDs(): array
+    public function getProjectIDs(): array
     {
         return $this->specimens[0]->getProjectIDs();
     }
 }
-

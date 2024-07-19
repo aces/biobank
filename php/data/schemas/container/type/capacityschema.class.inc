@@ -9,7 +9,8 @@ use LORIS\biobank\data\schema\TableKey;
 use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;
 use LORIS\biobank\data\schema\Relation;
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\schema\LoadingStrategy;
+use LORIS\biobank\data\Schema;
 
 /**
  * Capacity Schema Class
@@ -24,24 +25,24 @@ use LORIS\biobank\data\AbstractSchema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-final class CapacitySchema extends AbstractSchema
+final class CapacitySchema extends Schema
 {
-    public static function getTable(): Table
+    protected function getTable(): Table
     {
         return new Table(name: 'biobank_container_capacity');
     }
 
-    public static function getId(): Key
+    protected function getId(): Key
     {
         return new Key(name: 'ContainerCapacityID');
     }
 
-    public static function getLabel(): string
+    protected function getLabel(): string
     {
         return '';
     }
 
-    public static function getColumns(): array
+    protected function getColumns(): array
     {
         return [
             'quantity' => new Column(
@@ -51,19 +52,20 @@ final class CapacitySchema extends AbstractSchema
         ];
     }
 
-    public static function getRelations(): array {
+    protected function getRelations(): array {
         return [
             'unit' => new Relation(
                 from: new TableKey(
-                    table: self::getTable(),
+                    table: $this->table,
                     key: new Key(name: 'UnitID')
                 ),
-                to: UnitSchema::eager()
+                to: UnitSchema::class,
+                strategy: LoadingStrategy::EAGER
             ),
         ];
     }
 
-    public static function getJoins(): array {
+    protected function getJoins(): array {
         return []; // Add join definitions if needed
     }
 }

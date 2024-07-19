@@ -2,10 +2,10 @@
 
 namespace LORIS\biobank\data\schemas\specimen\attribute;
 
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\schema;
 
-class DatatypeSchema extends AbstractSchema {
+class DatatypeSchema extends Schema {
     protected function initialize(): void {
         // Define table and primary key
         $this->table = new schema\Table(

@@ -6,9 +6,11 @@ use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
 use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\query\QueryParams;
 use LORIS\biobank\data\query\Condition;
+use LORIS\biobank\data\query\QueryParams;
+use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\data\schemas\ContainerSchema;
+use LORIS\biobank\data\schemas\container\TypeSchema;
 use LORIS\biobank\models\Container;
 use LORIS\biobank\validators\ContainerValidator;
 use LORIS\Data\Filters\UserSiteMatch;
@@ -23,7 +25,14 @@ class ContainerService extends Service
 {
     function __construct(\Database $db)
     {
-        $dao = new DAO($db, ContainerSchema::eager(), new Factory(Container::class));
+        $dao = new DAO(
+            $db,
+            new ContainerSchema(
+                name: 'container',
+                strategy: LoadingStrategy::EAGER,
+            ),
+            new Factory(Container::class)
+        );
         $validator = new ContainerValidator($dao);
         $dao->filter(new UserSiteMatch());
         parent::__construct($dao, $validator);
@@ -38,10 +47,11 @@ class ContainerService extends Service
     public function getInstances(QueryParams $queryParams): array
     {
         // Always add the 'primary' condition
+        // TODO: I'm convinced there's a better of doign this.
         $queryParams->conditions[] = new Condition(
             field: 'prime',
-            relation: ContainerSchema::getRelations()['type'],
-            value: 0
+            value: 0,
+            relation: new TypeSchema(name: 'container_type', strategy: LoadingStrategy::LAZY),
         );
 
         return parent::getInstances($queryParams);

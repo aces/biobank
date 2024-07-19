@@ -5,35 +5,40 @@ namespace LORIS\biobank;
 use ArrayObject;
 use InvalidArgumentException;
 
-class Models extends ArrayObject
+// interface ModelsInterface
+// {
+//     public const MODEL = null;
+// }
+
+abstract class Models extends ArrayObject 
 {
-    protected string $modelClass;
+    public static string $model;
 
     public function __construct(array $items = [])
     {
         parent::__construct([], ArrayObject::ARRAY_AS_PROPS);
 
         foreach ($items as $item) {
-            if (!$item instanceof $this->modelClass) {
-                throw new InvalidArgumentException("Expected instance of {$this->modelClass}");
-            }
+            // if (!$item instanceof static::MODEL) {
+            //     throw new InvalidArgumentException("Expected instance of ".static::MODEL);
+            // }
             $this[] = $item;
         }
     }
 
     public function offsetSet($key, $value): void
     {
-        if (!$value instanceof $this->modelClass) {
-            throw new InvalidArgumentException("Expected instance of {$this->modelClass}");
-        }
+        // if (!$value instanceof static::MODEL) {
+        //     throw new InvalidArgumentException("Expected instance of ".static::MODEL);
+        // }
         parent::offsetSet($key, $value);
     }
 
     public function append($value): void
     {
-        if (!$value instanceof $this->modelClass) {
-            throw new InvalidArgumentException("Expected instance of {$this->modelClass}");
-        }
+        // if (!$value instanceof static::MODEL) {
+        //     throw new InvalidArgumentException("Expected instance of ".static::MODEL);
+        // }
         parent::append($value);
     }
 }

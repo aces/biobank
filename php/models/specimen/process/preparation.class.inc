@@ -13,7 +13,9 @@
  * @link     https://www.github.com/aces/Loris/
  */
 
-namespace LORIS\biobank\models;
+namespace LORIS\biobank\models\specimen;
+
+use LORIS\biobank\models\specimen\Process;
 
 /**
  * Preparation Object Class
@@ -29,7 +31,7 @@ namespace LORIS\biobank\models;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Preparation extends Process
+final class Preparation extends Process
 {
 }
 

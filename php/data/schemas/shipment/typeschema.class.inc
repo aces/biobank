@@ -6,7 +6,7 @@ use LORIS\biobank\data\schema\Table;
 use LORIS\biobank\data\schema\Key;                                                 
 use LORIS\biobank\data\schema\Column;                                              
 use LORIS\biobank\data\schema\ColumnType;                                          
-use LORIS\biobank\data\AbstractSchema;                                             
+use LORIS\biobank\data\Schema;                                             
                                                                                    
 /**                                                                                
  * Shipment Type Schema Class                                                    
@@ -22,21 +22,21 @@ use LORIS\biobank\data\AbstractSchema;
  * @link       https://www.github.com/aces/Loris/                                  
  */                                                                                
                                                                                    
-class TypeSchema extends AbstractSchema                                          
+final class TypeSchema extends Schema                                          
 {                                                                                  
-    public function getTable(): Table {                                            
+    protected function getTable(): Table {                                            
         return new Table(name: 'shipment_type');                                 
     }                                                                              
                                                                                    
-    public function getId(): Key {                                                 
+    protected function getId(): Key {                                                 
         return new Key(name: 'ShipmentTypeID');                                          
     }                                                                              
                                                                                    
-    public function getLabel(): string {                                           
+    protected function getLabel(): string {                                           
         return 'label';                                                            
     }                                                                              
                                                                                    
-    public function getColumns(): array {                                          
+    protected function getColumns(): array {                                          
         return [                                                                   
             'label' => new Column(                                                 
                 name: 'Label',                                                     
@@ -45,11 +45,11 @@ class TypeSchema extends AbstractSchema
         ];                                                                         
     }                                                                              
                                                                                    
-    public function getRelations(): array {                                        
+    protected function getRelations(): array {                                        
         return [];                                                                 
     }                                                                              
                                                                                    
-    public function getJoins(): array {                                            
+    protected function getJoins(): array {                                            
         return [];                                                                 
     }                                                                              
 }      

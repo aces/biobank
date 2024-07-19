@@ -15,14 +15,8 @@
  */
 namespace LORIS\biobank\models;
 
-use LORIS\biobank\models\Container;
-use LORIS\biobank\models\specimen;
-use LORIS\biobank\models\Center;
-use LORIS\biobank\models\Projects;
-use LORIS\biobank\models\Specimens;
-use LORIS\biobank\models\Candidate;
-use LORIS\biobank\models\Session;
-use LORIS\biobank\models\Pool;
+use LORIS\biobank\Model;
+use LORIS\biobank\models\specimen\Type;
 use LORIS\biobank\models\specimen\process\Collection;
 use LORIS\biobank\models\specimen\process\Preparation;
 use LORIS\biobank\models\specimen\process\Analysis;
@@ -41,31 +35,31 @@ use LORIS\biobank\models\specimen\process\Analysis;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class Specimen extends Model implements \LORIS\StudyEntities\SiteHaver
+final class Specimen extends Model implements \LORIS\StudyEntities\SiteHaver
 {
     public function __construct(
-        private int $id
-        public Container $container,
-        public specimen\Type $type,
-        public float $quantity,
-        public string $unit,
-        public Projects $projects,
-        public int $fTCycle,
-        public Specimens $parents,
-        public Candidate $candidate,
-        public Session $session,
-        public Pool $pool,
-        public Collection $collection,
-        public Preparation $preparation,
-        public Analysis $analysis
+        public readonly float $quantity,
+        public readonly ?int $fTCycle = null,
+        private readonly ?int $id = null,
+        public readonly ?Unit $unit = null,
+        public readonly ?Type $type = null,
+        public readonly ?Projects $projects = null,
+        public readonly ?Specimens $parents = null,
+        public readonly ?Candidate $candidate = null,
+        public readonly ?Session $session = null,
+        public readonly ?Pool $pool = null,
+        public readonly ?Collection $collection = null,
+        public readonly ?Preparation $preparation = null,
+        public readonly ?Analysis $analysis = null,
+        public readonly ?Container $container = null, //removed for the moment to account for parent specimsn not being able to loading containers but should be re-instated later.
     ) {}
 
-    public getCenterID(): \CenterID
+    public function getCenterID(): \CenterID
     {
         return $this->container->center->id;
     }
 
-    public getProjectIDs(): array
+    public function getProjectIDs(): array
     {
         return array_map(function($project) {
             return $project->getId();

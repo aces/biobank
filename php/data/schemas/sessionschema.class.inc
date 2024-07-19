@@ -2,8 +2,15 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\schema;
-use LORIS\biobank\data\AbstractSchema;
+use LORIS\biobank\data\schemas;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\TableKey;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
+use LORIS\biobank\data\schema\Relation;
+use LORIS\biobank\data\schema\LoadingStrategy;
+use LORIS\biobank\data\Schema;
 
 /**
  * Session Schema Class
@@ -18,44 +25,57 @@ use LORIS\biobank\data\AbstractSchema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class SessionSchema extends AbstractSchema
+final class SessionSchema extends Schema
 {
-    protected function initialize(): void
-    {
-        // Define table and primary key
-        $this->table = new schema\Table(name: 'session');
-        $this->id = new schema\TableKey(
-            table: $this->table,
-            column: new schema\Key(name: 'ID')
-        );
-
-        // Define label column
-        $this->label = new schema\Column(
-            name: 'Visit_label',
-            type: schema\ColumnType::VARCHAR
-        );
-
-        // Define columns
-        $this->columns = [
-            'visit_label' => $this->label,
-        ];
-
-        // Define relations
-        $this->relations = [
-            'candidate' => new schema\Relation(
-                from: new schema\TableKey(
+    protected function getTable(): Table                                       
+    {                                                                              
+        return new Table(name: 'session');
+    }                                                                              
+                                                                                   
+    protected function getId(): Key                                            
+    {                                                                              
+        return new Key('ID');                                                  
+    }                                                                              
+                                                                                   
+    protected function getLabel(): string                                      
+    {                                                                              
+        return 'label';                                                            
+    }                                                                              
+                                                                                   
+    protected function getColumns(): array                                     
+    {                                                                              
+        return [                                                                   
+            'label' => new Column(
+                name: 'Visit_label',
+                type: ColumnType::VARCHAR
+            ),
+        ];                                                                         
+    }                                                                              
+                                                                                   
+    protected function getJoins(): array                                       
+    {                                                                              
+        return [];                                                                 
+    }                                                                              
+                                                                                   
+    protected function getRelations(): array                                   
+    {                                                                              
+        return [
+            'candidate' => new Relation(
+                from: new TableKey(
                     table: $this->table,
-                    key: new schema\Key('CandID')
+                    key: new Key('CandID')
                 ),
-                to: schema\CandidateSchema::lazy()
+                to: schemas\CandidateSchema::class,
+                strategy: LoadingStrategy::LAZY,
             ),
             'center' => new schema\Relation(
                 from: new schema\TableKey(
                     table: $this->table,
                     key: new schema\Key('CenterID')
                 ),
-                to: schema\CenterSchema::lazy()
+                to: schemas\CenterSchema::class,
+                strategy: LoadingStrategy::LAZY,
             ),
         ];
-    }
-}
+    }                                                                              
+}    

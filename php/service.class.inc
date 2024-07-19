@@ -29,7 +29,7 @@ abstract class Service {
     {
         $instance = $this->dao->findByLabel($label);
         if (!$instance) {
-            throw new Exception("Instance not found");
+            throw new \Exception("Instance not found");
         }
         return $instance;
     }
