@@ -1,8 +1,7 @@
 import { ReactElement } from 'react';
 import { mapFormOptions, clone } from '../utils';
 import { CustomFields, ProcessField } from '../components';
-import { Protocol } from '../types';
-import { ProcessHook, SpecimenHook } from '../entities';
+import { IProtocol, ISpecimenType, ProcessHook, SpecimenHook } from '../entities';
 import { SpecimenAPI } from '../APIs';
 import { useBiobankContext } from '../hooks';
 import Form from 'Form';
@@ -20,7 +19,7 @@ type ProcessFormProps = {
   specimen?: SpecimenHook,
   process: ProcessHook,
   processStage: string,
-  type: string,
+  type: ISpecimenType,
   edit?: boolean,
   hideProtocol?: boolean,
 };
@@ -46,10 +45,10 @@ function ProcessForm({
   // XXX: THIS IS A DYNAMICALLY GENERATED CONFIG — FIND A WAY TO PULL THIS INTO
   // ANOTHER COMPONENT NOW!!!
   let specimenProtocolAttributes = {};
-  Object.entries(options.specimen?.protocols as { [key: string]: Protocol }).forEach(([id, protocol]) => {
+  Object.entries(options.specimen?.protocols as { [key: string]: IProtocol }).forEach(([id, protocol]) => {
     // FIXME: I really don't like 'toLowerCase()' function, but it's the
     // only way I can get it to work at the moment.
-    if (type == protocol.type &&
+    if (type.label == protocol.type.label &&
         protocol.process.toLowerCase() ==
         processStage) {
       specimenProtocolAttributes[id] = options.specimen.protocolAttributes[id];
@@ -57,11 +56,11 @@ function ProcessForm({
   });
 
   const renderProtocolFields = () => {
-    if (specimenProtocolAttributes[process.protocol]) {
+    if (process.protocol.attributes) {
       if (process.data) {
         return (
           <CustomFields
-            fields={specimenProtocolAttributes[process.protocol]}
+            attributes={process.protocol.attributes}
             data={process.data}
            />
         );

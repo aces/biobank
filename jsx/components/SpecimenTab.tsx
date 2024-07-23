@@ -1,10 +1,9 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { Candidate, Session} from '../types';
 import { ISpecimen } from '../entities';
 import { clone, mapFormOptions } from '../utils';
 import FilterableDataTable from 'FilterableDataTable';
-import { useBiobankContext, useEditable } from '../hooks';
+import { useBiobankContext, useEditable, useRequest } from '../hooks';
 import {
   SpecimenForm,
   PoolForm,
@@ -12,6 +11,11 @@ import {
   BatchEditForm,
   Search,
 } from '../components';
+import {
+  ContainerAPI,
+  SpecimenAPI,
+  BaseAPI,
+} from '../APIs';
 
 declare const loris: any;
 
@@ -20,7 +24,7 @@ declare const loris: any;
  * module.
  */
 const SpecimenTab: React.FC = () => {
-  const { options, specimens, specProg: progress } = useBiobankContext();
+  const { specimens, specProg: progress } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
 
   /**
@@ -34,12 +38,9 @@ const SpecimenTab: React.FC = () => {
    */
   function formatSpecimenColumns(
     column: string,
-    value: string | string[],
-    row: Record<string, string>,
+    value: any,
+    row: Record<string, any>,
   ): ReactElement {
-    const candidate = Object.values(options.candidates)
-      .find((cand: Candidate) => cand.pscid == row['PSCID']) as Candidate;
-    const candidatePermission = candidate !== undefined;
     const statusColorMap: Record<string, string> = {
       Available: 'green',
       Reserved: 'orange',
@@ -51,6 +52,7 @@ const SpecimenTab: React.FC = () => {
         return <td><Link to={`/specimens/${value}`}>{value}</Link></td>;
       case 'Parent Specimens':
         // Check if 'value' is an array and map over it to produce Link elements
+
         const barcodes = Array.isArray(value) ? value.map((barcode, index) => (
           // Use React.Fragment to wrap each Link and comma
           <React.Fragment key={barcode}>
@@ -61,17 +63,15 @@ const SpecimenTab: React.FC = () => {
 
         return <td>{barcodes}</td>;
       case 'PSCID':
-        if (candidatePermission) {
-          return <td><a href={loris.BaseURL + '/' + candidate.id}>{value}</a></td>;
+        if (value.id) {
+          return <td><a href={loris.BaseURL + '/' + value.id}>{value.label}</a></td>;
         }
         return <td>{value}</td>;
       case 'Visit Label':
-        if (candidatePermission) {
-          const ses = Object.values(options.candidateSessions[candidate.id]).find(
-            (sess: Session) => sess.label == value
-          ) as Session;
-          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candidate.id+
-            '&sessionID='+ses.id;
+        if (value.id) {
+          const visitLabelURL =
+            loris.BaseURL+'/instrument_list/?candID='+row['PSCID'].id+
+            '&sessionID='+value.id;
           return <td><a href={visitLabelURL}>{value}</a></td>;
         }
         return <td>{value}</td>;
@@ -88,73 +88,62 @@ const SpecimenTab: React.FC = () => {
      }
   }
 
-  const barcodesPrimary = Object.values(specimens)
-    .reduce<{ [key: string]: string }>((result, specimen: ISpecimen) => {
-      if (specimen.barcode) {
-        result[specimen.barcode] = specimen.barcode;
-      }
-      return result;
-    }, {});
-
   const specimenData = Object.values(specimens).map((specimen: ISpecimen) => {
-    let specimenAttributeData = [];
-    Object.keys(options.specimen.processAttributes)
-      .forEach((processId) => {
-        Object.keys(options.specimen.processAttributes[processId])
-          .forEach((attributeId) => {
-            const process = options.specimen.processes[processId].label.toLowerCase();
-            if ((specimen[process]||{}).data) {
-              const protocols = options.specimen.processAttributes[processId][attributeId].protocolIds;
-              if (protocols.includes(specimen[process].protocol)) {
-                const data = specimen[process].data[attributeId];
-                specimenAttributeData.push(data);
-              } else {
-                specimenAttributeData.push(null);
-              }
-            }
-          });
-      });
-
-    const candidate = options.candidate[specimen.candidate];
-    return [
-      specimen.barcode,
-      specimen.type,
-      specimen.container.type,
-      specimen.quantity+' '+specimen.unit,
-      specimen.fTCycle,
-      specimen.parentSpecimens,
-      specimen.candidate,
-      candidate.sex,
-      candidate.age,
-      candidate.diagnosisIds,
-      specimen.session,
-      specimen.poolLabel,
-      specimen.container.status,
-      specimen.projects,
-      specimen.container.center,
-      options.sessionCenters[specimen.session]?.center,
-      specimen.collection.date,
-      specimen.collection.time,
-      specimen.preparation?.time,
-      specimen.container.parentContainer,
-      specimen.container.coordinate,
-      ...specimenAttributeData,
-    ];
+     let specimenAttributeData = [];
+  //   Object.keys(options.specimen.processAttributes)
+  //     .forEach((processId) => {
+  //       Object.keys(options.specimen.processAttributes[processId])
+  //         .forEach((attributeId) => {
+  //           const process = options.specimen.processes[processId].label.toLowerCase();
+  //           if ((specimen[process]||{}).data) {
+  //             const protocols = options.specimen.processAttributes[processId][attributeId].protocolIds;
+  //             if (protocols.includes(specimen[process].protocol)) {
+  //               const data = specimen[process].data[attributeId];
+  //               specimenAttributeData.push(data);
+  //             } else {
+  //               specimenAttributeData.push(null);
+  //             }
+  //           }
+  //         });
+  //     });
+     return [
+       specimen.type,
+       specimen.container.type,
+       specimen.quantity+' '+specimen.unit,
+       specimen.fTCycle,
+       specimen.parents,
+       specimen.candidate,
+       specimen.candidate.sex,
+       specimen.candidate.age,
+       specimen.candidate.diagnosisIds,
+       specimen.session,
+       specimen.pool.label,
+       specimen.container.status,
+       specimen.projects,
+       specimen.container.center,
+       specimen.session.center,
+       specimen.collection.date,
+       specimen.collection.time,
+       specimen.preparation?.time,
+       specimen.container.parent,
+       specimen.container.coordinate,
+       ...specimenAttributeData,
+     ];
   });
 
-  let specimenAttributeFields = [];
-  Object.keys(options.specimen.processAttributes)
-    .forEach((processId) => {
-      Object.keys(options.specimen.processAttributes[processId])
-        .forEach((attributeId) => {
-          specimenAttributeFields.push(
-            {
-              label: options.specimen.attributes[attributeId].label,
-              show: true,
-            },
-          );
-        });
-    });
+  // let specimenAttributeFields = [];
+  // Object.keys(options.specimen.processAttributes)
+  //   .forEach((processId) => {
+  //     Object.keys(options.specimen.processAttributes[processId])
+  //       .forEach((attributeId) => {
+  //         specimenAttributeFields.push(
+  //           {
+  //             label: options.specimen.attributes[attributeId].label,
+  //             show: true,
+  //           },
+  //         );
+  //       });
+  //   });
 
   const fields = [
     {label: 'Barcode', show: true, filter: {
@@ -164,12 +153,12 @@ const SpecimenTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: options.specimen.types,
+      options: useRequest(new SpecimenAPI('types')),
     }},
     {label: 'Container Type', show: true, filter: {
       name: 'containerType',
       type: 'select',
-      options: options.container.typesPrimary,
+      options: useRequest(new ContainerAPI('types?primary=1')),
     }},
     {label: 'Quantity', show: true},
     {label: 'F/T Cycle', show: false, filter: {
@@ -178,7 +167,7 @@ const SpecimenTab: React.FC = () => {
       hide: true,
     }},
     {label: 'Parent Specimen(s)', show: false, filter: {
-      name: 'parentSpecimens',
+      name: 'parents',
       type: 'text',
       hide: true,
     }},
@@ -198,7 +187,7 @@ const SpecimenTab: React.FC = () => {
     {label: 'Diagnosis', show: true, filter: {
       name: 'diagnosis',
       type: 'multiselect',
-      options: options.diagnoses,
+      options: useRequest(new BaseAPI('diagnoses')),
     }},
     {label: 'Visit Label', show: true, filter: {
       name: 'session',
@@ -212,22 +201,22 @@ const SpecimenTab: React.FC = () => {
     {label: 'Status', show: true, filter: {
       name: 'status',
       type: 'select',
-      options: options.container.stati,
+      options: useRequest(new ContainerAPI('status')),
     }},
     {label: 'Projects', show: true, filter: {
       name: 'projects',
       type: 'multiselect',
-      options: options.projects,
+      options: useRequest(new BaseAPI('projects')),
     }},
     {label: 'Current Site', show: true, filter: {
       name: 'currentSite',
       type: 'select',
-      options: options.centers,
+      options: useRequest(new BaseAPI('centers')),
     }},
     {label: 'Draw Site', show: true, filter: {
       name: 'drawSite',
       type: 'select',
-      options: options.centers,
+      options: useRequest(new BaseAPI('centers')),
     }},
     {label: 'Collection Date', show: true, filter: {
       name: 'collectionDate',
@@ -246,7 +235,7 @@ const SpecimenTab: React.FC = () => {
       type: 'text',
     }},
     {label: 'Coordinate', show: true},
-    ...specimenAttributeFields,
+    // ...specimenAttributeFields,
   ];
 
   const actions = [
@@ -279,7 +268,7 @@ const SpecimenTab: React.FC = () => {
         title='Go To Specimen'
         show={editable.searchSpecimen}
         onClose={clear}
-        barcodes={barcodesPrimary}
+        barcodes={specimens}
       />
       {loris.userHasPermission('biobank_specimen_create') ?
       <SpecimenForm

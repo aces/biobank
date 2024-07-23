@@ -2,8 +2,7 @@ import { ReactElement } from 'react';
 import Form from 'Form';
 const { FormElement } = Form;
 import { ProcessForm } from '../components';
-import { Protocol, Options } from '../types';
-import { ProcessType, useSpecimenContext } from '../entities';
+import { IProtocol, ProcessType, useSpecimenContext } from '../entities';
 import { useBarcodePageContext, useBiobankContext } from '../hooks';
 declare const loris: any;
 
@@ -53,7 +52,7 @@ function ProcessPanel({
   };
 
   const protocolExists = Object.values(options.specimen.protocols).find(
-    (protocol: Protocol) => {
+    (protocol: IProtocol) => {
       return protocol.type == specimen.type &&
       protocol.process == process.replace(/^\w/, (c) => c.toUpperCase());
     }

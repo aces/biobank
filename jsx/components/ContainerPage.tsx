@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useEffect, useContext, ReactElement }  from 'react';
 import { Link, RouteComponentProps } from 'react-router-dom';
-import { Options } from '../types';
 import {
   ISpecimen,
   IContainer,
   useContainer,
   ContainerProvider,
-  Dimension,
+  IDimension,
 } from '../entities';
 import { clone, mapFormOptions } from '../utils';
 import {
@@ -69,7 +68,7 @@ export const ContainerPage: React.FC<RouteComponentProps<{barcode: string}>> = (
   const checkoutButton = () => {                                                
     if (                                                                        
       !loris.userHasPermission('biobank_container_update') ||                   
-      containers[container.barcode].childContainers.length == 0               
+      containers[container.barcode].children.length == 0               
     ) {                                                                         
       return;                                                                   
     }                                                                           
@@ -126,45 +125,46 @@ export const ContainerPage: React.FC<RouteComponentProps<{barcode: string}>> = (
   );                                                                            
 
   const containerList = () => {                                                 
-    if (!container.childContainers) {                                         
+    if (!container.children) {                                         
       return <div className='title'>This Container is Empty!</div>;             
     }                                                                           
                                                                                 
     let listAssigned = [];                                                      
+    let unassigned = [];                                                      
     let coordinateList = [];                                                    
                                                                                 
     // if (!loris.userHasPermission('biobank_specimen_view')) {                  
     //   return; // This is the correct place for the return statement           
     // }                                                                         
 
-    // Check if the current entry is for 'unassigned' containers
-    const unassigned = container.childContainers?.unassigned?.map(barcode => {
-      <div key={barcode}>
-        <Link
-          to={'/barcode='+barcode}
-          id={barcode}
-          draggable={true}
-          onDragStart={drag}
-        >
-          {barcode}
-        </Link>
-        <br />
-      </div>
-    });
+    container.children.forEach((child) => {
+      if (child.coordinate) {
+        listAssigned.push(
+          <div key={child.barcode}>
+            <Link to={'/barcode='+child.barcode}>
+              {child.barcode}
+            </Link>
+          </div>
+        );
+      } else {
+        unassigned.push(
+          <div key={child.barcode}>
+            <Link
+              to={'/barcode='+child.barcode}
+              id={child.barcode}
+              draggable={true}
+              onDragStart={drag}
+            >
+              {child.barcode}
+            </Link>
+            <br />
+          </div>
+        );
+      }
 
-    Object.entries(container.childContainers || {}).forEach(([key, barcode]) => {
-      if (Array.isArray(barcode)) return;
-
-      listAssigned.push(
-        <div key={barcode}>
-          <Link to={'/barcode='+barcode}>
-            {barcode}
-          </Link>
-        </div>
-      );
-
-      const coordinateLabel = <CoordinateLabel container={containers[barcode]}/>;
-      coordinateList.push(<div key={barcode}>at {coordinateLabel}</div>);
+      const coordinateLabel = <CoordinateLabel
+      container={containers[child.barcode]}/>;
+      coordinateList.push(<div key={child.barcode}>at {coordinateLabel}</div>);
     })
                                                                                 
     return (                                                                    

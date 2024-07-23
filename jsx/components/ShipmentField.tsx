@@ -1,7 +1,9 @@
-import { FieldConfiguration, User } from '../types';
-import { Shipment, IShipment, ShipmentHook, Log, ILog, LogHook } from '../entities';
+import { FieldConfiguration } from '../types';
+import { Shipment, IShipment, IUser, ShipmentHook, Log, ILog, LogHook } from '../entities';
+import { BaseAPI, ShipmentAPI } from '../APIs';
 import { mapFormOptions } from '../utils';
 import { DynamicField } from '../components';
+import { useRequest } from '../hooks';
 
 type ShipmentFields = Pick<IShipment, 'barcode' | 'type' | 'destinationCenter'>; 
 type ShipmentFieldConfig = FieldConfiguration<IShipment>;
@@ -16,17 +18,13 @@ const shipmentFieldConfig: Record<keyof ShipmentFields, ShipmentFieldConfig> = {
     label: 'Container Type',                                                              
     type: 'select',                                                             
     required: true,                                                             
-    getOptions: (context) => {                                                  
-      return context.options.shipment.types;                                           
-    }                                                                           
+    getOptions: (context) => useRequest(new ShipmentAPI().getTypes())
   },                                                                            
   destinationCenter: {                                                                     
     label: 'Destination Center',                                                              
     type: 'select',                                                             
     required: true,                                                             
-    getOptions: (context) => {                                                  
-      return context.options.centers;                                           
-    }                                                                           
+    getOptions: (context) => useRequest(new BaseAPI('centers'))   
   },                                                                            
 };                                                                              
                                                                                 
@@ -65,10 +63,7 @@ const logFieldConfig: Record<keyof LogFields, LogFieldConfig> = {
     label: 'Done By',                                                           
     type: 'select',                                                               
     required: true,                                                             
-    getOptions: (context) => {
-      return Object.fromEntries(Object.values(context.options.users)
-                                .map((user: User) => [user.label, user.label]));
-    }
+    getOptions: (context) => useRequest(new BaseAPI('users')),
   },                                                                            
   comments: {                                                                    
     label: 'Comments',                                                           

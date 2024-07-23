@@ -3,10 +3,13 @@
 namespace LORIS\biobank\data\schemas\specimen\process;
 
 use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
 
 /**
- * Specimen Process Schema Descriptor Class
+ * Specimen Process Type Schema Descriptor Class
  * This class encapsulates the table definitions and provides
  * a map to key values to be used within the business layer.
  *
@@ -18,20 +21,40 @@ use LORIS\biobank\data\schema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class ProcessSchema extends Schema {
-    protected function initialize(): void {
-        // Define table and primary key
-        $this->table = new schema\Table(
-            name: 'biobank_specimen_process',
-        );
-        $this->id = new schema\Key('SpecimenProcessID');
+final class TypeSchema extends Schema
+{
+    protected function getTable(): Table
+    {
+        return new Table(name: 'biobank_specimen_process');
+    }
 
-        // Define columns
-        $this->columns = [
-            'label' => new schema\Column(
+    protected function getId(): Key
+    {
+        return new Key('SpecimenProcessID');
+    }
+
+    protected function getLabel(): string
+    {
+        return 'label';
+    }
+
+    protected function getColumns(): array
+    {
+        return [
+            'label' => new Column(
                 name: 'Label',
-                type: schema\ColumnType::VARCHAR
-            )
+                type: ColumnType::VARCHAR
+            ),
         ];
+    }
+
+    protected function getJoins(): array
+    {
+        return [];
+    }
+
+    protected function getRelations(): array
+    {
+        return [];
     }
 }

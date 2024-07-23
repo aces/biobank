@@ -4,7 +4,6 @@ import { ContainerParentForm, SpecimenField, ContainerField, ProcessForm,
 import Modal from 'Modal';
 import { mapFormOptions, clone, padBarcode } from '../utils';
 import { useBiobankContext } from '../hooks';
-import { Options } from '../types';
 import {
   ISpecimen,
   Specimen,
@@ -43,7 +42,7 @@ function SpecimenForm({
   title,
 }: SpecimenFormProps): ReactElement {
 
-  const { options, containers } = useBiobankContext();
+  const { containers } = useBiobankContext();
 
   const specimen = useSpecimen();
   const container = useContainer();
@@ -65,17 +64,6 @@ function SpecimenForm({
     //   specimen.set('quantity', 0)
     // }
   }, [parent]); // Dependency array, effect runs when `parent` changes
-
-  /**
-   * When a session is selected, set the session, center
-   *
-   * @param {object} session
-   * @param {string} session
-   */
-  const setSession = (session, sessionId) => {
-    container.set('center', options.sessionCenters[sessionId].center); 
-    specimen.set('session', session);
-  }
 
   /**
    * Increment the current barcode
@@ -130,7 +118,7 @@ function SpecimenForm({
   const increaseCoordinate = (coordinate, parentContainer) => {               
     const containers = {}; // TODO: fill this with actual containers to make it work!  
     const childCoordinates =
-      containers[parentContainer].childContainers    
+      containers[parentContainer].children    
     .reduce((result, id) => {                                                   
       const container = containers[id];                                         
       if (container.coordinate) {                                               
@@ -310,14 +298,14 @@ function SpecimenForm({
   };
 
   // Assuming container.parentContainerBarcode is defined
-  if (container.parentContainer) {
+  if (container.parent) {
       let initialCoord = 0; // Initial coordinate value
       let coordinates = []; // Local array to accumulate coordinates
   
       for (const key of Object.keys(specimens)) {
           initialCoord = increaseCoordinate(
               initialCoord,
-              container.parentContainer,
+              container.parent,
           );
   
           // Parse and add the new coordinate
@@ -352,16 +340,7 @@ function SpecimenForm({
               text={parent ? dict.noteForAliquots : dict.noteForSpecimens}
             />
             {renderGlobalFields()}
-            <SelectElement
-              name='projects'
-              label='Project'
-              options={options.projects}
-              onUserInput={specimen.set}
-              required={true}
-              value={specimen.projects}
-              disabled={specimen.candidate ? false : true}
-              errorMessage={specimen.errors.projects}
-            />
+            <SpecimenField property={'projects'}/>
             {renderRemainingQuantityFields()}
           </div>
         </div>

@@ -1,8 +1,8 @@
 import BaseAPI from './BaseAPI';
-import { Pool } from '../entities';
+import { IPool } from '../entities';
 
-export default class PoolAPI extends BaseAPI<Pool> {
+export default class PoolAPI extends BaseAPI<IPool> {
   constructor() {
-    super('/pools');
+    super('pools');
   }
 }

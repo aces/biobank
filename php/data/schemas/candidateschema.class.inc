@@ -87,7 +87,7 @@ class CandidateSchema extends Schema
         return [
             'diagnoses' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['diagnosis'],
+                    table: $this->joins['diagnosis']->to->table,
                     key: new Key(name: 'DiagnosisID')
                 ),
                 to: DiagnosisSchema::class,
@@ -96,8 +96,8 @@ class CandidateSchema extends Schema
             ),
             'sessions' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
-                    key: SessionSchema::getIdKey()->key
+                    table: $this->joins['session']->to->table,
+                    key: new Key(name: 'ID')
                 ),
                 to: SessionSchema::class,
                 strategy: LoadingStrategy::LAZY,

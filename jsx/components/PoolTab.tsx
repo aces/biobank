@@ -1,11 +1,11 @@
 import { Fragment, useState, useEffect, ReactElement} from 'react';
 import { Link } from 'react-router-dom';
 import { SpecimenForm } from '../components';
-import { Candidate, Session } from '../types';
 import { IPool } from '../entities';
 import { mapFormOptions, clone } from '../utils';
 import FilterableDataTable from 'FilterableDataTable';
-import { useBiobankContext, useEditable } from '../hooks';
+import { useBiobankContext, useEditable, useRequest } from '../hooks';
+import { BaseAPI, SpecimenAPI } from '../APIs';
 import Form from 'Form';
 const {
   CTA,
@@ -13,7 +13,7 @@ const {
 declare const loris: any;
 
 export const PoolTab: React.FC = () => {
-  const { pools, options, poolProg: progress } = useBiobankContext();
+  const { pools, poolProg: progress } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
                                                                                 
   const openAliquotForm = (pool) => {
@@ -31,19 +31,9 @@ export const PoolTab: React.FC = () => {
    */
   function formatPoolColumns(
     column: string,
-    value: string | string[],
+    value: any,
     row: any
   ): ReactElement {
-    // Attempt to find the candidate
-    const candidate = Object.values(options.candidates)
-    .find((cand: Candidate) => cand.pscid == row['PSCID']) as Candidate;
-
-    // Check if a candidate was found before accessing the id
-    const candId = candidate ? candidate.id : null;
-
-    // If candId is defined, then the user has access to the candidate and a
-    // hyperlink can be established.
-    const candidatePermission = candId != null;
     switch (column) {
       case 'Pooled Specimens':
         const barcodesArray = typeof value === 'string' ? [value] : value;
@@ -55,17 +45,15 @@ export const PoolTab: React.FC = () => {
           })
         return <td>{barcodes}</td>;
       case 'PSCID':
-        if (candidatePermission) {
-          return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+        if (value.id) {
+          return <td><a href={loris.BaseURL + '/' + value.id}>{value.label}</a></td>;
         }
-        return <td>{value}</td>;
+        return <td>{value.label}</td>;
       case 'Visit Label':
-        if (candidatePermission) {
-          const session = Object.values(options.candidateSessions[candId])
-          .find((sess: Session) => sess.label == value) as Session;
-          const sessionId = session ? session.id : null;
-          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
-            '&sessionID='+sessionId;
+        if (value.id) {
+          const visitLabelURL =
+            loris.BaseURL+'/instrument_list/?candID='+row['PSCID'].id+
+            '&sessionID='+value.id;
           return <td><a href={visitLabelURL}>{value}</a></td>;
         }
         return <td>{value}</td>; 
@@ -95,7 +83,6 @@ export const PoolTab: React.FC = () => {
     );
   }
 
-  const specimenTypes = mapFormOptions(options.specimen.types, 'label');
   const poolData = Object.values(pools).map((pool: IPool) => {
     return [
       pool.label,
@@ -128,12 +115,12 @@ export const PoolTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: specimenTypes,
+      options: useRequest(new SpecimenAPI('types')),
     }},
     {label: 'Site', show: true, filter: {
       name: 'site',
       type: 'select',
-      options: options.centers,
+      options: useRequest(new BaseAPI('centers')),
     }},
     {label: 'Date', show: true},
     {label: 'Time', show: true},

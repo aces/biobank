@@ -2,6 +2,8 @@ import { FieldConfiguration } from '../types';
 import { IContainer, ContainerHook, useContainerContext } from '../entities';
 import { mapFormOptions } from '../utils';
 import { DynamicField } from '../components';
+import { useRequest } from '../hooks';
+import { ContainerAPI, BaseAPI} from '../APIs';
 
 // TODO: find a way to implement this again:                                    
 // const removeChildContainers = (object, id) => {                              
@@ -25,7 +27,7 @@ import { DynamicField } from '../components';
 // }                                                                            
 
 type ContainerFields = Pick<IContainer, 'barcode' | 'center' |
-  'parentContainer' | 'lotNumber' | 'expirationDate' | 'status' | 'type'>;
+  'parent' | 'lotNumber' | 'expirationDate' | 'status' | 'type'>;
 
 const getContainerFieldConfig = (
   container: ContainerHook
@@ -40,10 +42,10 @@ const getContainerFieldConfig = (
     type: 'select',                                                             
     required: true,                                                             
     getOptions: (context) => {                                                  
-      return context.options.centers;                                           
+      return useRequest(new BaseAPI('centers'))                                           
     }                                                                           
   },                                                                            
-  parentContainer: {                                                          
+  parent: {                                                          
     label: 'Parent Container Barcode',                                          
     type: 'search',                                                             
     required: false,                                                            
@@ -52,7 +54,7 @@ const getContainerFieldConfig = (
       .reduce((result, container: IContainer) => {                               
         const dimension = container.dimension;
         const capacity = dimension.x * dimension.y * dimension.z;            
-        const available = capacity - Number(container.childContainers.length);        
+        const available = capacity - Number(container.children.length);        
         result[container.barcode] = container.barcode +                              
              ' (' +available + ' Available Spots)';                             
         return result;                                                          
@@ -74,7 +76,7 @@ const getContainerFieldConfig = (
     type: 'select',                                                             
     required: true,                                                             
     getOptions: (context) => {                                                   
-      return mapFormOptions(context.options.container.stati, 'label');
+      return useRequest(new ContainerAPI('status'));
     },                                                                          
   },                                                                            
   type: {                                                                     
@@ -82,7 +84,8 @@ const getContainerFieldConfig = (
     type: 'select',                                                             
     required: true,                                                             
     getOptions: (context) => {                                                  
-      return mapFormOptions(context.options.container.typesNonPrimary, 'label');
+      console.log(context);
+      return useRequest(new ContainerAPI('types?primary=0'));
 
       // const containerTypesPrimary = mapFormOptions(
       //   options.container.typesPrimary,

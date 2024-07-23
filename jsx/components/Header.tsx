@@ -157,7 +157,7 @@ const Header: React.FC<{
    * @returns {void}
    */
   const checkoutContainer = (): void => {
-      container.set('parentContainer', null);
+      container.set('parent', null);
       container.set('coordinate', null);
       // TODO: this function has to be created!
       //contHandler.put();
@@ -188,7 +188,7 @@ const Header: React.FC<{
         </div>
         {addAliquotForm()}
         {loris.userHasPermission('biobank_container_update') &&
-        container.parentContainer ? (
+        container.parent ? (
           <div className='action'>
             <div
               className='action-button update'

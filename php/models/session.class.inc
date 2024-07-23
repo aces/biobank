@@ -7,7 +7,7 @@ use LORIS\biobank\Model;
 final class Session extends Model                                                           
 {                                                                                  
     public function __construct(                                                   
-        public readonly string $label,                                                      
+        public readonly ?string $label = null,                                                      
         private readonly ?int $id = null,                                                           
     ) {}                                                                           
 }   

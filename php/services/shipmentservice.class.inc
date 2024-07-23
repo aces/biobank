@@ -42,7 +42,7 @@ class ShipmentService extends Service
     }
 
     public function saveLogs(Shipment $shipment): void {
-        $logDAO = new LogDAO($dao->db);
+        $logDAO = new DAO($dao->db);
         foreach ($shipment->getLogs() as $log) {
             $log->setShipmentId($shipment->getId());
             $logDAO->save($log);

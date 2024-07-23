@@ -9,7 +9,7 @@ use LORIS\biobank\Factory;
 use LORIS\biobank\models\Pool;
 use LORIS\biobank\Permission;
                                                                                 
-class Pools extends Endpoint                                                
+final class Pools extends Endpoint                                                
 {                                                                               
     public function __construct(\User $user, \Database $db)                      
     {                                                                           
@@ -18,7 +18,7 @@ class Pools extends Endpoint
             new Factory(Pool::class)
         );
 
-        parent::__construct($user, $controller);
+        parent::__construct($user, $db, $controller);
     }                                                                           
 
     protected static function getPermission(Permission $permission) : string
@@ -27,6 +27,11 @@ class Pools extends Endpoint
             Permission::GET => 'biobank_pool_view',
             Permission::POST => 'biobank_pool_create',
         };
+    }
+
+    protected function getSubHandler(string $subpath): ?Endpoint
+    {
+        return null;
     }
 
     public static function getName() : string

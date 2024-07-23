@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FieldConfiguration } from '../types';
 import { Pool, IPool, PoolHook } from '../entities';
+import { useRequest } from '../hooks';
+import { BaseAPI } from '../APIs';
 import { DynamicField } from '../components';
 import { mapFormOptions } from '../utils';
 
@@ -28,8 +30,7 @@ const poolFieldConfig: Record<keyof PoolFields, FieldConfiguration<IPool>> = {
     label: 'Units',
     type: 'text',
     required: true,
-    getOptions: (context) => mapFormOptions(context.options.specimen.units,
-                                            'label'),
+    getOptions: (context) => useRequest(new BaseAPI('unit')),
   },
   date: {
     label: 'Date',

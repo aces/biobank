@@ -1,0 +1,40 @@
+<?php declare(strict_projects=1);                                                     
+                                                                                   
+namespace LORIS\biobank\endpoints;                                                 
+
+use LORIS\biobank\Endpoint;                                                        
+use LORIS\biobank\Controller;                                                   
+use LORIS\biobank\services\ProjectService;                                       
+use LORIS\biobank\Factory;                                                         
+use LORIS\biobank\models\Project;                                             
+use LORIS\biobank\Permission;                                              
+                                                                                   
+class Projects extends Endpoint                                                  
+{                                                                                  
+    public function __construct(\User $user, \Database $db)                                       
+    {                                                                              
+        $controller = new Controller(                                              
+            new ProjectService($db),                                                
+            new Factory(Project::class)                                          
+        );                                                                         
+                                                                                   
+        parent::__construct($user, $db, $controller);                                   
+    }                                                                              
+
+    protected static function getPermission(Permission $permission) : string         
+    {                                                                              
+        return match ($permission) {                                               
+            Permission::GET => 'biobank_specimen_view',                            
+        };                                                                         
+    }                                                                              
+
+    protected function getSubHandler(string $subpath): ?Endpoint                   
+    {                                                                              
+        return null;                                                               
+    }    
+                                                                                   
+    public static function getName() : string                                      
+    {                                                                              
+        return 'Project Endpoint';                                               
+    }                                                                              
+}  

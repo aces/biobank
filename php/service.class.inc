@@ -8,13 +8,13 @@ use LORIS\biobank\data\query\QueryParams;
 abstract class Service {
 
     protected DAO $dao;
-    private Validator $validator;
+    private ?Validator $validator;
 
     // abstract public function mapInstances(array $instances): array;
     abstract protected function handlePostSave(Model $instance): void;
     // abstract protected function map(array $instanceArray);
 
-    public function __construct(DAO $dao, Validator $validator) {
+    public function __construct(DAO $dao, ?Validator $validator = null) {
 
         $this->dao = $dao;
         $this->validator = $validator;
@@ -35,6 +35,12 @@ abstract class Service {
     }
 
     public function save(array $instances): array {
+        // XXX this is here so that I can omit validators for current services
+        // that live in the biobank but shouldn't long term (i.e. centers,
+        // projects, candidates, etc.)
+        if ($this->validator === null) {
+            throw new \LogicException("Validator is required for saving instances.");
+        }
         $this->dao->begin();
 
         try {

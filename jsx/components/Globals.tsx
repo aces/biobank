@@ -42,7 +42,7 @@ const Globals: React.FC<{
   const poolField = (specimen||{}).pool ? (
     <InlineField
       label='Pool'
-      value={specimen.poolLabel}
+      value={specimen.pool.label}
     />
   ) : null;
 
@@ -53,7 +53,7 @@ const Globals: React.FC<{
       updateValue={() => SpecimenAPI.update(specimen)}
       edit={() => edit('quantity')}
       value={Math.round(specimen.quantity * 100) / 100+
-      ' '+options.specimen.units[specimen.unit].label}
+      ' '+specimen.unit.label}
       editable={editable.quantity}
     >
       <SpecimenField property={'quantity'}/>
@@ -117,7 +117,7 @@ const Globals: React.FC<{
       label={'Temperature'}
       clearAll={clearAll}
       updateValue={() => ContainerAPI.update(container)}
-      edit={!container.parentContainer && editTemperature}
+      edit={!container.parent && editTemperature}
       value={container.temperature + '°'}
       editable={editable.temperature}
     >
@@ -188,13 +188,17 @@ const Globals: React.FC<{
       return null;
     }
   
-    const value = specimen.parentSpecimens.length === 0
+    const value = specimen.parents.length === 0
         ? 'None'
         : <>
-            {specimen.parentSpecimens.map((barcode, index) => (
-              <React.Fragment key={barcode}>
+            {specimen.parents.map((parent, index) => (
+              <React.Fragment key={parent.container.barcode}>
                 {index > 0 && ', '}
-                <Link to={'/specimens/'+barcode}>{barcode}</Link>
+                <Link
+                  to={'/specimens/'+parent.container.barcode}
+                >
+                  {parent.container.barcode}
+                </Link>
               </React.Fragment>
             ))}
           </>;
@@ -212,8 +216,8 @@ const Globals: React.FC<{
     if (loris.userHasPermission('biobank_container_view')) {
       // Set Parent Container Barcode Value if it exists
       const parentContainerBarcodeValue = () => {
-        if (container.parentContainer) {
-          const barcode = container.parentContainer
+        if (container.parent) {
+          const barcode = container.parent
           // TODO: in the future, this should only be linked conditionally based
           // on whether the user has permission to view this container.
           return <Link to={'/containers/'+barcode}>{barcode}</Link>;

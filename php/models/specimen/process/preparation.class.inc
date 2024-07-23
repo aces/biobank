@@ -13,7 +13,7 @@
  * @link     https://www.github.com/aces/Loris/
  */
 
-namespace LORIS\biobank\models\specimen;
+namespace LORIS\biobank\models\specimen\process;
 
 use LORIS\biobank\models\specimen\Process;
 

@@ -1,7 +1,6 @@
 import React, { createContext } from 'react';                        
 import { useSpecimen, SpecimenHook } from './';          
 import { ContainerProvider } from '../';
-import { Options } from '../../types';                                             
                                                                                 
 export const SpecimenContext = React.createContext<SpecimenHook>(undefined);             
                                                                                 

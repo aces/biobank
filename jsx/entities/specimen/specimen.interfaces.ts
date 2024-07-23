@@ -1,20 +1,50 @@
-import { IContainer, EntityHook, ContainerHook } from '../';
+import {
+  IContainer,
+  ICandidate,
+  IProject,
+  IExaminer,
+  ICenter,
+  ISession,
+  IPool,
+  IUnit,
+  EntityHook,
+  ContainerHook
+} from '../';
 
 export interface IData extends Record<string, any> {};                                         
+
+export interface IAttribute {
+  id: number,
+  label: string,
+  required: boolean,        
+  show: boolean,
+  datatype: string,
+}
+
+export interface IProtocol {
+  label: string,
+  type: ISpecimenType,
+  process: ProcessType,
+  attributes: IAttribute[],
+}
                                                                                 
 export interface IProcess {                                                         
-  center: string,                                                            
+  center: Partial<ICenter>,                                                            
   comments?: string,                                                            
   data?: IData,                                                                  
   date: string,                                                                
-  examiner: string,                                                          
-  protocol: string,                                                          
+  examiner: Partial<IExaminer>,                                                          
+  protocol: Partial<IProtocol>,                                                          
   quantity: number,                                                            
   time: string,                                                                
-  unit: string                                                               
+  unit: IUnit,                                                               
 };                                                                              
-                                                                                
 
+export interface ISpecimenType {
+  label: string,
+  units: IUnit[]
+};
+                                                                                
 // TODO: maybe change this to an enum later, having trouble currently.
 // export enum ProcessType {                                                       
 //   Collection = 'collection',                                                    
@@ -31,19 +61,17 @@ export type ProcessType = 'collection' | 'preparation' | 'analysis';
 export type ISpecimen = {                                           
   id: string,                                                                   
   barcode: string,                                                              
-  candidateAge: number,                                                         
-  candidate: string,                                                          
+  candidate: Partial<ICandidate>,                                                          
   container: Partial<IContainer>,                                                         
   collection: Partial<IProcess>,
   preparation?: Partial<IProcess>,
   analysis?: Partial<IProcess>,
   fTCycle: number,                                                              
-  parentSpecimens?: string[],                                            
-  pool?: string,                                                              
-  poolLabel?: string                                                            
-  projects: string[],                                                         
+  parents?: Partial<ISpecimen>[],                                            
+  pool?: Partial<IPool>,                                                              
+  projects: Partial<IProject>[],                                                         
   quantity: number,                                                             
-  session: string,                                                            
-  type: string,                                                               
-  unit: string,                                                               
+  session: Partial<ISession>,                                                            
+  type: ISpecimenType,                                                               
+  unit: IUnit,
 };      

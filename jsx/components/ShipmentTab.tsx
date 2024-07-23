@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import FilterableDataTable from 'FilterableDataTable';
-import { useBiobankContext } from '../hooks';
+import { useBiobankContext, useRequest } from '../hooks';
 // import Container from './Container';
 import { IShipment, Shipment, ILog, Log, useShipment, useLog } from '../entities';
 import { ShipmentField, LogField } from './';
 import TriggerableModal from 'TriggerableModal';
-import { ShipmentAPI } from '../APIs';
+import { BaseAPI, ShipmentAPI } from '../APIs';
 import dict from '../i18n/en.json';
 import Form from 'Form';
 const {
@@ -84,6 +84,9 @@ const ShipmentTab: React.FC = () => {
     ];
   });
 
+  const shipmentAPI = new ShipmentAPI();
+  const centers = useRequest(new BaseAPI('centers').get());
+
   const fields = [
     {label: 'ID', show: false},
     {label: 'Barcode', show: true, filter: {
@@ -93,22 +96,22 @@ const ShipmentTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: options.shipment.types,
+      options: useRequest(shipmentAPI.getTypes())
     }},
     {label: 'Status', show: true, filter: {
       name: 'status',
       type: 'select',
-      options: options.shipment.statuses,
+      options: useRequest(shipmentAPI.getStatuses())
     }},
     {label: 'Origin Center', show: true, filter: {
       name: 'originCenter',
       type: 'select',
-      options: options.centers,
+      options: centers,
     }},
     {label: 'Destination Center', show: true, filter: {
       name: 'destinationCenter',
       type: 'select',
-      options: options.centers,
+      options: centers,
     }},
     {label: 'Actions', show: true},
   ];
@@ -175,7 +178,7 @@ const CreateShipment: React.FC = () => {
   const { containers } = useBiobankContext();
 
   const logIndex = 0;
-  const shipment = useShipment({logs: [{status: 'created'}]});
+  const shipment = useShipment({logs: [{status: {label: 'created'}}]});
   const log = shipment.logs[logIndex];
 
   const setLog = (log) => shipment.setLog(logIndex, log);
@@ -229,7 +232,7 @@ const ReceiveShipment: React.FC<{
   };
 
   const onOpen = () => {
-    shipment.addLog({status: 'received', center: shipment.destinationCenter});
+    shipment.addLog({status: {label: 'received'}, center: shipment.destinationCenter});
   };
 
   return (

@@ -3,7 +3,11 @@
 namespace LORIS\biobank\data\schemas;
 
 use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\TableKey;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
 
 /**
  * Diagnosis Schema Class
@@ -20,25 +24,42 @@ use LORIS\biobank\data\schema;
  */
 class DiagnosisSchema extends Schema
 {
-    protected function initialize(): void
-    {
-        // Define table and primary key
-        $this->table = new schema\Table(name: 'diagnosis');
-        $this->id = new schema\TableKey(
-            table: $this->table,
-            column: new schema\Key(name: 'DiagnosisID')
-        );
+    protected function getTable(): Table                                           
+    {                                                                              
+        return new Table(name: 'diagnosis');                                    
+    }      
 
-        // Define columns
-        $this->columns = [
-            'diagnosis' => new Schema\Column(
-                name: 'Diagnosis',
-                type: schema\ColumnType::VARCHAR
-            ),
-            'abbreviation' => new schema\Column(
+    protected function getId(): Key                                                
+    {                                                                              
+        return new Key('DiagnosisID');                                                  
+    }                                                                              
+                                                                                   
+    protected function getLabel(): string                                          
+    {                                                                              
+        return 'label';                                                            
+    }                                                                              
+                                                                                   
+    protected function getColumns(): array                                         
+    {                                                                              
+        return [                                                                   
+            'label' => new Column(                                                 
+                name: 'Name',                                                     
+                type: ColumnType::VARCHAR                                          
+            ),                                                                     
+            'abbreviation' => new Column(
                 name: 'Abbreviation',
-                type: schema\ColumnType::VARCHAR
+                type: ColumnType::VARCHAR
             ),
-        ];
-    }
+        ];                                                                         
+    }                                                                              
+                                                                                   
+    protected function getJoins(): array                                           
+    {                                                                              
+        return [];                                                                 
+    }                                                                              
+                                                                                   
+    protected function getRelations(): array                                       
+    {                                                                              
+        return [];                                                                 
+    }       
 }

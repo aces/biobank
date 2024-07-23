@@ -1,4 +1,10 @@
-export type Dimension = {                                                       
+import {
+  ICenter,        
+  IUnit,
+  IShipment
+} from '../';
+
+export type IDimension = {                                                       
   y: number,                                                                    
   x: number,                                                                    
   z: number,                                                                    
@@ -7,19 +13,32 @@ export type Dimension = {
   zNum: boolean,                                                                 
 }; 
 
+export type ICapacity = {
+  quantity: number,
+  unit: IUnit,  
+}
+
+export type IContainerType = {
+  label: string,
+  brand: string,
+  productNumber: string,
+  dimension: IDimension,
+  capacity: ICapacity,  
+}
+
 export interface IContainer {                                    
   id: string,                                                                  
   barcode: string,                                                             
-  center: string,                                                            
-  childContainers?: Record<string, string> & { unassigned: string[] },   
+  center: Partial<ICenter>,                                                            
+  children?: IContainer[],
   comments?: string,                                                            
   coordinate?: number,                                                          
-  dimension: Dimension,                                                         
+  dimension: IDimension,                                                         
   expirationDate?: string,                                                      
   lotNumber?: string,                                                           
-  parentContainer?: string,                                              
-  shipments?: string[],                                                  
+  parent?: IContainer,                                              
+  shipments?: IShipment[],                                                  
   status?: string,                                                            
   temperature: number,                                                         
-  type: string,                                                              
+  type: IContainerType,                                                              
 };     

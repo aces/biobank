@@ -74,7 +74,7 @@ final class QueryBuilder
         $query .= !is_null($this->limit) ? " LIMIT " . $this->limit : '';
         $query .= !is_null($this->offset) ? " OFFSET " . $this->offset : '';
 
-        $this->logQuery($query);
+        //$this->logQuery($query);
 
         return new Query(string: $query, params: $this->params);
     }

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FieldConfiguration } from '../types';
 import { ISpecimen, SpecimenHook, useSpecimenContext, IProcess, ProcessHook, IData, DataHook } from '../entities';
 import { DynamicField } from '../components';
+import { useRequest } from '../hooks';
+import { SpecimenAPI, BaseAPI } from '../APIs';
 import { mapFormOptions } from '../utils';
 
 type SpecimenFields = Pick<ISpecimen, 'candidate' | 'session' | 'type' | 'quantity' | 'unit' | 'fTCycle' |
@@ -17,7 +19,7 @@ const getSpecimenFieldConfig = (
     required: true,
     placeHolder: 'Search for a PSCID',
     getOptions: (context) => {
-      return mapFormOptions(context.options.candidates, 'pscid');
+        return useRequest(new BaseAPI('candidates'));
     },
   },
   session: {
@@ -28,7 +30,8 @@ const getSpecimenFieldConfig = (
     // autoSelect: true,
     getOptions: (context) => {
       return specimen.candidate ?
-        mapFormOptions(context.options.candidateSessions[specimen.candidate], 'label')
+        new BaseAPI('sessions').get({field: 'candidate', value:
+                                    specimen.candidate.label})
       : {}
     },
   },
@@ -38,31 +41,13 @@ const getSpecimenFieldConfig = (
     required: true,
     getOptions: (context) => {
       // let specimenTypes;
-      // if (specimen.type) {
-      //   specimenTypes = {};
-      //   // specimenTypes = Object.entries(options.specimen.types).reduce(
-      //   //   (result, [id, type]) => {
-      //   //     if (id == specimen.type) {
-      //   //       result[id] = type;
-      //   //     }
-      // 
-      //   //     if (type.parentTypeIds) {
-      //   //       type.parentTypeIds.forEach((i) => {
-      //   //         if (i == specimen.typeId) {
-      //   //           result[id] = type;
-      //   //         }
-      //   //       });
-      //   //     }
-      // 
-      //   //     return result;
-      //   //   }, {}
-      //   // );
-      // } else {
-      //   specimenTypes = options.specimen.types;
-      // }
-      // 
-      // return mapFormOptions(specimenTypes, 'label');
-      return {filler: 'filler'};
+      if (specimen.parents) {
+        return useRequest(new SpecimenAPI().getTypes(
+          specimen.parents[0].type.label
+        ));
+      }
+
+      return new SpecimenAPI().getTypes();
     }
   },
   quantity: {
@@ -76,9 +61,7 @@ const getSpecimenFieldConfig = (
     required: true,
     disabled: !specimen.type,
     getOptions: (context) => {
-      return specimen.type ? mapFormOptions(
-        context.options.specimen.typeUnits[specimen.type], 'label'
-      ) : {};
+      return specimen.type ? specimen.type.units : {};
     }
   },
   fTCycle: {
@@ -91,7 +74,8 @@ const getSpecimenFieldConfig = (
     type: 'select',
     multiple: true,
     required: true,
-    getOptions: (context) => context.options.projects,
+    disabled: !specimen.candidate,
+    getOptions: (context) => new BaseAPI('projects').getAll(),
   },
 })
 
@@ -172,7 +156,7 @@ const processFieldConfig: Record<keyof ProcessFields, ProcessFieldConfig> = {
     label: 'Done By',
     type: 'text',
     required: true,
-    getOptions: context => mapFormOptions(context.options.examiners, 'label'),
+    getOptions: context => useRequest(new BaseAPI('examiner')),
   },
   date: {
     label: 'Date',

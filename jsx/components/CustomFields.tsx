@@ -9,15 +9,10 @@ const {
   FileElement
 } = Form;
 import { useBiobankContext } from '../hooks'; 
+import { IAttribute } from '../entities';
 
 type CustomFieldsProps = {
-  fields: {
-    [key: string]: {
-      label: string,
-      required: boolean,
-      datatype: string,
-    },
-  },
+  attributes: IAttribute[],
   data: any //TODO: type,
 };
 
@@ -28,25 +23,26 @@ type CustomFieldsProps = {
  * @returns {ReactElement} JSX Element corresponding to each field.
  */
 const CustomFields = ({
-  fields,
+  attributes,
   data,
 }: CustomFieldsProps): ReactElement => {
   const { options } = useBiobankContext();
 
   return (
     <>
-      {Object.keys(fields).map((attribute, key) => {
-        const datatype = fields[attribute]['datatype'];
+      {attributes.map((attribute, key) => {
+        const datatype = attribute.datatype;
+        const label = attribute.label;
         if (datatype === 'text' || datatype === 'number') {
           return (
             <TextboxElement
               key={key}
               name={attribute}
-              label={fields[attribute].label}
+              label={attribute.label}
               onUserInput={data.set}
-              required={fields[attribute].required}
-              value={data[attribute]}
-              errorMessage={data.errors[attribute]}
+              required={attribute.required}
+              value={data[attribute.label]}
+              errorMessage={data.errors[attribute.label]}
             />
           );
         }
@@ -56,11 +52,11 @@ const CustomFields = ({
             <DateElement
               key={key}
               name={attribute}
-              label={fields[attribute].label}
+              label={attribute.label}
               onUserInput={data.set}
-              required={fields[attribute].required}
-              value={data[attribute]}
-              errorMessage={data.errors[attribute]}
+              required={attribute.required}
+              value={data[attribute.label]}
+              errorMessage={data.errors[attribute.label]}
             />
           );
         }
@@ -70,11 +66,11 @@ const CustomFields = ({
             <TimeElement
               key={key}
               name={attribute}
-              label={fields[attribute].label}
+              label={attribute.label}
               onUserInput={data.set}
-              required={fields[attribute].required}
-              value={data[attribute]}
-              errorMessage={data.errors[attribute]}
+              required={attribute.required}
+              value={data[attribute.label]}
+              errorMessage={data.errors[attribute.label]}
             />
           );
         }
@@ -84,11 +80,11 @@ const CustomFields = ({
             <CheckboxElement
               key={key}
               name={attribute}
-              label={fields[attribute].label}
+              label={attribute.label}
               onUserInput={data.set}
-              required={fields[attribute].required}
-              value={data[attribute]}
-              errorMessage={data.errors[attribute]}
+              required={attribute.required}
+              value={data[attribute.label]}
+              errorMessage={data.errors[attribute.label]}
             />
           );
         }

@@ -1,12 +1,13 @@
 import { useQuery, UseQueryResult, QueryKey } from 'react-query';
                                                                                 
-export const useRequest = <T>(                                               
-  key: QueryKey,
-  requestFunction: () => Promise<T>,                                            
+export const useRequest = <T>(
+  key: QueryKey | null,
+  requestFunction: () => Promise<T>,
   placeholder = {},
-  dependencies: any[] = [],
 ): UseQueryResult<T, Error> => {
-
+  // Autogenerate key if none provided
+  const generatedKey = key || requestFunction.name;
+          
   return useQuery([key, ...dependencies], requestFunction, {
     placeholderData: placeholder,
     refetchOnWindowFocus: false,

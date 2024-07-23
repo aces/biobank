@@ -55,11 +55,10 @@ class DAO extends ProvisionerInstance
                                                                                    
     public function find(QueryParams $queryParams): array //Model[]                
     {                                                                              
-                                                                                   
         $this->queryBuilder->reset();                                              
                                                                                    
         // TODO: ideally this would be $query = $this->queryBuilder($queryParams)->build();
-        //                                                                         
+        error_log('FIELDS: '.print_r($queryParams->fields, true));
         $query = $this->queryBuilder                                               
             ->select(...$queryParams->fields)                                      
             ->where(...$queryParams->conditions)                                   
@@ -67,7 +66,9 @@ class DAO extends ProvisionerInstance
             ->offset($queryParams->offset)                                         
             ->build();                                                             
                                                                                    
-        $rows = $this->db->pselect($query->toString(), $query->getParams());       
+        $rows = $this->db->pselectWithIndexKey($query->toString(), $query->getParams(), $this->schema->label);       
+
+        // error_log(print_r($rows, true));
                                                                                    
         $models = [];                                                              
         foreach ($rows as $row) {                                                  
@@ -75,6 +76,7 @@ class DAO extends ProvisionerInstance
                 $data = json_decode($row['json'], true);                           
                 if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
                     $data = $this->decodeNestedJson($data); // Decode nested JSON strings
+                    // error_log('Data passed to create: ' . print_r($data, true)); // Log the data passed to create
                     $models[] = $this->factory->create($data);
                 } else {
                     error_log("JSON decode error: " . json_last_error_msg());
@@ -104,7 +106,7 @@ class DAO extends ProvisionerInstance
         return $this->find(
             new QueryParams(
                 conditions: [
-                    new Condition(field: $this->schema->getLabel(), value: $label)
+                    new Condition(field: $this->schema->label, value: $label)
                 ]
             )
         )[0];

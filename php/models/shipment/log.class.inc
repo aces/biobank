@@ -13,11 +13,11 @@
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-namespace LORIS\biobank\models;
+namespace LORIS\biobank\models\shipment;
 
+use LORIS\biobank\Model;
 use LORIS\biobank\models\Shipment;
 use LORIS\biobank\models\Center;
-use LORIS\biobank\models\shipment\log\Status;
 use LORIS\biobank\models\User;
 use LORIS\biobank\type\Date;
 use LORIS\biobank\type\Time;

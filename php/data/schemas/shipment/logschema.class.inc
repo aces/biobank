@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\data\schemas\shipment;
 
+use LORIS\biobank\data\schemas;
 use LORIS\biobank\data\schema\Table;
 use LORIS\biobank\data\schema\Key;
 use LORIS\biobank\data\schema\TableKey;
@@ -9,6 +10,7 @@ use LORIS\biobank\data\schema\Column;
 use LORIS\biobank\data\schema\ColumnType;
 use LORIS\biobank\data\schema\Relation;
 use LORIS\biobank\data\schema\Join;
+use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\data\Schema;
 
 /**
@@ -54,7 +56,7 @@ class LogSchema extends Schema
             ),
             'comments' => new Column(
                 name: 'Comments',
-                type: ColumnType::TEXT
+                type: ColumnType::VARCHAR
             ),
         ];
     }
@@ -66,7 +68,7 @@ class LogSchema extends Schema
                     table: $this->table,
                     key: new Key(name: 'CenterID')
                 ),
-                to: CenterSchema::class,
+                to: schemas\CenterSchema::class,
                 strategy: LoadingStrategy::LAZY
             ),
             'status' => new Relation(
@@ -82,7 +84,7 @@ class LogSchema extends Schema
                     table: $this->table,
                     key: new Key(name: 'UserID')
                 ),
-                to: LORIS\biobank\data\schemas\UserSchema::class,
+                to: schemas\UserSchema::class,
                 strategy: LoadingStrategy::LAZY
             ),
         ];

@@ -3,14 +3,14 @@ import { Link} from 'react-router-dom';
 import { Search, ContainerForm } from '../components';
 import FilterableDataTable from 'FilterableDataTable';
 import { mapFormOptions, clone} from '../utils';
-import { useBiobankContext, useEditable } from '../hooks';
+import { useBiobankContext, useEditable, useRequest } from '../hooks';
 import { IContainer } from '../entities';
-import { ContainerAPI } from '../APIs';
+import { ContainerAPI, BaseAPI } from '../APIs';
 declare const loris: any;
 
 export const ContainerTab: React.FC = () => {
 
-  const { options, containers, contProg: progress } = useBiobankContext();
+  const { containers, contProg: progress } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
 
   /**
@@ -55,27 +55,6 @@ export const ContainerTab: React.FC = () => {
     }
   }
 
-  const stati = mapFormOptions(options.container.stati, 'label');
-  const containerTypesNonPrimary = mapFormOptions(
-    options.container.typesNonPrimary, 'label'
-  );
-
-  // TODO: DELETE THIS!!!!
-  // const containersNonPrimary = Object.values(containers)
-  //   .reduce((result, container) => {
-  //     // TODO: this check is necessary or else the page will go blank when the
-  //     // first specimen is added.
-  //     if (container) {
-  //       const tprops = options.container.types;
-  //       if (props[container.type].primary == 0) {
-  //         result[container.barcode] = container;
-  //       }
-  //       return result;
-  //     }
-  //   }, {});
-
-  const barcodesNonPrimary = mapFormOptions(containers, 'barcode');
-
   const data = Object.values(containers).map(
     (container: IContainer) => {
       return [
@@ -83,7 +62,7 @@ export const ContainerTab: React.FC = () => {
         container.type,
         container.status,
         container.center,
-        container.parentContainer,
+        container.parent,
       ];
     }
   );
@@ -96,17 +75,17 @@ export const ContainerTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: containerTypesNonPrimary,
+      options: useRequest(new ContainerAPI('types?field=label&primary=0')),
     }},
     {label: 'Status', show: true, filter: {
       name: 'status',
       type: 'select',
-      options: stati,
+      options: useRequest(new ContainerAPI('status?field=label')),
     }},
     {label: 'Site', show: true, filter: {
       name: 'currentSite',
       type: 'select',
-      options: options.centers,
+      options: useRequest(new BaseAPI('centers?field=label'))
     }},
     {label: 'Parent Barcode', show: true, filter: {
       name: 'parentBarcode',
@@ -143,7 +122,7 @@ export const ContainerTab: React.FC = () => {
         title='Go To Container'
         show={editable.searchContainer}
         onClose={clear}
-        barcodes={barcodesNonPrimary}
+        barcodes={containers}
       />
       {loris.userHasPermission('biobank_container_create') ?
       <ContainerForm

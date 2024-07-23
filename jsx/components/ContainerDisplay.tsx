@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { useBiobankContext } from '../hooks';
 import { mapFormOptions } from '../utils';
-import { IContainer, ISpecimen, Dimension, ContainerHook } from '../entities';
+import { IContainer, ISpecimen, ContainerHook } from '../entities';
 import { ContainerAPI } from '../APIs';
 import { Current } from './ContainerPage';
 import Form from 'Form';
@@ -48,7 +48,7 @@ function ContainerDisplay({
 
   const { options, containers, specimens } = useBiobankContext();
   const history = useHistory();
-  const dimensions = containers[container.parentContainer].dimensions;
+  const dimensions = containers[container.parent].dimensions;
 
   useEffect(() => {
     // TODO: Use react-based approach isntead of jquery
@@ -57,8 +57,8 @@ function ContainerDisplay({
 
   const redirectURL = (e: React.MouseEvent<HTMLDivElement>) => {
     const coordinate = (e.target as HTMLElement).id;
-    if (container.childContainers[coordinate]) {
-      const barcode = containers[container.childContainers[coordinate]].barcode;
+    if (container.children[coordinate]) {
+      const barcode = containers[container.children[coordinate]].barcode;
       history.push(`/barcode=${barcode}`);
     }
   };
@@ -84,7 +84,7 @@ function ContainerDisplay({
   const increaseCoordinate = (coordinate: number): void => {
     const capacity = dimensions.x * dimensions.y * dimensions.z;
     let nextCoordinate = coordinate +1 ;
-    while (Object.keys(container.childContainers).includes(nextCoordinate.toString()) && nextCoordinate <= capacity) {
+    while (Object.keys(container.children).includes(nextCoordinate.toString()) && nextCoordinate <= capacity) {
       nextCoordinate++;
     }
 
@@ -110,7 +110,7 @@ function ContainerDisplay({
 
     const newContainer = {
       ...containers[containerBarcode],
-      parentContainer: container.barcode,
+      parent: container.barcode,
       coordinate: current.coordinate,
     }
 
@@ -130,7 +130,7 @@ function ContainerDisplay({
   const checkoutContainers = (): void => {
     const checkoutPromises = Object.values(current.list).map((container:
                                                               IContainer) => {
-      const updatedContainer = { ...container, parentContainer: null, coordinate: null };
+      const updatedContainer = { ...container, parent: null, coordinate: null };
       return new ContainerAPI().update(updatedContainer);
     });
 
@@ -183,7 +183,7 @@ function ContainerDisplay({
 
   // // place container children in an object
   // let children = {};
-  // if ((container||{}).childContainerBarcodes) {
+  // if ((container||{}).children) {
   //   Object.values(containers).map((c) => {
   //     container.childContainerIds.forEach((id) => {
   //       if (c.id == id) {
@@ -259,7 +259,7 @@ function ContainerDisplay({
         const optcon = options.container;
 
         if (!select) {
-          if ((container.childContainers[coordinate])) {
+          if ((container.children[coordinate])) {
             onClick = redirectURL;
             if (coordinate in current.list) {
               nodeClass = 'node checkout';
@@ -273,11 +273,11 @@ function ContainerDisplay({
             dataToggle = 'tooltip';
             dataPlacement = 'top';
             // This is to avoid a console error
-            const childContainer = containers[container.childContainers[coordinate]];
+            const child = containers[container.children[coordinate]];
             tooltipTitle =
-              '<h5>'+childContainer.barcode+'</h5>' +
-              '<h5>'+optcon.types[childContainer.type].label+'</h5>' +
-              '<h5>'+optcon.stati[childContainer.status].label+'</h5>';
+              '<h5>'+child.barcode+'</h5>' +
+              '<h5>'+optcon.types[child.type].label+'</h5>' +
+              '<h5>'+optcon.stati[child.status].label+'</h5>';
             
             draggable = !loris.userHasPermission(
                'biobank_container_update') ||
@@ -288,7 +288,7 @@ function ContainerDisplay({
 
             if (editable.containerCheckout) {
               onClick = (e) => {
-                const checkoutContainer = containers[container.childContainers[e.target.id]];
+                const checkoutContainer = containers[container.children[e.target.id]];
                 setCheckoutList(checkoutContainer);
               };
             }
@@ -313,31 +313,31 @@ function ContainerDisplay({
         if (select) {
           if (coordinate == selectedCoordinate) {
             nodeClass = 'node occupied';
-          } else if (!container.childContainers) {
+          } else if (!container.children) {
             nodeClass = 'node available';
             onClick = (e) => container.set('coordinate', e.target.id);
-          } else if (container.childContainers) {
-            if (!container.childContainers[coordinate]) {
+          } else if (container.children) {
+            if (!container.children[coordinate]) {
               nodeClass = 'node available';
               onClick = (e) => container.set('coordinate', e.target.id);
-            } else if (container.childContainers[coordinate]) {
-              const childContainer = containers[container.childContainers[coordinate]];
+            } else if (container.children[coordinate]) {
+              const child = containers[container.children[coordinate]];
               const specimen = Object.values(specimens as Record<string, ISpecimen>)
                 .find((specimen: ISpecimen) => specimen.barcode ==
-                      childContainer.barcode);
+                      child.barcode);
               let quantity = '';
               if (specimen) {
                 quantity = `<h5>${specimen.quantity +
-                    ' '+options.specimen.units[specimen.unit].label}</h5>`;
+                    ' '+specimen.unit.label}</h5>`;
               }
               dataHtml = true;
               dataToggle = 'tooltip';
               dataPlacement = 'top';
               tooltipTitle =
-                `<h5>${childContainer.barcode}</h5>` +
-                `<h5>${optcon.types[childContainer.type].label}</h5>` +
+                `<h5>${child.barcode}</h5>` +
+                `<h5>${optcon.types[child.type].label}</h5>` +
                 quantity +
-                `<h5>${optcon.stati[childContainer.status].label}</h5>`;
+                `<h5>${optcon.stati[child.status].label}</h5>`;
             }
           }
         }

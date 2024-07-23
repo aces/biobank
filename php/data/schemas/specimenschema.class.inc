@@ -148,7 +148,6 @@ class SpecimenSchema extends Schema
                     key: new Key('SpecimenTypeID')
                 ),
                 to: specimen\TypeSchema::class,
-                strategy: LoadingStrategy::EAGER,
             ),
             'unit' => new Relation(
                 from: new TableKey(
@@ -156,12 +155,10 @@ class SpecimenSchema extends Schema
                     key: new Key('UnitID')
                 ),
                 to: UnitSchema::class,
-                strategy: LoadingStrategy::EAGER,
             ),
             'freezethaw' => new Relation(
                 from: $this->idKey,
                 to: specimen\FreezethawSchema::class,
-                strategy: LoadingStrategy::EAGER,
             ),
             'collection' => new Relation(
                 from: $this->idKey,
@@ -192,7 +189,6 @@ class SpecimenSchema extends Schema
                     key: $this->id
                 ),
                 to: self::class,
-                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
             'parents' => new Relation(
@@ -201,7 +197,6 @@ class SpecimenSchema extends Schema
                     key: new Key('ParentSpecimenID')
                 ),
                 to: self::class,
-                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
             'session' => new Relation(
@@ -210,7 +205,6 @@ class SpecimenSchema extends Schema
                     key: new Key('SessionID')
                 ),
                 to: SessionSchema::class,
-                strategy: LoadingStrategy::LAZY,
             ),
             'candidate' => new Relation(
                 from: new TableKey(
@@ -218,7 +212,6 @@ class SpecimenSchema extends Schema
                     key: new Key('CandID')
                 ),
                 to: CandidateSchema::class,
-                strategy: LoadingStrategy::LAZY,
             ),
             'projects' => new Relation(
                 from: new TableKey(

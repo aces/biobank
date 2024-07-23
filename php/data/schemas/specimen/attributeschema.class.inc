@@ -3,31 +3,54 @@
 namespace LORIS\biobank\data\schemas\specimen;
 
 use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema;
-use LORIS\biobank\data\schemas\specimen\attribute;
+use LORIS\biobank\data\schema\Table;
+use LORIS\biobank\data\schema\Key;
+use LORIS\biobank\data\schema\Column;
+use LORIS\biobank\data\schema\ColumnType;
+use LORIS\biobank\data\schema\LoadingStrategy;
 
-class SpecimenAttributeSchema extends Schema {
-        // Define table and primary key
-        $this->table = new schema\Table(name: 'biobank_specimen_attribute');
-        $this->id = new schema\Key('SpecimenAttributeID');
+final class AttributeSchema extends Schema
+{
+    protected function getTable(): Table
+    {
+        return new Table(name: 'biobank_specimen_attribute');
+    }
 
-        // Define columns
-        $this->columns = [
-            'label' => new schema\Column(
+    protected function getId(): Key
+    {
+        return new Key('SpecimenAttributeID');
+    }
+
+    protected function getLabel(): string
+    {
+        return 'label';
+    }
+
+    protected function getColumns(): array
+    {
+        return [
+            'label' => new Column(
                 name: 'Label',
-                type: schema\ColumnType::VARCHAR
+                type: ColumnType::VARCHAR
             ),
-            'datatypeID' => new Key('DatatypeID')
         ];
+    }
 
-        // Define relations
-        $this->relations = [
+    protected function getJoins(): array
+    {
+        return [];
+    }
+
+    protected function getRelations(): array
+    {
+        return [
             'datatype' => new schema\Relation(
                 from: new schema\TableKey(
                     table: $this->table,
                     key: new Key('DatatypeID')
                 ),
-                to: attribute\DatatypeSchema::class
+                to: attribute\DatatypeSchema::class,
+                strategy: LoadingStrategy::EAGER
             )
         ];
     }

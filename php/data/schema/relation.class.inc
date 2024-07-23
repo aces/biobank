@@ -11,7 +11,7 @@ class Relation
     public function __construct(
         public TableKey $from,
         private string $to, // schema fully qualified class name
-        private LoadingStrategy $strategy,
+        private ?LoadingStrategy $strategy = LoadingStrategy::LAZY,
         public ?bool $many = false,
     ) {
         if (!is_subclass_of($to, Schema::class)) {

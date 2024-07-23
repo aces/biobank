@@ -38,7 +38,7 @@ use LORIS\biobank\models\specimen\process\Analysis;
 final class Specimen extends Model implements \LORIS\StudyEntities\SiteHaver
 {
     public function __construct(
-        public readonly float $quantity,
+        public readonly ?float $quantity = null, //removed because parent empty? should not instantiate if empty
         public readonly ?int $fTCycle = null,
         private readonly ?int $id = null,
         public readonly ?Unit $unit = null,

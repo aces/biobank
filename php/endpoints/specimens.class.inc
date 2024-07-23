@@ -2,6 +2,9 @@
 
 namespace LORIS\biobank\endpoints;                                                 
                                                                                    
+use LORIS\biobank\endpoints\specimen\Types;
+use LORIS\biobank\endpoints\specimen\Protocols;
+use LORIS\biobank\endpoints\specimen\Attributes;
 use LORIS\biobank\Endpoint;                                                        
 use LORIS\biobank\Controller;                                                   
 use LORIS\biobank\services\SpecimenService;                                       
@@ -18,8 +21,18 @@ class Specimens extends Endpoint
             new Factory(Specimen::class)                                          
         );                                                                         
                                                                                    
-        parent::__construct($user, $controller);                                   
+        parent::__construct($user, $db, $controller);                                   
     }                                                                              
+
+    protected function getSubHandler(string $subpath): ?Endpoint
+    {
+        return match ($subpath) {
+            'types' => new Types($this->user, $this->db),
+            'protocols' => new Protocols($this->user, $this->db),
+            'attributes' => new Attributes($this->user, $this->db),
+            default => null
+        };
+    }
                                                                                    
     protected static function getPermission(Permission $permission) : string         
     {                                                                              

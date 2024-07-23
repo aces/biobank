@@ -15,7 +15,12 @@
  */
 namespace LORIS\biobank\models\specimen\process;
 
+use LORIS\biobank\types\Time;
+use LORIS\biobank\types\Date;
 use LORIS\biobank\models\Unit;
+use LORIS\biobank\models\Center;
+use LORIS\biobank\models\Examiner;
+use LORIS\biobank\models\specimen\Protocol;
 use LORIS\biobank\models\specimen\Process;
 
 /**
@@ -32,16 +37,21 @@ use LORIS\biobank\models\specimen\Process;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
+
 final class Collection extends Process
 {
     public function __construct(
         public float $quantity,
         public Unit $unit,
-        public Process $process,
+        ?int $id = null,
+        ?Center $center = null,
+        ?Examiner $examiner = null,
+        ?Date $date = null,
+        ?Time $time = null,
+        ?string $comments = null,
+        ?array $data = null,
+        ?Protocol $protocol = null
     ) {
-        parent::__construct($process);
-        $this->quantity = $quantity,
-        $this->unit = $unit,
+        parent::__construct($id, $center, $examiner, $date, $time, $comments, $data, $protocol);
     }
 }
-

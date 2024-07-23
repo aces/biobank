@@ -12,6 +12,7 @@
  */
 namespace LORIS\biobank;
 
+use \Psr\Http\Server\RequestHandlerInterface;                                      
 use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Message\ResponseInterface;
 use LORIS\Http\Endpoint as LORISEndpoint;
@@ -34,10 +35,12 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
      */
     private $_cache;
     private $controller;
-    private $user;
+    protected $user;
+    protected $db;
 
-    public function __construct(\User $user, Controller $controller)
+    public function __construct(\User $user, \Database $db, Controller $controller)
     {
+        $this->db = $db;
         $this->user = $user;
         $this->controller = $controller;
     }
@@ -62,6 +65,38 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
             throw new Forbidden($this->getName() . ": {$permission->name()} Permission Denied");
         }
     }     
+
+    abstract protected function getSubHandler(string $subpath): ?Endpoint;
+
+    public function process(
+        ServerRequestInterface $request,
+        RequestHandlerInterface $handler
+    ): ResponseInterface
+    {
+        $path = trim($request->getURI()->getPath(), "/");
+        $pathparts = explode('/', $path);
+
+        // Determine subendpoint handler based on the subpath
+        if (count($pathparts) > 1) {
+            $subpath = $pathparts[1];
+            $subhandler = $this->getSubHandler($pathparts[1]);
+
+            if ($subhandler !== null) {
+                // Remove the handled part of the path and pass the remainder
+                $remainingPath = implode('/', array_slice($pathparts, 1));
+
+                // Update the request URI path
+                $uri = $request->getUri()->withPath($remainingPath);
+                $request = $request->withUri($uri);
+
+                return $subhandler->process($request, $subhandler);
+            }
+        }
+
+        // Default processing for the main endpoint if no subendpoint matches
+        return parent::process($request, $handler);
+        // return $this->handle($request); // Adjusted to call the controller's handle method
+    }
 
     /**
      * Handles Endpoint requests
@@ -96,12 +131,14 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
         // like should already be done by the module.
         $path = trim($request->getURI()->getPath(), "/");
         $pathparts = explode('/', $path);
+
+
         $queryParams = (new QueryParamsHandler($request->getQueryParams()))->parse();
 
         if (count($pathparts) === 1) {
-            // if (isset($this->_cache)) {
-            //     return $this->_cache;
-            // }
+            if (isset($this->_cache)) {
+                return $this->_cache;
+            }
 
             $result = $this->controller->get($queryParams);
 
@@ -109,7 +146,6 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
 
             return $this->_cache;
         } else {
-            error_log('TWO PATH');
             $label  = $pathparts[1];                                 
             $result = $this->controller->getByLabel($label);     
             return new \LORIS\Http\Response\JSON\OK([$result]);        

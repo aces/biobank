@@ -14,17 +14,17 @@ const ContainerParentForm: React.FC<{
 
   // when a parent container is selected, the passed container gets updated
   useEffect(() => {
-    const parentContainer = containers[container.parentContainer];
-    if (parentContainer) {
+    const parent = containers[container.parent.barcode];
+    if (parent) {
       container.set('coordinate', null);
-      container.set('temperature', parentContainer.temperature);
-      container.set('center', parentContainer.center);
-      container.set('status', parentContainer.status);
+      container.set('temperature', parent.temperature);
+      container.set('center', parent.center);
+      container.set('status', parent.status);
     }
-  }, [container.parentContainer]);
+  }, [container.parent]);
 
   const renderContainerDisplay = () => {
-    if (!(container.parentContainer && display)) {
+    if (!(container.parent && display)) {
       return;
     }
 
@@ -40,7 +40,7 @@ const ContainerParentForm: React.FC<{
   return (
     <div className='row'>
       <div className="col-lg-11">
-        <ContainerField property={'parentContainer'}/>
+        <ContainerField property={'parent'}/>
       </div>
       {renderContainerDisplay()}
     </div>

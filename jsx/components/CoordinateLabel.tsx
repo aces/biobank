@@ -1,5 +1,5 @@
 import { useBiobankContext } from '../hooks';
-import { IContainer, Dimension } from '../entities';
+import { IContainer, IDimension } from '../entities';
 
 export const CoordinateLabel: React.FC<{
   container: Partial<IContainer>
@@ -8,13 +8,13 @@ export const CoordinateLabel: React.FC<{
 }) => {   
   const { options, containers } = useBiobankContext();
 
-  const parentContainer = containers[container.parentContainer];       
-  if (!parentContainer) return null;                                          
+  const parent = containers[container.parent];       
+  if (!parent) return null;                                          
                                                                               
   const dimension = container.dimension;
   if (!dimension) return null;                                               
                                                                               
-  const formatCoordinate = (x: number, y: number, dimension: Dimension): string => {
+  const formatCoordinate = (x: number, y: number, dimension: IDimension): string => {
     const xVal = dimension.xNum === true ? x : String.fromCharCode(64 + x);     
     const yVal = dimension.yNum === true ? y : String.fromCharCode(64 + y);     
     return dimension.xNum === true && dimension.yNum === true                    

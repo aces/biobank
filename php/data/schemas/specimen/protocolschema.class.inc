@@ -42,11 +42,12 @@ final class ProtocolSchema extends Schema
     protected function getJoins(): array                                       
     {                                                                              
         return [                                                                 
-            'protocol_attribute' => new Join(
+            'attribute_rel' => new Join(
                 from: $this->idKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_protocol_attribute_rel',
+                        alias: 'attribute_rel',
                     ),
                     key: $this->id
                 )
@@ -59,14 +60,14 @@ final class ProtocolSchema extends Schema
         return [                                                                 
             'attributes' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['protocol_attribute']->to->table,
+                    table: $this->joins['attribute_rel']->to->table,
                     key: new Key('SpecimenAttributeID')
                 ),
                 to: AttributeSchema::class,
-                strategy: LoadingStrategy::EAGER,
+                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
-            'specimenType' => new Relation(
+            'type' => new Relation(
                 from: new TableKey(
                     table: $this->table,
                     key: new Key('SpecimenTypeID')
@@ -74,12 +75,12 @@ final class ProtocolSchema extends Schema
                 to: TypeSchema::class,
                 strategy: LoadingStrategy::LAZY
             ),
-            'processType' => new Relation(
+            'process' => new Relation(
                 from: new TableKey(
                     table: $this->table,
                     key: new Key('SpecimenProcessID')
                 ),
-                to: ProcessSchema::class,
+                to: process\TypeSchema::class,
                 strategy: LoadingStrategy::LAZY
             ),
         ];

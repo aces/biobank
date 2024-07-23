@@ -1,4 +1,5 @@
 declare const loris: any;
+import { QueryBuilder, QueryParam } from './';
 
 interface ApiResponse<T> {
     data: T,
@@ -23,20 +24,33 @@ interface ApiError {
 //   handleError(response: Response): void;
 // }
 
-
 export default class BaseAPI<T> {
   protected baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = loris.BaseURL+'/biobank'+baseUrl;
+    this.baseUrl = loris.BaseURL+'/biobank/'+baseUrl;
   }
 
-  async getAll(): Promise<T[]> {
-    return await BaseAPI.fetchJSON(this.baseUrl);
+  async get<U = T>(path: string = this.baseUrl, queryParam?: QueryParam): Promise<U[]> {
+    const queryBuilder = new QueryBuilder();
+    if (queryParam) {
+       queryBuilder.addParam(queryParam);
+    }
+    const queryString = queryBuilder.build();
+    const endpoint = `${path}?${queryString}`;
+    return await BaseAPI.fetchJSON<U[]>(endpoint);
   }
 
   async getById(id: string): Promise<T> {
     return await BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`);
+  }
+
+  async getSubEndpoint<U>(
+    subEndpoints: string[],
+    queryParam?: QueryParam
+  ): Promise<U[]> {
+    const path = `${this.baseUrl}/${subEndpoints.join('/')}`;
+    return this.get<U>(path, queryParam);
   }
 
   async create(data: T): Promise<T> {

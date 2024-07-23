@@ -64,12 +64,15 @@ class Module extends \Module
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
+        // TODO: both of these should evenutally be got from the request or the
+        // loris object
         // Get the stripped path from the request URI
         $user = $request->getAttribute('user');
         $db = \NDB_Factory::singleton()->database();
 
         // Set the session variable for group_concat_max_len
         ini_set('memory_limit', '-1');
+        //ini_set('max_execution_time', 30);
         ini_set('display_errors', 1);
         ini_set('display_startup_errors', 1);
         error_reporting(E_ALL);
@@ -85,8 +88,15 @@ class Module extends \Module
             'containers' => new endpoints\Containers($user, $db),
             'shipments' => new endpoints\Shipments($user, $db),
             'pools' => new endpoints\Pools($user, $db),
+            'centers' => new endpoints\Centers($user, $db),
+            'examiners' => new endpoints\Examiners($user, $db),
+            'candidates' => new endpoints\Candidates($user, $db),
+            'projects' => new endpoints\Projects($user, $db),
+            'users' => new endpoints\Users($user, $db),
+            'session' => new endpoints\Sessions($user, $db),
             default => null
         };
+
 
         // If handler is a ResponseInterface, return it directly
         if ($handler === null) {
