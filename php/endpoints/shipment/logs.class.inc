@@ -3,23 +3,16 @@
 namespace LORIS\biobank\endpoints\shipment;                                                 
                                                                                    
 use LORIS\biobank\Endpoint;                                                        
-use LORIS\biobank\Controller;                                                   
+use LORIS\biobank\Service;                                                   
 use LORIS\biobank\services\shipment\LogService;                                       
-use LORIS\biobank\Factory;                                                         
-use LORIS\biobank\models\shipment\Log;                                             
-use LORIS\biobank\Permission;                                              
+use LORIS\biobank\endpoints\Permission;                                              
                                                                                    
 class Logs extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user, \Database $db)                                       
+    protected function getService(): Service                                       
     {                                                                              
-        $controller = new Controller(                                              
-            new LogService($db),                                                
-            new Factory(Log::class)                                          
-        );                                                                         
-                                                                                   
-        parent::__construct($user, $db, $controller);                                   
-    }                                                                              
+        return new LogService();                               
+    }      
 
     protected static function getPermission(Permission $permission) : string         
     {                                                                              
@@ -32,9 +25,4 @@ class Logs extends Endpoint
     {                                                                              
         return null;                                                               
     }    
-                                                                                   
-    public static function getName() : string                                      
-    {                                                                              
-        return 'Log Endpoint';                                               
-    }                                                                              
 }  

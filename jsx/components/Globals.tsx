@@ -1,10 +1,15 @@
-import React, { useState, ReactElement, ReactNode} from 'react';
+import React, { useState, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { mapFormOptions, isEmpty } from '../utils';
 import Modal from 'Modal';
 import Loader from 'Loader';
-import { ContainerParentForm, SpecimenField, ContainerField, CoordinateLabel } from '../components';
-import { Button } from './';
+import {
+  ContainerParentForm,
+  SpecimenField,
+  ContainerField,
+  Button,
+} from '../forms';
+import { CoordinateLabel } from '../components';
 import { useSpecimenContext, useContainerContext } from '../entities';
 import { useBarcodePageContext, useBiobankContext } from '../hooks';
 import { ContainerAPI, SpecimenAPI } from '../APIs';
@@ -322,13 +327,7 @@ const Globals: React.FC<{
   );
 }
 
-/**
- * Inline Field
- *
- * @param {object} props
- * @return {*}
- **/
-const Item: React.FC = ({children}) => (
+const Item = ({children}: {children: ReactNode}) => (
   <div className="item">{children}</div>
 );
 
@@ -342,6 +341,7 @@ const InlineField: React.FC<{
   clearAll?: () => void,
   link?: string
   subValue?: string
+  children?: ReactNode
 }> = ({
   label,
   value,

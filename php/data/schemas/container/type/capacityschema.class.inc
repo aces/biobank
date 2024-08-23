@@ -2,15 +2,16 @@
 
 namespace LORIS\biobank\data\schemas\container\type;
 
-use LORIS\biobank\data\schemas\UnitSchema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\TableKey;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\schema\Relation;
-use LORIS\biobank\data\schema\LoadingStrategy;
-use LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schemas\UnitSchema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Key;
+use \LORIS\biobank\data\schema\TableKey;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\schema\Relation;
+use \LORIS\biobank\data\schema\RelationType;
+use \LORIS\biobank\data\schema\LoadingStrategy;
+use \LORIS\biobank\data\Schema;
 
 /**
  * Capacity Schema Class
@@ -27,14 +28,20 @@ use LORIS\biobank\data\Schema;
  */
 final class CapacitySchema extends Schema
 {
+
+    protected function getModel(): string
+    {
+        return \LORIS\biobank\models\container\type\Capacity::class;
+    }
+
     protected function getTable(): Table
     {
         return new Table(name: 'biobank_container_capacity');
     }
 
-    protected function getId(): Key
+    protected function getId(): string
     {
-        return new Key(name: 'ContainerCapacityID');
+        return 'ContainerCapacityID';
     }
 
     protected function getLabel(): string
@@ -47,7 +54,7 @@ final class CapacitySchema extends Schema
         return [
             'quantity' => new Column(
                 name: 'Quantity',
-                type: ColumnType::DECIMAL
+                table: $this->table,
             ),
         ];
     }
@@ -57,10 +64,10 @@ final class CapacitySchema extends Schema
             'unit' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key(name: 'UnitID')
+                    key: 'UnitID'
                 ),
                 to: UnitSchema::class,
-                strategy: LoadingStrategy::EAGER
+                type: RelationType::ManytoOne,
             ),
         ];
     }

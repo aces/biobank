@@ -2,38 +2,26 @@
                                                                                    
 namespace LORIS\biobank\endpoints;                                                 
 
-use \Psr\Http\Message\ServerRequestInterface;
-use \Psr\Http\Server\RequestHandlerInterface;
-use \Psr\Http\Message\ResponseInterface;
-                                                                                   
 use LORIS\biobank\Endpoint;                                                        
-use LORIS\biobank\Controller;                                                   
+use LORIS\biobank\Service;                                                   
 use LORIS\biobank\services\ShipmentService;                                       
-use LORIS\biobank\Factory;                                                         
-use LORIS\biobank\models\Shipment;                                             
-use LORIS\biobank\Permission;                                              
 use LORIS\biobank\endpoints\shipment\Types;
 use LORIS\biobank\endpoints\shipment\Logs;
 use LORIS\biobank\endpoints\shipment\Statuses;
                                                                                    
 class Shipments extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user, \Database $db)                                       
+    protected function getService(): Service                                       
     {                                                                              
-        $controller = new Controller(                                              
-            new ShipmentService($db),                                                
-            new Factory(Shipment::class)                                          
-        );                                                                         
-                                                                                   
-        parent::__construct($user, $db, $controller);                                   
-    }                                                                              
+        return new ShipmentService();                               
+    }      
 
     protected function getSubHandler(string $subpath): ?Endpoint
     {
         return match ($subpath) {
-            'types' => new Types($this->user, $this->db),
-            'logs' => new Logs($this->user, $this->db),
-            'statuses' => new Statuses($this->user, $this->db),
+            'types' => new Types($this->loris),
+            'logs' => new Logs($this->loris),
+            'statuses' => new Statuses($this->loris),
             default => null
         };
     }
@@ -45,10 +33,5 @@ class Shipments extends Endpoint
             Permission::PUT => 'biobank_container_update',                            
             Permission::POST => 'biobank_container_create',                          
         };                                                                         
-    }                                                                              
-                                                                                   
-    public static function getName() : string                                      
-    {                                                                              
-        return 'Shipment Endpoint';                                               
     }                                                                              
 }  

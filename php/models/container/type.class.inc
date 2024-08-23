@@ -15,8 +15,8 @@ class Type extends Model
         public string $brand,
         public string $productNumber,
         public bool $prime,
-        public ?Dimension $dimension = null,
-        public ?Capacity $capacity = null,
-        private ?int $id = null,
+        public ?Dimension $dimension,
+        public ?Capacity $capacity,
+        private ?int $id,
     ) {}
 }

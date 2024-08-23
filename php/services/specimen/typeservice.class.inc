@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\services\specimen;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
@@ -19,16 +20,13 @@ use LORIS\biobank\validators\specimen\TypeValidator;
  */
 class TypeService extends Service
 {
-    function __construct(\Database $db)
-    {
-        $dao = new DAO($db,
-            new TypeSchema(
-                name: 'type',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Type::class));
-        $validator = new TypeValidator($dao);
-        parent::__construct($dao, $validator);
-    }
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            new ModelProvisioner(new TypeSchema('type')),
+            new TypeValidator($this),                                         
+        );                                                                         
+    }          
 
     /**
      * Handles actions to be performed after saving a Type.

@@ -3,23 +3,15 @@
 namespace LORIS\biobank\Endpoints;                                              
                                                                                 
 use LORIS\biobank\Endpoint;                                                     
-use LORIS\biobank\Controller;                                     
+use LORIS\biobank\Service;                                     
 use LORIS\biobank\services\CenterService;
-use LORIS\biobank\Factory;
-use LORIS\biobank\models\Center;
-use LORIS\biobank\Permission;
                                                                                 
 class Centers extends Endpoint                                                
 {                                                                               
-    public function __construct(\User $user, \Database $db)                      
-    {                                                                           
-        $controller = new Controller(
-            new CenterService($db),
-            new Factory(Center::class)
-        );
-
-        parent::__construct($user, $db, $controller);
-    }                                                                           
+    protected function getService(): Service                                       
+    {                                                                              
+        return new CenterService();                             
+    }    
 
     protected static function getPermission(Permission $permission) : string
     {
@@ -31,10 +23,5 @@ class Centers extends Endpoint
     protected function getSubHandler(string $subpath): ?Endpoint
     {
         return null;
-    }
-
-    public static function getName() : string
-    {
-        return 'Center Endpoint';
     }
 }

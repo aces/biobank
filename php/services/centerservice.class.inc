@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\services;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
@@ -18,15 +19,12 @@ use LORIS\biobank\models\Center;
  */
 class CenterService extends Service
 {
-    function __construct(\Database $db)
-    {
-        $dao = new DAO($db,
-            new CenterSchema(
-                name: 'center',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Center::class));
-        parent::__construct($dao);
-    }
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            new ModelProvisioner(new CenterSchema('center')),                                                      
+        );                                                                         
+    }          
 
     /**
      * Handles actions to be performed after saving a Center.

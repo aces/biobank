@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\services\shipment;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
@@ -19,16 +20,13 @@ use LORIS\biobank\validators\shipment\LogValidator;
  */
 class LogService extends Service
 {
-    function __construct(\Database $db)
-    {
-        $dao = new DAO($db,
-            new LogSchema(
-                name: 'log',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Log::class));
-        $validator = new LogValidator($dao);
-        parent::__construct($dao, $validator);
-    }
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            new ModelProvisioner(new LogSchema('log')),
+            new LogValidator($this),                                         
+        );                                                                         
+    }          
 
     /**
      * Handles actions to be performed after saving a Log.

@@ -2,11 +2,10 @@
 
 namespace LORIS\biobank\data\schemas\shipment;
 
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\Schema;
 
 /**
  * Shipment Status Schema Class
@@ -24,12 +23,17 @@ use LORIS\biobank\data\Schema;
 
 class StatusSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\shipment\Status::class;                            
+    }   
+    
     protected function getTable(): Table {
         return new Table(name: 'shipment_status');
     }
 
-    protected function getId(): Key {
-        return new Key(name: 'StatusID');
+    protected function getId(): string {
+        return 'StatusID';
     }
 
     protected function getLabel(): string {
@@ -40,7 +44,7 @@ class StatusSchema extends Schema
         return [
             'label' => new Column(
                 name: 'Label',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             )
         ];
     }

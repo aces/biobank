@@ -2,20 +2,25 @@
 
 namespace LORIS\biobank\data\schemas\specimen;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schemas;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\TableKey;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\schema\Relation;
-use LORIS\biobank\data\schema\LoadingStrategy;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schemas;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\TableKey;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\schema\Relation;
+use \LORIS\biobank\data\schema\RelationType;
 
-abstract class ProcessSchema extends Schema {
-    protected function getId(): Key                                            
+abstract class ProcessSchema extends Schema
+{
+    protected function getModel(): string                                          
     {                                                                              
-        return new Key('SpecimenID');                                          
+        return \LORIS\biobank\models\specimen\Process::class;                            
+    }   
+
+    protected function getId(): string                                            
+    {                                                                              
+        return 'SpecimenID';                                          
     }              
 
     protected function getLabel(): string                                      
@@ -28,19 +33,19 @@ abstract class ProcessSchema extends Schema {
         return [
             'date' => new Column(
                 name: 'Date',
-                type: ColumnType::DATE
+                table: $this->table,
             ),
             'time' => new Column(
                 name: 'Time',
-                type: ColumnType::TIME
+                table: $this->table,
             ),
             'comments' => new Column(
                 name: 'Comments',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
             'data' => new Column(
                 name: 'Data',
-                type: ColumnType::LONGTEXT
+                table: $this->table,
             )
         ];
     }
@@ -56,26 +61,23 @@ abstract class ProcessSchema extends Schema {
             'protocol' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key('SpecimenProtocolID')
+                    key: 'SpecimenProtocolID'
                 ),
                 to: ProtocolSchema::class,
-                strategy: LoadingStrategy::LAZY
             ),
             'center' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key('CenterID')
+                    key: 'CenterID'
                 ),
                 to: schemas\CenterSchema::class,
-                strategy: LoadingStrategy::LAZY
             ),
             'examiner' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key('ExaminerID')
+                    key: 'ExaminerID'
                 ),
                 to: schemas\ExaminerSchema::class,
-                strategy: LoadingStrategy::LAZY
             )
         ];
     }

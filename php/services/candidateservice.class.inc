@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\services;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
@@ -18,14 +19,11 @@ use LORIS\biobank\models\Candidate;
  */
 class CandidateService extends Service
 {
-    function __construct(\Database $db)
+    function __construct()
     {
-        $dao = new DAO($db,
-            new CandidateSchema(
-                name: 'candidate',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Candidate::class));
-        parent::__construct($dao);
+        parent::__construct(
+            new ModelProvisioner(new CandidateSchema('candidate'))
+        );
     }
 
     /**

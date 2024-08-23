@@ -18,8 +18,8 @@ class ProcessValidator extends Validator
 
     private function _validateData(Process $process) : void
     {
-        $protocolAttributes = $this->dao->getProtocolAttributes();
-        $attributeDatatypes = $this->dao->getAttributeDatatypes();
+        $protocolAttributes = $this->service->getProtocolAttributes();
+        $attributeDatatypes = $this->service->getAttributeDatatypes();
         $protocolId         = $process->getProtocolId();
         $attributes         = $protocolAttributes[$protocolId] ?? [];
         $data = $process->getData() ?? [];
@@ -39,7 +39,7 @@ class ProcessValidator extends Validator
             $attribute = $attributes[$attributeId];
 
             if (!isset($attribute)) {
-                $wrongAttribute = $this->dao->getAttributes()[$attributeId];
+                $wrongAttribute = $this->service->getAttributes()[$attributeId];
                 $this->addError($wrongAttribute['label'],
                     "The attribute '"
                     . $wrongAttribute['label']

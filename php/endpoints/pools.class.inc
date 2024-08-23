@@ -3,23 +3,16 @@
 namespace LORIS\biobank\Endpoints;                                              
                                                                                 
 use LORIS\biobank\Endpoint;                                                     
-use LORIS\biobank\Controller;                                     
+use LORIS\biobank\Service;                                     
 use LORIS\biobank\services\PoolService;
-use LORIS\biobank\Factory;
-use LORIS\biobank\models\Pool;
-use LORIS\biobank\Permission;
+use LORIS\Data\Filters;
                                                                                 
 final class Pools extends Endpoint                                                
 {                                                                               
-    public function __construct(\User $user, \Database $db)                      
-    {                                                                           
-        $controller = new Controller(
-            new PoolService($db),
-            new Factory(Pool::class)
-        );
-
-        parent::__construct($user, $db, $controller);
-    }                                                                           
+    protected function getService(): Service                                       
+    {                                                                              
+        return new PoolService();                              
+    }    
 
     protected static function getPermission(Permission $permission) : string
     {
@@ -32,10 +25,5 @@ final class Pools extends Endpoint
     protected function getSubHandler(string $subpath): ?Endpoint
     {
         return null;
-    }
-
-    public static function getName() : string
-    {
-        return 'Pool Endpoint';
     }
 }

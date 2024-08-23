@@ -2,11 +2,10 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\Schema;
 
 
 /**
@@ -24,12 +23,17 @@ use LORIS\biobank\data\Schema;
  */
 class CenterSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\Center::class;                              
+    }  
+
     protected function getTable(): Table {
         return new Table(name: 'psc');
     }
 
-    protected function getId(): Key {
-        return new Key(name: 'CenterID');
+    protected function getId(): string {
+        return 'CenterID';
     }
 
     protected function getLabel(): string {
@@ -38,10 +42,9 @@ class CenterSchema extends Schema
 
     protected function getColumns(): array {
         return [
-            'id' => $this->id,
             'label' => new Column(
                 name: 'Name',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];
     }

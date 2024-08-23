@@ -37,18 +37,18 @@ use LORIS\biobank\types\Date;
 class Container extends Model implements \LORIS\StudyEntities\SiteHaver
 {
     public function __construct(
-        private ?int $id = null,
-        public ?string $barcode = null,
-        public ?float $temperature = null,
-        public ?Type $type = null,
-        public ?Center $center = null,
-        public ?Shipments $shipments = null, //Shipments[]
-        public ?Container $parent = null,
-        public ?Containers $children = null, //Containers[]
-        public ?int $coordinate = null,
-        public ?string $lotNumber = null,
-        public ?Date $expirationDate = null,
-        public ?string $comments = null,
+        private ?int $id,
+        public ?string $barcode,
+        public ?float $temperature,
+        public ?Type $type,
+        public ?Center $center,
+        public ?Shipments $shipments, //Shipments[]
+        public ?Container $parent,
+        public ?Containers $children, //Containers[]
+        public ?int $coordinate,
+        public ?string $lotNumber,
+        public ?Date $expirationDate,
+        public ?string $comments,
     ) {}
 
     public function getCenterID(): \CenterID

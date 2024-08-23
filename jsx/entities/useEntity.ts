@@ -11,6 +11,8 @@ export type EntityHook<E extends Entity<I>, I extends object> = Partial<I> & {
   validate: () => void,                                                        
   errors: Partial<Record<keyof I, string>>,                                  
   getData: () => Partial<I>,
+  setLocked: (locked: boolean) => void,
+  locked: boolean,
 }   
 
 // export function useEntity<I extends {}>(                              
@@ -20,6 +22,7 @@ export function useEntity<E extends Entity<I>, I extends object>(
 ): EntityHook<E, I> {                                                
   const [entity, setEntity] = useState(entityFactory);                          
   const [errors, setErrors] = useState(entity.getErrors());
+  const [locked, setLocked] = useState(false);
 
   const set = useCallback(<K extends keyof I>(key: keyof I, value: I[K]) => {
     setEntity(entity.set(key, value));
@@ -65,5 +68,7 @@ export function useEntity<E extends Entity<I>, I extends object>(
     validate,
     errors,             
     getData,
+    setLocked,
+    locked,
   }
 }

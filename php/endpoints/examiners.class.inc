@@ -3,23 +3,15 @@
 namespace LORIS\biobank\endpoints;                                                 
 
 use LORIS\biobank\Endpoint;                                                        
-use LORIS\biobank\Controller;                                                   
+use LORIS\biobank\Service;                                                   
 use LORIS\biobank\services\ExaminerService;                                       
-use LORIS\biobank\Factory;                                                         
-use LORIS\biobank\models\Examiner;                                             
-use LORIS\biobank\Permission;                                              
                                                                                    
 class Examiners extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user, \Database $db)                                       
+    protected function getService(): Service                                       
     {                                                                              
-        $controller = new Controller(                                              
-            new ExaminerService($db),                                                
-            new Factory(Examiner::class)                                          
-        );                                                                         
-                                                                                   
-        parent::__construct($user, $db, $controller);                                   
-    }                                                                              
+        return new ExaminerService();                             
+    }    
 
     protected static function getPermission(Permission $permission) : string         
     {                                                                              
@@ -32,9 +24,4 @@ class Examiners extends Endpoint
     {                                                                              
         return null;                                                               
     }    
-                                                                                   
-    public static function getName() : string                                      
-    {                                                                              
-        return 'Examiner Endpoint';                                               
-    }                                                                              
 }  

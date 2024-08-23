@@ -4,28 +4,21 @@ namespace LORIS\biobank\endpoints;
                                                                                 
 use LORIS\biobank\endpoints\container\Types;                                                     
 use LORIS\biobank\Endpoint;                                                     
-use LORIS\biobank\Controller;
+use LORIS\biobank\Service;
 use LORIS\biobank\services\ContainerService;                                     
-use LORIS\biobank\Factory;                                     
-use LORIS\biobank\models\Container;                                     
-use LORIS\biobank\Permission;                                     
+use LORIS\Data\Filters;
                                                                                 
-class Containers extends Endpoint
+final class Containers extends Endpoint
 {
-    public function __construct(\User $user, \Database $db)
+    protected function getService(): Service
     {
-        $controller = new Controller(
-            new ContainerService($db),
-            new Factory(Container::class)
-        );
-
-        parent::__construct($user, $db, $controller);
+        return new ContainerService();
     }
 
     protected function getSubHandler(string $subpath): ?Endpoint
     {
         return match ($subpath) {
-            'types' => new Types($this->user, $this->db),
+            'types' => new Types($this->loris),
             default => null
         };
     }
@@ -37,10 +30,5 @@ class Containers extends Endpoint
             Permission::PUT => 'biobank_container_update',
             Permission::POST => 'biobank_container_create',
         };
-    }
-
-    public static function getName() : string
-    {
-        return 'Container Endpoint';
     }
 }

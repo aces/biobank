@@ -2,11 +2,10 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
 
 /**
  * Examiner Schema Class
@@ -23,14 +22,19 @@ use LORIS\biobank\data\schema\ColumnType;
  */
 class ExaminerSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\Examiner::class;                              
+    }  
+
     protected function getTable(): Table
     {
         return new Table(name: 'examiners');
     }
 
-    protected function getId(): Key
+    protected function getId(): string
     {
-        return new Key('examinerID');
+        return 'examinerID';
     }
 
     protected function getLabel(): string
@@ -43,7 +47,7 @@ class ExaminerSchema extends Schema
         return [
             'label' => new Column(
                 name: 'full_name',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];
     }

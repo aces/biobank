@@ -8,8 +8,8 @@ use LORIS\biobank\models\Unit;
 class Capacity extends Model
 {
     public function __construct(
-        public float $quantity,
-        public Unit $unit,
-        private ?int $id = null,
+        public ?float $quantity,
+        public ?Unit $unit,
+        private ?int $id,
     ) {}
 }

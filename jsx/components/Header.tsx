@@ -1,6 +1,8 @@
 import { ReactElement } from 'react';
 import Modal from 'Modal';
-import { SpecimenForm, LifeCycle, ContainerField, BarcodePathDisplay } from '../components';
+import { LifeCycle, BarcodePathDisplay } from '../components';
+import { ContainerField } from '../forms';
+// import { SpecimenForm } from '../forms';
 import Swal from 'sweetalert2';
 import { useSpecimenContext, useContainerContext } from '../entities';
 import { useBarcodePageContext, useBiobankContext } from '../hooks';
@@ -47,12 +49,12 @@ const Header: React.FC<{
           <div className='action' title='Make Aliquots'>
             {renderActionButton()}
           </div>
-          <SpecimenForm
+          {/*<SpecimenForm
             title='Add Aliquots'
             parent={specimen}
             show={editable.aliquotForm}
             onClose={clearAll}
-          />
+          />*/}
         </>
       );
     }
@@ -104,7 +106,6 @@ const Header: React.FC<{
       onClose={clearAll}
       show={editable.lotForm}
       onSubmit={() => ContainerAPI.update(container)}
-      onSuccess={() => edit('lotForm')}
     >
       <ContainerField property={'lotNumber'}/>
     </Modal>
@@ -116,7 +117,6 @@ const Header: React.FC<{
       onClose={clearAll}
       show={editable.expirationForm}
       onSubmit={() => ContainerAPI.update(container)}
-      onSuccess={() => edit('expirationForm')}
     >
       <ContainerField property={'expirationDate'}/>
     </Modal>

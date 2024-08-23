@@ -13,14 +13,23 @@ final class QueryParamsHandler
 
     public function parse(): QueryParams
     {
-        return new QueryParams(
-            fields: $this->parseFields(),
-            conditions: $this->parseConditions(),
-            excludeConditions: $this->parseExcludeConditions(),
-            limit: $this->parseLimit(),
-            offset: $this->parseOffset(),
-            orderBy: $this->parseOrderBy(),
-        );
+        $queryParams = new QueryParams();
+        $queryParams->select(...$this->parseFields())
+                    ->where(...$this->parseConditions())
+                    ->include(...$this->parseIncludes()) // New include parsingi
+                    ->limit($this->parseLimit())
+                    ->offset($this->parseOffset())
+                    ->countOnly($this->parseCountOnly());  // Handle countOnly
+
+        return $queryParams;        
+        // return new QueryParams(
+        //     fields: $this->parseFields(),
+        //     conditions: $this->parseConditions(),
+        //     excludeConditions: $this->parseExcludeConditions(),
+        //     limit: $this->parseLimit(),
+        //     offset: $this->parseOffset(),
+        //     orderBy: $this->parseOrderBy(),
+        // );
     }
 
     protected function parseFields(): array
@@ -29,6 +38,46 @@ final class QueryParamsHandler
             explode(',', $this->queryParams['fields']) :
             [];
     }
+
+    protected function parseIncludes(): array
+    {
+        $includes = [];
+
+        if (isset($this->queryParams['include'])) {
+            $includes = $this->parseNestedIncludes(explode(',', $this->queryParams['include']));
+        }
+
+        return $includes;
+    }
+
+    protected function parseNestedIncludes(array $includes): array
+    {
+        $result = [];
+
+        foreach ($includes as $include) {
+            $result[] = $this->createWithObject($include);
+        }
+
+        return $result;
+    }
+
+    protected function createWithObject(string $include): With
+    {
+        // Split the include string into parts
+        $parts = explode('.', $include);
+        $name = array_shift($parts);
+
+        // Recursively build the nested With structure
+        $subIncludes = [];
+        if (!empty($parts)) {
+            $subIncludes[] = $this->createWithObject(implode('.', $parts));
+        }
+
+        // Parse conditions for the include, if any exist (this is a placeholder for actual logic)
+        $conditions = []; // This should be replaced with actual condition parsing
+
+        return new With($name, $conditions, $subIncludes);
+    }    
 
     protected function parseConditions(): array
     {
@@ -100,5 +149,10 @@ final class QueryParamsHandler
         }
 
         return $orderBy;
+    }
+
+    protected function parseCountOnly(): bool
+    {
+        return isset($this->queryParams['countOnly']) && $this->queryParams['countOnly'] === 'true';
     }
 }

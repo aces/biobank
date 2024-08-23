@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { ReactNode } from 'react';
 
 type CSSAlignSelf = 'auto' | 'start' | 'end' | 'center' | 'baseline' | 'stretch';
 type CSSJustifySelf = 'auto' | 'start' | 'end' | 'center' | 'stretch';
@@ -13,6 +14,7 @@ const Grid = styled.div<{
   rowGap?: string;
   align?: CSSAlignItems;
   justify?: CSSJustifyContent;
+  children?: ReactNode;
 }>`
   display: grid;
   grid-template-columns: ${({ columns }) => columns || '1fr'};
@@ -29,6 +31,7 @@ const Item = styled.div<{
   row?: string;
   align?: CSSAlignSelf;
   justify?: CSSJustifySelf;
+  children?: ReactNode;
 }>`
   grid-column: ${({ column }) => column || 'auto'};
   grid-row: ${({ row }) => row || 'auto'};
@@ -53,6 +56,7 @@ const Flex = styled.div<{
   wrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
   width?: string;
   height?: string;
+  children?: ReactNode;
 }>`
   display: flex;
   flex-direction: ${({ direction }) => direction || 'row'};
@@ -129,7 +133,7 @@ const ActionTitle = styled.div`
 //   margin-right: 10px;
 // `;
 
-export const Layout = {
+const Layout = {
   Grid,
   Item,
   Field,
@@ -138,3 +142,5 @@ export const Layout = {
   Inline,
   ActionTitle,
 };
+
+export default Layout;

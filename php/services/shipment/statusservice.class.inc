@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\services\shipment;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
@@ -19,16 +20,13 @@ use LORIS\biobank\validators\shipment\StatusValidator;
  */
 class StatusService extends Service
 {
-    function __construct(\Database $db)
-    {
-        $dao = new DAO($db,
-            new StatusSchema(
-                name: 'status',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Status::class));
-        $validator = new StatusValidator($dao);
-        parent::__construct($dao, $validator);
-    }
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            new ModelProvisioner(new StatusSchema('status')),
+            new StatusValidator($this),                                         
+        );                                                                         
+    }          
 
     /**
      * Handles actions to be performed after saving a Status.

@@ -6,6 +6,7 @@ enum LoadingStrategy: string
 {
     case LAZY = 'LAZY';
     case EAGER = 'EAGER';
+    case FORCED = 'FORCED';
 }
 
 trait LoadingStrategyTrait {
@@ -18,6 +19,11 @@ trait LoadingStrategyTrait {
     public function isEager(): bool
     {
         return $this->strategy === LoadingStrategy::EAGER;
+    }
+
+    public function isForced(): bool
+    {
+        return $this->strategy === LoadingStrategy::FORCED;
     }
 
     public function isLazy(): bool

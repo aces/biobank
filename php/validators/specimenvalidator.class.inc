@@ -85,11 +85,11 @@ class SpecimenValidator extends Validator
     {
         $parents = $specimen->parents;
         if ($parents) {
-            $baseParentSpecimen = $this->dao->getInstanceFromId(
+            $baseParentSpecimen = $this->service->getInstanceFromId(
                 (int) $parents[0]
             );
         }
-        $specimenTypes = $this->dao->getTypes();
+        $specimenTypes = $this->service->getTypes();
 
         if (empty($parents)) {
             return;
@@ -98,7 +98,7 @@ class SpecimenValidator extends Validator
             return;
         }
         foreach ($parents as $parent) {
-            $parent = $this->dao->getInstanceFromId((int) $parent);
+            $parent = $this->service->getInstanceFromId((int) $parent);
 
             $pSpecimenCandId = $parent->getCandidateId();
 

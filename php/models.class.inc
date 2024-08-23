@@ -10,7 +10,7 @@ use InvalidArgumentException;
 //     public const MODEL = null;
 // }
 
-abstract class Models extends ArrayObject 
+abstract class Models extends ArrayObject implements \JsonSerializable
 {
     public static string $model;
 
@@ -19,26 +19,39 @@ abstract class Models extends ArrayObject
         parent::__construct([], ArrayObject::ARRAY_AS_PROPS);
 
         foreach ($items as $item) {
-            // if (!$item instanceof static::MODEL) {
-            //     throw new InvalidArgumentException("Expected instance of ".static::MODEL);
-            // }
+            $this->validateType($item);
             $this[] = $item;
         }
     }
 
     public function offsetSet($key, $value): void
     {
-        // if (!$value instanceof static::MODEL) {
-        //     throw new InvalidArgumentException("Expected instance of ".static::MODEL);
-        // }
+        $this->validateType($value);
         parent::offsetSet($key, $value);
     }
 
     public function append($value): void
     {
-        // if (!$value instanceof static::MODEL) {
-        //     throw new InvalidArgumentException("Expected instance of ".static::MODEL);
-        // }
+        $this->validateType($value);
         parent::append($value);
+    }
+
+    public function getIds(): array
+    {
+        return array_map(function ($model) {
+            return $model->id;
+        }, (array) $this); // Cast to array to use array_map
+    }
+
+    public function jsonSerialize(): array
+    {
+        return $this->getArrayCopy();
+    }
+
+    protected function validateType($value): void
+    {
+        if (!$value instanceof static::$model) {
+            throw new InvalidArgumentException("Expected instance of " . static::$model);
+        }
     }
 }

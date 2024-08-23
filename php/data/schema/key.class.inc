@@ -6,7 +6,8 @@ class Key extends Column
 {
     public function __construct(
         string $name,
+        Table $table,
     ) {
-        parent::__construct($name, ColumnType::INT);
+        parent::__construct($name, $table);
     }
 }

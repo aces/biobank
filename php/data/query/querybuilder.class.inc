@@ -4,77 +4,43 @@ namespace LORIS\biobank\data\query;
 
 use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\DAO;
+use LORIS\biobank\data\schema\JoinType;
 
-// TODO: I feel like there's redundancy between this and query params.
-// There has to be a way to merge or make use of Query Params. Maybe a trait?
-//
 final class QueryBuilder
 {
-    protected Schema $schema;
-    protected array $selects = [];
-    protected array $conditions = [];
-    protected ?string $groupBy = null;
-    protected ?int $limit = null;
-    protected ?int $offset = null;
     protected array $params = [];
 
-    public function __construct(Schema $schema)
-    {
-        $this->schema = $schema;
+    public function __construct(
+        protected Schema $schema,
+        protected QueryParams $queryParams,
+    ) {
+        $this->validateQueryParams();
     }
 
-    public function reset(): self
+    // TODO: NOT WORKING FOR SOME REASON, MAKE SURE THIS GETS SENT TO THE FRONT
+    // END — ALSO, CONSIDER A BETTER LOCATION FOR THIS VALIDATION, SUCH AS IN
+    // THE QUERYPARAMS THEMSELVES, ALTHOUGH I'M NOT CONVINCED.
+    private function validateQueryParams(): void
     {
-        $this->selects = [];
-        $this->conditions = [];
-        $this->groupBy = null;
-        $this->limit = null;
-        $this->offset = null;
-        $this->params = [];
-        return $this;
-    }
-
-    public function select(string ...$fields): self
-    {
-        $this->selects = $fields;
-        return $this;
-    }
-
-    public function where(Condition ...$conditions): self
-    {
-        foreach ($conditions as $condition) {
-            $this->conditions[] = $condition;
+        foreach ($this->queryParams->conditions as $condition) {
+            if (!isset($this->schema->columns[$condition->field])) {
+                throw new \InvalidArgumentException("Field '{$condition->field}' does not exist in the schema.");
+            }
         }
 
-        return $this;
-    }
-
-    public function groupBy(string $groupBy): self
-    {
-        $this->groupBy = $groupBy;
-        return $this;
-    }
-
-    public function limit(?int $limit): self
-    {
-        $this->limit = $limit;
-        return $this;
-    }
-
-    public function offset(?int $offset): self
-    {
-        $this->offset = $offset;
-        return $this;
+        foreach ($this->queryParams->includes as $include) {
+            if (!isset($this->schema->relations[$include->name])) {
+                throw new \InvalidArgumentException("Relation '{$include->name}' does not exist in the schema.");
+            }
+        }
     }
 
     public function build(): Query
     {
-        $query = $this->buildWith();
-        $query .= $this->buildCommonTable();
-        $query .= !is_null($this->limit) ? " LIMIT " . $this->limit : '';
-        $query .= !is_null($this->offset) ? " OFFSET " . $this->offset : '';
+        $query = $this->buildCommonTable() .
+           $this->buildLimitOffset();
 
-        //$this->logQuery($query);
+        $this->logQuery($query);
 
         return new Query(string: $query, params: $this->params);
     }
@@ -103,31 +69,32 @@ final class QueryBuilder
 
     private function buildCommonTables(array $commonTables = []): array
     {
-        foreach ($this->schema->relations as $relation) {
-            if (isset($commonTables[$relation->schema->name])) {
-                error_log('RECURSIVE COMMON TABLES');
-                break;
-            }
+        foreach ($this->queryParams->includes as $include) {
 
-            $queryBuilder = new QueryBuilder($relation->schema);
+            $relation = $this->schema->relations[$include->name];
 
-            // TODO: I really am not super happy with this....
-            foreach($this->conditions as $condition) {
-                if ($condition->relation->name == $relation->schema->name) {
-                    $queryBuilder->where(new Condition(
-                        field: $condition->field,
-                        value: $condition->value,
-                    ));
-                }
-            }
+            // Build the schema for the current relation
+            $relation->buildSchema($this->schema->name, $include->name);
 
-            // Recursively build nested common tablesVx
+            // Prepare QueryParams for the current relation, handling conditions and sub-includes
+            $queryParams = new QueryParams(
+                conditions: $include->conditions,
+                includes: $include->subIncludes
+            );
+
+            // Create a new QueryBuilder instance for the relation's schem
+            $queryBuilder = new QueryBuilder($relation->schema, $queryParams);
+
+            // Recursively build common tables using the new QueryBuilder
             $nestedCommonTables = $queryBuilder->buildCommonTables($commonTables);
             $commonTables = array_merge($commonTables, $nestedCommonTables);
 
-            // Build the common table for the current relation
+            // Add the common table for the current relation
             $commonTable = $queryBuilder->buildCommonTable();
             $commonTables[$relation->schema->name] = "{$relation->schema->name} AS ($commonTable)";
+
+            // Merge parameters from the nested query builder back into this one
+            $this->params = array_merge($this->params, $queryBuilder->params);
         }
 
         return $commonTables;
@@ -136,143 +103,168 @@ final class QueryBuilder
     protected function buildCommonTable(): string
     {
         $schema = $this->schema;
+    
+        // Handle the select clause
+        $selectClause = $this->queryParams->countOnly
+            ? "COUNT(*) AS row_count"
+            : $this->buildSelect();
+    
+        // Build the query
         return "
             SELECT
-                {$schema->table->name}.{$schema->id->name},
-                {$this->buildFields()},
-                {$this->buildJson()}
+                $selectClause
             FROM
                 {$schema->table->name}
                 {$this->buildJoins()}
                 {$this->buildWhere()}
-            GROUP BY
-                {$schema->table->name}.{$schema->id->name}
-        ";
+            " . $this->buildGroupBy();
     }
-
-    public function buildFields(): string
-    {
-        $schema = $this->schema;
-        $columns = $schema->columns;
-        $fields = [];
     
-        foreach ($columns as $field => $column) {
-            $fields[] = "{$schema->table->name}.{$column->name} AS $field";
-        }
-    
-        return implode(", ", $fields);
-    }
-
-    public function buildJson(): string
+    private function buildSelect(): string
     {
         $schema = $this->schema;
 
-        $columns = $schema->columns;
-        $relations = $schema->relations;
-
-        // If no selects are specified, select all columns and relations.
-        $selects = empty($this->selects)
-            ? array_merge(array_keys($columns), array_keys($relations))
-            : $this->selects;
-
-        $fields = [];
-
-        foreach ($selects as $select) {
-            if (array_key_exists($select, $columns)) {
-                // Select column from columns
-                $column = $columns[$select]->name;
-                $fields[] = "'{$select}', {$schema->table->name}.{$column}";
-            }
+        return $this->buildFields();
     
-            if (array_key_exists($select, $relations)) {
-                // Select from relations
-                $relation = $relations[$select];
-                $fields[] = $relation->many
-                    ? "'{$select}', JSON_ARRAYAGG(DISTINCT {$relation->schema->name}.json)"
-                    : "'{$select}', {$relation->schema->name}.json";
-            }
-        }
+        // if (empty($this->queryParams->fields)) {
+        //     return "{$schema->table->name}.{$schema->id->name}," .
+        //            $this->buildFields();
+        // }
     
-        return "JSON_OBJECT(" . implode(", ", $fields) . ") AS json";
+        // return implode(", ", array_map(
+        //     fn($field) => "{$schema->table->name}.{$schema->columns[$field]->name} AS {$field}",
+        //     $this->queryParams->fields
+        // ));
     }
+    
+    private function buildGroupBy(): string
+    {
+        return $this->queryParams->countOnly ?
+            "" :
+            "GROUP BY {$this->schema->table->name}.{$this->schema->id}";
+    }    
+
+
+    public function buildFields(): string                                       
+    {                                                                           
+        $schema = $this->schema;                                                
+        $columns = $schema->columns;                                            
+        $fields = [];                                                           
+                                                                                
+        foreach ($columns as $field => $column) {                               
+            $fields[] = "{$schema->table->name}.{$schema->id} AS id";     
+            $fields[] = "{$schema->table->name}.{$column->name} AS $field";     
+        }                                                                       
+                                                                                
+        foreach ($schema->relations as $name => $relation) {                    
+                                                                                
+                                                                                
+            $relation->buildSchema($this->schema->name, $name);        
+                                                                                
+            // If the relation is "one", include all columns from the related schema
+            foreach ($relation->schema->columns as $field => $column) {         
+                $jsonFields[] = "'id', {$relation->schema->name}.{$relation->schema->id}";
+                $jsonFields[] = "'$field', {$relation->schema->name}.{$column->name}";
+            }                                                                   
+                                                                                
+            $fields[] = $relation->many                                   
+                ? "JSON_ARRAYAGG(JSON_OBJECT(" . implode(", ", $jsonFields) . ")) as {$name}"
+                : "JSON_OBJECT(" . implode(", ", $jsonFields) . ") as {$name}";
+        }                                                                       
+                                                                                
+        return implode(", ", $fields);                                          
+    }              
+
 
     protected function buildJoins(): string
     {
+        $schema = $this->schema;
         $joinClauses = [];
 
-        foreach ($this->schema->joins as $join) {
+        foreach ($schema->joins as $join) {
             $joinClauses[] = " {$join->type->value} JOIN
                 {$join->to->table->name} {$join->to->table->alias} ON
-                {$join->from->table->name}.{$join->from->key->name} =
-                {$join->to->table->alias}.{$join->to->key->name}";
+                {$join->from->table->name}.{$join->from->key} =
+                {$join->to->table->alias}.{$join->to->key}";
         }
 
-        foreach ($this->schema->relations as $field => $relation) {
-            $join = 'LEFT'; // Default join type is LEFT JOIN
+        foreach ($schema->relations as $name => $relation) {
+            $joinType = JoinType::LEFT; // Default join type is LEFT JOIN
 
-            // Determine if the join type should be INNER JOIN based on conditions
-            // TODO: this is part of the 'relation' condition I REALLY don't
-            // like.
-            foreach ($this->conditions as $condition) {
-                if ($condition->relation->name == $relation->schema->name) {
-                    $join = 'INNER';
-                    break; // No need to check further once we determine it's an INNER JOIN
-                }
-            }
-
-            $joinClauses[] = " {$join} JOIN {$relation->schema->name} ON 
-                {$relation->from->table->alias}.{$relation->from->key->name} =
-            {$relation->schema->name}.{$relation->schema->id->name}
+            $joinClauses[] = " {$joinType->value}
+                JOIN {$relation->schema->table->name} as {$relation->schema->name}
+                ON {$relation->from->table->alias}.{$relation->from->key} =
+            {$relation->schema->name}.{$relation->schema->id}
             ";
         }
 
         return implode(' ', $joinClauses);
     }
 
-
     protected function buildWhere(): string
     {
-        if (empty($this->conditions)) {
+        $whereClauses = [];
+    
+        // Function to process a condition and return the SQL clause
+        $processCondition = function($condition, $index, $schema) use (&$whereClauses) {
+            $field = $condition->field;
+            $value = $condition->value;
+    
+            if ($value === null) {
+                return;
+            }
+    
+            $column = $schema->columns[$field]->name;
+            $alias = $schema->name;
+            $comparisonOperator = $condition->operator->toSql();
+            $placeholder = ":{$field}{$index}";
+    
+            $clause = "$alias.$column $comparisonOperator $placeholder";
+    
+            if (!empty($whereClauses)) {
+                $logicalOperator = $condition->logicalOperator->value;
+                $clause = "{$logicalOperator} {$clause}";
+            }
+    
+            $whereClauses[] = $clause;
+            $this->params[$placeholder] = $value;
+        };
+    
+        // Process primary conditions
+        foreach ($this->queryParams->conditions as $index => $condition) {
+            $tableAlias = $this->schema->table->name;
+            $processCondition($condition, $index, $this->schema);
+        }
+    
+        // Process includes conditions with relations
+        foreach ($this->queryParams->includes as $includeIndex => $include) {
+            $schema = $this->schema->relations[$include->name]->schema;
+    
+            // Iterate over each condition within the includes array
+            foreach ($include->conditions as $conditionIndex => $condition) {
+                $processCondition($condition, "include{$includeIndex}_{$conditionIndex}", $schema);
+            }
+        }
+    
+        // Combine all where clauses
+        $whereClauseStr = ' WHERE ' . implode(' ', $whereClauses);
+        return !empty($whereClauses) ? $whereClauseStr : '';
+    }
+
+    private function buildLimitOffset(): string
+    {
+        if (is_null($this->queryParams->limit)) {
             return '';
         }
 
-        $whereClauses = [];
+        $limitOffset = " LIMIT " . $this->queryParams->limit;
+        // $limitOffset = " LIMIT 1";
 
-        foreach ($this->conditions as $index => $condition) {
-            $field = $condition->field;
-            $value = $condition->value;
-
-            if ($value === null) {
-                continue;
-            }
-
-            $comparisonOperator = $condition->operator->toSql();
-            $logicalOperator = $condition->logicalOperator->value;
-            $placeholder = ":{$field}{$index}";
-
-            // XXX: $condition->relation feels liek a hack. The idea is to add
-            // filters to relations
-            if (!isset($condition->relation)) {
-                $table = $this->schema->table->name;
-                $column = $this->schema->columns[$field]->name;
-
-                $clause = "$table.$column $comparisonOperator $placeholder";
-
-                // Add the logical operator for all clauses except the first one
-                if (!empty($whereClauses)) {
-                    $clause = "{$logicalOperator} {$clause}";
-                }
-
-                $whereClauses[] = $clause;
-            }
-            $this->params[$placeholder] = $value;
+        if (!is_null($this->queryParams->offset)) {
+            $limitOffset .= " OFFSET " . $this->queryParams->offset;
         }
 
-
-        // TODO: this extra check for empty where is because of the residual conditions that
-        // shouldn't  reallly be there.
-        $whereClauseStr = ' WHERE '.implode('', $whereClauses);
-
-        return !empty($whereClauses) ? $whereClauseStr : '';
+        return $limitOffset;
     }
+
 }

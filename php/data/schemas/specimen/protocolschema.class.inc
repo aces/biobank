@@ -2,26 +2,30 @@
 
 namespace LORIS\biobank\data\schemas\specimen;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\TableKey;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\schema\Join;
-use LORIS\biobank\data\schema\Relation;
-use LORIS\biobank\data\schema\LoadingStrategy;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\TableKey;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\schema\Join;
+use \LORIS\biobank\data\schema\Relation;
+use \LORIS\biobank\data\schema\RelationType;
 
 final class ProtocolSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\specimen\Protocol::class;                            
+    }   
+
     protected function getTable(): Table                                       
     {                                                                              
         return new Table(name: 'biobank_specimen_protocol');                                    
     }                                                                              
                                                                                    
-    protected function getId(): Key                                            
+    protected function getId(): string                                            
     {                                                                              
-        return new Key('SpecimenProtocolID');                                                  
+        return 'SpecimenProtocolID';                                                 
     }                                                                              
                                                                                    
     protected function getLabel(): string                                      
@@ -34,7 +38,7 @@ final class ProtocolSchema extends Schema
         return [                                                                   
             'label' => new Column(
                 name: 'Label',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];                                                                         
     }                                                                              
@@ -61,27 +65,24 @@ final class ProtocolSchema extends Schema
             'attributes' => new Relation(
                 from: new TableKey(
                     table: $this->joins['attribute_rel']->to->table,
-                    key: new Key('SpecimenAttributeID')
+                    key: 'SpecimenAttributeID'
                 ),
                 to: AttributeSchema::class,
-                strategy: LoadingStrategy::LAZY,
-                many: true
+                many: true,
             ),
             'type' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key('SpecimenTypeID')
+                    key: 'SpecimenTypeID'
                 ),
                 to: TypeSchema::class,
-                strategy: LoadingStrategy::LAZY
             ),
             'process' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key('SpecimenProcessID')
+                    key: 'SpecimenProcessID'
                 ),
                 to: process\TypeSchema::class,
-                strategy: LoadingStrategy::LAZY
             ),
         ];
     }       

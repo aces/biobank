@@ -2,23 +2,27 @@
 
 namespace LORIS\biobank\data\schemas\specimen;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\schema\LoadingStrategy;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\schema\LoadingStrategy;
 
 final class AttributeSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\specimen\Attribute::class;                            
+    }   
+
     protected function getTable(): Table
     {
         return new Table(name: 'biobank_specimen_attribute');
     }
 
-    protected function getId(): Key
+    protected function getId(): string
     {
-        return new Key('SpecimenAttributeID');
+        return 'SpecimenAttributeID';
     }
 
     protected function getLabel(): string
@@ -31,7 +35,7 @@ final class AttributeSchema extends Schema
         return [
             'label' => new Column(
                 name: 'Label',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];
     }
@@ -47,10 +51,9 @@ final class AttributeSchema extends Schema
             'datatype' => new schema\Relation(
                 from: new schema\TableKey(
                     table: $this->table,
-                    key: new Key('DatatypeID')
+                    key: 'DatatypeID'
                 ),
                 to: attribute\DatatypeSchema::class,
-                strategy: LoadingStrategy::EAGER
             )
         ];
     }

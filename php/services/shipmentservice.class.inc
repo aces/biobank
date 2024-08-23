@@ -2,10 +2,12 @@
 
 namespace LORIS\biobank\services;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
 use LORIS\biobank\data\DAO;
+use LORIS\biobank\data\query;
 use LORIS\biobank\data\schemas\ShipmentSchema;
 use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\Shipment;
@@ -19,15 +21,20 @@ use LORIS\biobank\validators\ShipmentValidator;
  */
 class ShipmentService extends Service
 {
-    function __construct(\Database $db)
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            new ModelProvisioner(new ShipmentSchema('shipment')),
+            new ShipmentValidator($this),                                         
+        );                                                                         
+    }          
+
+    public function applyDefaultParams(query\QueryParams $params): query\QueryParams
     {
-        $dao = new DAO($db,
-            new ShipmentSchema(
-                name: 'shipment',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Shipment::class));
-        $validator = new ShipmentValidator($dao);
-        parent::__construct($dao, $validator);
+        return $params
+            ->include(
+                new query\With('logs')
+            );
     }
 
     /**

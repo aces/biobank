@@ -4,12 +4,13 @@ import { v4 as uuidv4 } from 'uuid'; // Import UUID generator
 
 export type EntitiesHook<E extends Entity<I>, I extends object> = {                                  
   entities: Map<string, E>,                                             
-  add: (entity: Partial<I>) => string,                                          
+  add: (entityData: Partial<I>) => string,                                          
   update: (key: string, entity: Partial<I>) => void,                            
   remove: (key: string) => void,                                                
   setAll: (property: keyof I, value: any) => void,                              
   validateAll: () => boolean,                                                   
   toArray: () => E[],                                                   
+  toData: () => Map<string, Partial<I>>,
   keys: () => string[],
   isEmpty: () => boolean,                                                       
 }         
@@ -98,9 +99,17 @@ export const useEntities = <E extends Entity<I>, I extends object>(
                                                                                 
   const toArray = useCallback(() => Array.from(entities.values()), [entities]);
 
+  const toData = useCallback(() => {
+    const dataMap =  new Map<string, Partial<I>>();
+    entities.forEach((entity, key) => {
+      dataMap.set(key, entity.getData());
+    });
+    return dataMap;
+  }, [entities]);
+
   const keys = useCallback(() => Array.from(entities.keys()), [entities]);
 
   const isEmpty = useCallback(() => entities.size === 0, [entities]);
                                                                                 
-  return { entities, add, update, remove, setAll, validateAll, toArray, keys, isEmpty };       
+  return { entities, add, update, remove, setAll, validateAll, toArray, toData, keys, isEmpty };       
 };    

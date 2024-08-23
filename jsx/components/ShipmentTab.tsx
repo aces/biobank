@@ -2,23 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import FilterableDataTable from 'FilterableDataTable';
 import { useBiobankContext, useRequest } from '../hooks';
+import Utils from '../utils';
 // import Container from './Container';
-import { IShipment, Shipment, ILog, Log, useShipment, useLog } from '../entities';
-import { ShipmentField, LogField } from './';
+import { IShipment, Shipment, ILog, Log, useShipment, useLog, ShipmentProvider,
+  LogProvider } from '../entities';
+import { EntityType } from '../contexts';
 import TriggerableModal from 'TriggerableModal';
 import { BaseAPI, ShipmentAPI } from '../APIs';
 import dict from '../i18n/en.json';
-import Form from 'Form';
-const {
-  InputList,
-  SelectElement,
-  StaticElement,
-  TextboxElement,
-  TextareaElement,
-  HorizontalRule,
-  DateElement,
-  TimeElement,
-} = Form;
+import { StaticField, ShipmentField, LogField} from '../forms';
+import { HorizontalRule } from '../styles/form'; 
 
 // TODO:
 // - Make sure all subcontainers are loaded into shipment
@@ -32,18 +25,17 @@ const {
  */
 const ShipmentTab: React.FC = () => {
 
-  const { options, shipments, shipProg: progress} = useBiobankContext();
+  const { shipments, updateEntity, initializeEntity } = useBiobankContext();
 
-  // TODO it will generally be good to have the context objects be updatable.
-  // so this should be implemented again
-  // const updateShipments = (updatedShipments: IShipment[]) => {
-  //   updatedShipments.forEach((shipment) => {
-      // setShipments({
-      //   ...shipments,
-      //   [shipment.barcode]: shipment,
-      // });
-  //  });
-  // };
+  useEffect(() => {
+    initializeEntity(EntityType.Shipments);
+  });
+
+  const updateShipments = (updatedShipments: IShipment[]) => {
+    updatedShipments.forEach((shipment) => {
+      updateEntity('Shipments', shipment.barcode, shipment);
+   });
+  };
 
   const formatShipmentColumns = (
     column: string,
@@ -61,20 +53,19 @@ const ShipmentTab: React.FC = () => {
         );
       case 'Actions':
         if (row['Status'] !== 'received') {
-          return (
-            <td>
-              <ReceiveShipment
-                shipment={shipments[row['Barcode']]}
-              />
-            </td>
-          );
+          // this should maybe just pass the barcode to receive shipment and
+          // then upon receiving a barcode the receiveshipment component actually
+          // renders itself.
+          const shipment = shipments.find(shipment => shipment.barcode ===
+                                          row['Barcode']);
+          return <td><ReceiveShipment shipment={shipment}/></td>;
         }
       default:
         return <td>{value}</td>;
     }
   };
 
-  const shipmentData = Object.values(shipments).map((shipment: IShipment) => {
+  const shipmentData = Object.values(shipments.data).map((shipment: IShipment) => {
     return [
       shipment.barcode,
       shipment.type,
@@ -85,7 +76,7 @@ const ShipmentTab: React.FC = () => {
   });
 
   const shipmentAPI = new ShipmentAPI();
-  const centers = useRequest(new BaseAPI('centers').get());
+  const centers = Utils.mapLabel(useRequest(() => new BaseAPI('centers').get()));
 
   const fields = [
     {label: 'ID', show: false},
@@ -96,12 +87,12 @@ const ShipmentTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: useRequest(shipmentAPI.getTypes())
+      options: Utils.mapLabel(useRequest(() => shipmentAPI.getTypes()))
     }},
     {label: 'Status', show: true, filter: {
       name: 'status',
       type: 'select',
-      options: useRequest(shipmentAPI.getStatuses())
+      options: Utils.mapLabel(useRequest(() => shipmentAPI.getStatuses()))
     }},
     {label: 'Origin Center', show: true, filter: {
       name: 'originCenter',
@@ -120,7 +111,7 @@ const ShipmentTab: React.FC = () => {
 
   return (
     <FilterableDataTable
-      progress={progress}
+      progress={shipments.progress}
       data={shipmentData}
       fields={fields}
       forms={forms}
@@ -134,21 +125,12 @@ const ShipmentInformation: React.FC<{
 }> = ({
   shipment,
 }) => {
-  const logs = shipment.logs.map((log, i) => {
-    return (
-    <>
-      <h4>Shipment Log {i+1}</h4>
-      <HorizontalRule/>
-      <StaticElement label='Center' text={log.center}/>
-      <StaticElement label='Status' text={log.status}/>
-      <StaticElement label='Temperature' text={log.temperature}/>
-      <StaticElement label='Date' text={log.date}/>
-      <StaticElement label='Time' text={log.time}/>
-      <StaticElement label='User' text={log.user}/>
-      <StaticElement label='Comments' text={log.comments}/>
-    </>
-    );
-  });
+
+  const shipmentHook = useShipment(shipment);
+
+  const logs = shipment.logs.map((log, i) => (
+    <LogEntry key={i} log={log} index={i} />
+  ));
 
   const containers = shipment.containers.map((barcode, i) => (
     <React.Fragment key={i}>
@@ -160,22 +142,40 @@ const ShipmentInformation: React.FC<{
   ))
 
   return (
-    <>
-      <StaticElement label='Barcode' text={shipment.barcode}/>
-      <StaticElement label='Type' text={shipment.type}/>
-      <StaticElement label='Containers' text={containers}/>
-      <StaticElement label='Origin Center' text={shipment.logs[0].center}/>
-      <StaticElement label='Destination Center' text={shipment.destinationCenter}/>
+    <ShipmentProvider shipment={shipmentHook}>
+      <ShipmentField isStatic property='barcode'/>
+      <ShipmentField isStatic property='type'/>
+      <ShipmentField isStatic property='containers'/>
+      <ShipmentField isStatic property='originCenter'/>
+      <ShipmentField isStatic property='destinationCenter'/>
       {logs}
-    </>
+    </ShipmentProvider>
   );
 }
+
+const LogEntry: React.FC<{ log: Partial<ILog>; index: number }> = ({ log, index }) => {
+  const logHook = useLog(log); // Assuming useLog is your custom hook
+
+  return (
+    <LogProvider log={logHook}>
+      <h4>Shipment Log {index + 1}</h4>
+      <HorizontalRule />
+      <LogField isStatic property='center'/>
+      <LogField isStatic property='status'/>
+      <LogField isStatic property='temperature'/>
+      <LogField isStatic property='date'/>
+      <LogField isStatic property='time'/>
+      <LogField isStatic property='user'/>
+      <LogField isStatic property='comments'/>
+    </LogProvider>
+  );
+};
 
 // TODO: this will be reinstated as a prop when I start re-instating context updates
 // updateShipments: (updatedShipments: Shipment[]) => void,
 const CreateShipment: React.FC = () => {
 
-  const { containers } = useBiobankContext();
+  const { containers, updateEntities } = useBiobankContext();
 
   const logIndex = 0;
   const shipment = useShipment({logs: [{status: {label: 'created'}}]});
@@ -187,8 +187,8 @@ const CreateShipment: React.FC = () => {
     const container = containers(shipment.containers[0]);
     const l = new Log(log).set('center', container.center);
     shipment.setLog(logIndex, l.getData());
-    // const entities = await shipment.post();
-    //updateShipments(entities.shipments);
+    const entities = await ShipmentAPI.create(shipment);
+    updateEntities('shipments', entities.shipments);
   };
 
   return (
@@ -198,19 +198,14 @@ const CreateShipment: React.FC = () => {
       onSubmit={onSubmit}
       onClose={shipment.clear}
     >
-      <StaticElement label='Note' text={dict.noteForCreateShipment}/>
-      <ShipmentField property='barcode' shipment={shipment}/>
-      <ShipmentField property='type' shipment={shipment}/>
-      <InputList
-        name='containers'
-        label="Container"
-        items={shipment.containers}
-        setItems={shipment.set}
-        options={{}} //TODO: fill this with call to get all containers
-        errorMessage={shipment.errors.containers}
-      />
-      <ShipmentField property='destinationCenter' shipment={shipment}/>
-      <ShipmentLogForm log={log} setLog={setLog}/>
+      <ShipmentProvider shipment={shipment}>
+        <StaticField label='Note' value={dict.noteForCreateShipment}/>
+        <ShipmentField property='barcode'/>
+        <ShipmentField property='type'/>
+        <ShipmentField property='containers'/>
+        <ShipmentField property='destinationCenter'/>
+        <ShipmentLogForm log={log} setLog={setLog}/>
+      </ShipmentProvider>
     </TriggerableModal>
   );
 }
@@ -220,11 +215,9 @@ const CreateShipment: React.FC = () => {
  */
 // TODO: this will be reinstated as a prop when I start re-instating context updates
 // updateShipments: (updatedShipments: Shipment[]) => void,
-const ReceiveShipment: React.FC<{
-  shipment: IShipment,
-}> = ({
-  shipment: initShipment,
-}) => {
+const ReceiveShipment = ({
+  shipment: initShipment
+}: { shipment: IShipment }) => {
   const shipment = useShipment(initShipment);
   const logIndex = shipment.logs.length-1;
   const onSuccess = ({shipments, containers}) => {
@@ -272,13 +265,13 @@ const ShipmentLogForm: React.FC<{
   }, [log])
 
   return (
-    <>
-      <LogField property={'temperature'} log={logHook}/>
-      <LogField property={'date'} log={logHook}/>
-      <LogField property={'time'} log={logHook}/>
-      <LogField property={'user'} log={logHook}/>
-      <LogField property={'comments'} log={logHook}/>
-    </>
+    <LogProvider log={logHook}>
+      <LogField property={'temperature'}/>
+      <LogField property={'date'}/>
+      <LogField property={'time'}/>
+      <LogField property={'user'}/>
+      <LogField property={'comments'}/>
+    </LogProvider>
   );
 }
 

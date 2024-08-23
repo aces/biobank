@@ -38,20 +38,20 @@ use LORIS\biobank\models\specimen\process\Analysis;
 final class Specimen extends Model implements \LORIS\StudyEntities\SiteHaver
 {
     public function __construct(
-        public readonly ?float $quantity = null, //removed because parent empty? should not instantiate if empty
-        public readonly ?int $fTCycle = null,
-        private readonly ?int $id = null,
-        public readonly ?Unit $unit = null,
-        public readonly ?Type $type = null,
-        public readonly ?Projects $projects = null,
-        public readonly ?Specimens $parents = null,
-        public readonly ?Candidate $candidate = null,
-        public readonly ?Session $session = null,
-        public readonly ?Pool $pool = null,
-        public readonly ?Collection $collection = null,
-        public readonly ?Preparation $preparation = null,
-        public readonly ?Analysis $analysis = null,
-        public readonly ?Container $container = null, //removed for the moment to account for parent specimsn not being able to loading containers but should be re-instated later.
+        public readonly ?int $id,
+        public readonly ?float $quantity, //removed because parent empty? should not instantiate if empty
+        public readonly ?int $fTCycle,
+        public readonly ?Unit $unit,
+        public readonly ?Type $type,
+        public readonly ?Projects $projects,
+        public readonly ?Specimens $parents,
+        public readonly ?Candidate $candidate,
+        public readonly ?Session $session,
+        public readonly ?Pool $pool,
+        public readonly ?Collection $collection,
+        public readonly ?Preparation $preparation,
+        public readonly ?Analysis $analysis,
+        public readonly ?Container $container, //removed for the moment to account for parent specimsn not being able to loading containers but should be re-instated later.
     ) {}
 
     public function getCenterID(): \CenterID
@@ -61,8 +61,6 @@ final class Specimen extends Model implements \LORIS\StudyEntities\SiteHaver
 
     public function getProjectIDs(): array
     {
-        return array_map(function($project) {
-            return $project->getId();
-        }, $this->projects);
+        return $this->projects->getIds();
     }
 }

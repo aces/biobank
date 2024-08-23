@@ -1,17 +1,23 @@
 import { useState, useEffect, ReactElement, CSSProperties } from 'react';
-import { Link} from 'react-router-dom';
-import { Search, ContainerForm } from '../components';
+import { Link } from 'react-router-dom';
+import { ContainerForm } from '../forms';
+import { Search } from '../components';
 import FilterableDataTable from 'FilterableDataTable';
-import { mapFormOptions, clone} from '../utils';
+import Utils from '../utils'
 import { useBiobankContext, useEditable, useRequest } from '../hooks';
 import { IContainer } from '../entities';
+import { EntityType } from '../contexts';
 import { ContainerAPI, BaseAPI } from '../APIs';
 declare const loris: any;
 
 export const ContainerTab: React.FC = () => {
 
-  const { containers, contProg: progress } = useBiobankContext();
+  const { containers, initializeEntity } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
+
+  useEffect(() => {
+    initializeEntity(EntityType.Containers);
+  });
 
   /**
    * Format the cells for a column in the container
@@ -30,22 +36,22 @@ export const ContainerTab: React.FC = () => {
       case 'Barcode':
         return <td><Link to={`/containers/${value}`}>{value}</Link></td>;
 
-      case 'Status':
-        switch (value) {
-          case 'Available':
-            style.color = 'green';
-            break;
-          case 'Reserved':
-            style.color = 'orange';
-            break;
-          case 'Dispensed':
-            style.color = 'red';
-            break;
-          case 'Discarded':
-            style.color = 'red';
-            break;
-        }
-        return <td style={style}>{value}</td>;
+      // case 'Status':
+      //   switch (value) {
+      //     case 'Available':
+      //       style.color = 'green';
+      //       break;
+      //     case 'Reserved':
+      //       style.color = 'orange';
+      //       break;
+      //     case 'Dispensed':
+      //       style.color = 'red';
+      //       break;
+      //     case 'Discarded':
+      //       style.color = 'red';
+      //       break;
+      //   }
+      //   return <td style={style}>{value}</td>;
 
       case 'Parent Barcode':
         return <td><Link to={`/containers/${value}`}>{value}</Link></td>;
@@ -55,14 +61,12 @@ export const ContainerTab: React.FC = () => {
     }
   }
 
-  const data = Object.values(containers).map(
-    (container: IContainer) => {
+  const data = containers.data.map((container: IContainer) => {
       return [
         container.barcode,
-        container.type,
-        container.status,
-        container.center,
-        container.parent,
+        container.type.label,
+        container.center.label,
+        container.parent?.barcode,
       ];
     }
   );
@@ -75,17 +79,12 @@ export const ContainerTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: useRequest(new ContainerAPI('types?field=label&primary=0')),
-    }},
-    {label: 'Status', show: true, filter: {
-      name: 'status',
-      type: 'select',
-      options: useRequest(new ContainerAPI('status?field=label')),
+      options: Utils.mapLabel(useRequest(() => new ContainerAPI().getTypes()))
     }},
     {label: 'Site', show: true, filter: {
       name: 'currentSite',
       type: 'select',
-      options: useRequest(new BaseAPI('centers?field=label'))
+      options: Utils.mapLabel(useRequest(() => new BaseAPI('centers').get()))
     }},
     {label: 'Parent Barcode', show: true, filter: {
       name: 'parentBarcode',
@@ -93,18 +92,16 @@ export const ContainerTab: React.FC = () => {
     }},
   ];
 
-  const openSearchContainer = () => edit('searchContainer');
-  const openContainerForm = () => edit('containerForm');
   const actions = [
     {
       name: 'goToContainer',
       label: 'Go To Container',
-      action: openSearchContainer,
+      action: () => edit('searchContainer'),
     },
     {
       name: 'addContainer',
       label: 'Add Container',
-      action: openContainerForm,
+      action: () => edit('containerForm'),
     },
   ];
 
@@ -116,13 +113,13 @@ export const ContainerTab: React.FC = () => {
         fields={fields}
         actions={actions}
         getFormattedCell={formatContainerColumns}
-        progress={progress}
+        progress={containers.progress}
       />
       <Search
         title='Go To Container'
         show={editable.searchContainer}
         onClose={clear}
-        barcodes={containers}
+        barcodes={containers.data}
       />
       {loris.userHasPermission('biobank_container_create') ?
       <ContainerForm

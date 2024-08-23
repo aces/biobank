@@ -41,7 +41,7 @@ class ShipmentValidator extends Validator
 
     private function validateBarcode($shipment): void {
         if (!$shipment->id) {
-            foreach ($this->dao->selectInstances() as $shipmentComp) {
+            foreach ($this->service->selectInstances() as $shipmentComp) {
                 if ($shipment->barcode === $shipmentComp->barcode) {
                     $this->addError('barcode', 'A shipment with this Barcode already exists.');
                 }
@@ -50,7 +50,7 @@ class ShipmentValidator extends Validator
     }
 
     private function validateLogs($shipment): void {
-        $logValidator = new LogValidator($this->dao);
+        $logValidator = new LogValidator($this->service);
         foreach ($shipment->logs as $log) {
             $logValidator->validate($log);
             if ($logValidator->hasErrors()) {
@@ -82,7 +82,7 @@ class ShipmentValidator extends Validator
             // shipment.
             if (!$shipment->id) {
                 foreach ($container->getShipmentBarcodes() as $shipmentBarcode) {
-                    $containerShipment = $this->dao->getInstanceFromBarcode(
+                    $containerShipment = $this->service->getInstanceFromBarcode(
                         $shipmentBarcode
                     );
                     if ($containerShipment->getActive()) {

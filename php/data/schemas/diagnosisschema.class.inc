@@ -2,12 +2,11 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\TableKey;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\TableKey;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
 
 /**
  * Diagnosis Schema Class
@@ -24,14 +23,19 @@ use LORIS\biobank\data\schema\ColumnType;
  */
 class DiagnosisSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\Diagnosis::class;                              
+    }  
+
     protected function getTable(): Table                                           
     {                                                                              
         return new Table(name: 'diagnosis');                                    
     }      
 
-    protected function getId(): Key                                                
+    protected function getId(): string                                                
     {                                                                              
-        return new Key('DiagnosisID');                                                  
+        return 'DiagnosisID';                                                  
     }                                                                              
                                                                                    
     protected function getLabel(): string                                          
@@ -44,11 +48,11 @@ class DiagnosisSchema extends Schema
         return [                                                                   
             'label' => new Column(                                                 
                 name: 'Name',                                                     
-                type: ColumnType::VARCHAR                                          
+                table: $this->table,
             ),                                                                     
             'abbreviation' => new Column(
                 name: 'Abbreviation',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];                                                                         
     }                                                                              

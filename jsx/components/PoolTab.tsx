@@ -1,20 +1,22 @@
 import { Fragment, useState, useEffect, ReactElement} from 'react';
-import { Link } from 'react-router-dom';
-import { SpecimenForm } from '../components';
+import { Link } from '../components';
+import { SpecimenForm } from '../forms';
 import { IPool } from '../entities';
-import { mapFormOptions, clone } from '../utils';
+import Utils from '../utils';
+import { Button } from '../forms';
 import FilterableDataTable from 'FilterableDataTable';
 import { useBiobankContext, useEditable, useRequest } from '../hooks';
+import { EntityType } from '../contexts'
 import { BaseAPI, SpecimenAPI } from '../APIs';
-import Form from 'Form';
-const {
-  CTA,
-} = Form;
 declare const loris: any;
 
 export const PoolTab: React.FC = () => {
-  const { pools, poolProg: progress } = useBiobankContext();
+  const { pools, initializeEntity } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
+
+  useEffect(() => {
+    initializeEntity(EntityType.Pools);
+  });
                                                                                 
   const openAliquotForm = (pool) => {
     edit('aliquotForm');
@@ -34,64 +36,54 @@ export const PoolTab: React.FC = () => {
     value: any,
     row: any
   ): ReactElement {
-    switch (column) {
-      case 'Pooled Specimens':
-        const barcodesArray = typeof value === 'string' ? [value] : value;
-        const barcodes = barcodesArray.map((barcode, i) => {
-            <Fragment key={i}>
-              {i > 0 && ', '}
-              <Link to={`/specimens/${barcode}`}>{barcode}</Link>;
-            </Fragment>
-          })
-        return <td>{barcodes}</td>;
-      case 'PSCID':
-        if (value.id) {
-          return <td><a href={loris.BaseURL + '/' + value.id}>{value.label}</a></td>;
-        }
-        return <td>{value.label}</td>;
-      case 'Visit Label':
-        if (value.id) {
-          const visitLabelURL =
-            loris.BaseURL+'/instrument_list/?candID='+row['PSCID'].id+
-            '&sessionID='+value.id;
-          return <td><a href={visitLabelURL}>{value}</a></td>;
-        }
-        return <td>{value}</td>; 
-      case 'Aliquot':
-        const onClick = () => openAliquotForm(row['ID']);
-        return <td><CTA label='Aliquot' onUserInput={onClick}/></td>;
-      default:
-        return <td>{value}</td>;
-    }
+    console.log(value);
+    const handlers = {
+      'Pooled Specimens': () => (
+        value.map((specimen, i) => (
+          <Fragment key={i}>
+            {i > 0 && ', '}
+            <Link to={'/specimens/'+specimen.container.barcode}>
+              {specimen.container.barcode}
+            </Link>
+          </Fragment>
+        ))
+      ),
+      'PSCID': () => (
+        <Link href={loris.BaseURL+'/'+value.id} condition={!!value.id}>
+          {value.label}
+        </Link>
+      ),
+      'Visit Label': () => (
+        <Link
+          href={loris.BaseURL+'/instrument_list/?candID='+row['PSCID'].id+'&sessionID='+value.id}
+          condition={!!value.id}
+        >
+          {value}
+        </Link>
+      ),
+      'Aliquot': () => (
+        loris.userHasPermission('biobank_specimen_create') && row['ID'] ? (
+          <Button label='Aliquot' onClick={() => openAliquotForm(row['ID'])} />
+        ) : value
+      ),
+      'default': () => value
+    };
+    // Return the result wrapped in a <td> tag, falling back to 'default' if the column is not found.
+    return <td>{(handlers[column] || handlers['default'])()}</td>;
   }
 
-  const renderAliquotForm = () => {
-    // TODO: This should be fixed. A lot of hacks are being used to initialize
-    // this form and there's definitely better ways to be doing it.
-    // if (!(loris.userHasPermission('biobank_specimen_create')
-    //     && poolId)
-    // ) {
-    //   return;
-    // }
+  console.log('pools:', pools);  // Check if `pools` is defined and what it contains
+  console.log('pools.data:', pools.data);  // Check if `pools.data` is defined
 
-    return (
-      <SpecimenForm
-        title='Aliquot Pool'
-        show={editable.aliquotForm}
-        onClose={clear}
-      />
-    );
-  }
-
-  const poolData = Object.values(pools).map((pool: IPool) => {
+  const poolData = (pools.data || {}).map((pool: IPool) => {
     return [
       pool.label,
-      Math.round(pool.quantity*100)/100 + ' ' + pool.unit,
-      pool.specimens,
-      pool.candidate,
-      pool.session,
-      pool.type,
-      pool.center,
+      Math.round(pool.quantity*100)/100 + ' ' + pool.unit.label,
+      pool.specimens.map((specimen) => specimen.container.barcode),
+      pool.specimens[0].candidate.label,
+      pool.specimens[0].session.label,
+      pool.specimens[0].type.label,
+      pool.specimens[0].container.center.label,
       pool.date,
       pool.time,
     ];
@@ -115,12 +107,12 @@ export const PoolTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: useRequest(new SpecimenAPI('types')),
+      options: Utils.mapLabel(useRequest(() => new SpecimenAPI().getTypes())),
     }},
     {label: 'Site', show: true, filter: {
       name: 'site',
       type: 'select',
-      options: useRequest(new BaseAPI('centers')),
+      options: Utils.mapLabel(useRequest(() => new BaseAPI('centers').get())),
     }},
     {label: 'Date', show: true},
     {label: 'Time', show: true},
@@ -128,15 +120,19 @@ export const PoolTab: React.FC = () => {
   ];
 
   return (
-    <div>
+    <>
       <FilterableDataTable
         name='pool'
         data={poolData}
         fields={fields}
         getFormattedCell={formatPoolColumns}
-        progress={progress}
+        progress={pools.progress}
       />
-      {renderAliquotForm()}
-    </div>
+      <SpecimenForm
+        title='Aliquot Pool'
+        show={editable.aliquotForm}
+        onClose={clear}
+      />
+    </>
   );
 }

@@ -2,22 +2,47 @@
 
 namespace LORIS\biobank;
 
+use LORIS\Data\ProvisionerInstance;
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\data\DAO;
+use LORIS\biobank\data\Schema;
 use LORIS\biobank\data\query\QueryParams;
+use LORIS\biobank\data\query\QueryBuilder;
 
-abstract class Service {
+abstract class Service
+{
+    public function __construct(
+        protected ModelProvisioner $provisioner,
+        protected ?Validator $validator = null
+    ) {}
 
-    protected DAO $dao;
-    private ?Validator $validator;
-
-    // abstract public function mapInstances(array $instances): array;
     abstract protected function handlePostSave(Model $instance): void;
-    // abstract protected function map(array $instanceArray);
 
-    public function __construct(DAO $dao, ?Validator $validator = null) {
+    protected function applyDefaultParams(QueryParams $params): QueryParams {
+        return $params;
+    }
 
-        $this->dao = $dao;
-        $this->validator = $validator;
+    public function get(QueryParams $queryparams): ModelProvisioner
+    {
+        $params = $this->applyDefaultParams($queryparams);
+        return $this->provisioner->with(...$params->includes)->get($queryparams);
+    }
+
+    public function getLabels(QueryParams $params): array
+    {
+        if (count($params->fields) !== 1 || $params->fields[0] !== 'label') {
+            throw new InvalidArgumentException("This method only retrieves labels");
+        }
+
+        return $this->dao->findLabels($params);
+    }
+
+
+    protected function countInstances(QueryParams $params): int
+    {
+        $params->countOnly(true);
+        // TODO: potentially merge params here...
+        return $this->dao->find($params);
     }
 
     public function getInstances(QueryParams $params): array //Model[]
@@ -41,6 +66,7 @@ abstract class Service {
         if ($this->validator === null) {
             throw new \LogicException("Validator is required for saving instances.");
         }
+
         $this->dao->begin();
 
         try {

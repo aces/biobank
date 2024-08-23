@@ -2,11 +2,10 @@
                                                                                    
 namespace LORIS\biobank\data\schemas\shipment;                                     
                                                                                    
-use LORIS\biobank\data\schema\Table;                                               
-use LORIS\biobank\data\schema\Key;                                                 
-use LORIS\biobank\data\schema\Column;                                              
-use LORIS\biobank\data\schema\ColumnType;                                          
-use LORIS\biobank\data\Schema;                                             
+use \LORIS\biobank\data\schema\Table;                                               
+use \LORIS\biobank\data\schema\Column;                                              
+use \LORIS\biobank\data\schema\ColumnType;                                          
+use \LORIS\biobank\data\Schema;                                             
                                                                                    
 /**                                                                                
  * Shipment Type Schema Class                                                    
@@ -24,12 +23,17 @@ use LORIS\biobank\data\Schema;
                                                                                    
 final class TypeSchema extends Schema                                          
 {                                                                                  
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\shipment\Type::class;                            
+    }   
+
     protected function getTable(): Table {                                            
         return new Table(name: 'shipment_type');                                 
     }                                                                              
                                                                                    
-    protected function getId(): Key {                                                 
-        return new Key(name: 'ShipmentTypeID');                                          
+    protected function getId(): string {                                                 
+        return 'ShipmentTypeID';                                          
     }                                                                              
                                                                                    
     protected function getLabel(): string {                                           
@@ -40,7 +44,7 @@ final class TypeSchema extends Schema
         return [                                                                   
             'label' => new Column(                                                 
                 name: 'Label',                                                     
-                type: ColumnType::VARCHAR                                          
+                table: $this->table,
             )                                                                      
         ];                                                                         
     }                                                                              

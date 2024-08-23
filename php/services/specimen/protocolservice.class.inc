@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\services\specimen;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
@@ -19,16 +20,13 @@ use LORIS\biobank\validators\specimen\ProtocolValidator;
  */
 class ProtocolService extends Service
 {
-    function __construct(\Database $db)
-    {
-        $dao = new DAO($db,
-            new ProtocolSchema(
-                name: 'protocol',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Protocol::class));
-        $validator = new ProtocolValidator($dao);
-        parent::__construct($dao, $validator);
-    }
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            new ModelProvisioner(new ProtocolSchema('protocol')),
+            new ProtocolValidator($this),                                         
+        );                                                                         
+    }          
 
     /**
      * Handles actions to be performed after saving a Protocol.

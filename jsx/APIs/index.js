@@ -5,4 +5,4 @@ export { default as SpecimenAPI } from './SpecimenAPI';
 export { default as PoolAPI } from './PoolAPI';
 export { default as ShipmentAPI } from './ShipmentAPI';
 export { default as LabelAPI } from './LabelAPI';
-export { default as QueryBuilder, QueryParam } from './QueryBuilder';
+export { default as Query } from './Query';

@@ -8,6 +8,6 @@ class Center extends Model
 {                                                                               
     public function __construct(                                                
         public string $label,                                                 
-        private ?int $id = null,                                                         
+        public ?\CenterID $id,                                                         
     ) {}                                                                        
 }  

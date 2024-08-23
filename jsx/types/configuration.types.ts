@@ -1,15 +1,18 @@
 import { BiobankContextType } from '../contexts';
 
-export interface FieldConfiguration<I extends object> {                                               
+// Utility type to extract the element type if it's an array, otherwise just use the type itself
+type ElementType<T> = T extends Array<infer U> ? U : T;
+
+export interface FieldConfiguration<I extends object, K extends keyof I> {                                               
   label: string,                                                                
   type: 'text' | 'select' | 'date' | 'search' | 'time' | 'textarea' | 'boolean'
-  | 'number',                                             
+  | 'number' | 'static' | 'input',                                             
   required?: boolean,                                                            
   disabled?: boolean,
   multiple?: boolean,
   autoSelect?: boolean, 
-  placeHolder?: string,
+  placeholder?: string,
   emptyOption?: boolean,
-  getOptions?: (context: BiobankContextType) =>
-  Record<string, string>,
+  getOptions?: (context: BiobankContextType) => ElementType<I[K]>[],
+  format?: (object: ElementType<I[K]>) => string,
 }    

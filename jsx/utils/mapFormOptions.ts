@@ -7,12 +7,18 @@
  * @returns {{ [key: string]: any }} Mapped object with the same keys as the    
  * input object and values derived from the specified attribute.                
  */                                                                             
-export function mapFormOptions(                                                 
-  object: { [key: string]: any },                                               
+export function mapFormOptions<T>(                                                 
+  entities: T[],                                               
   attribute: string                                                             
-): { [key: string]: string } {                                                     
-  return Object.keys(object).reduce((result, id) => {                           
-    result[id] = object[id][attribute];                                         
+): Record<string, string> {                                                     
+  return entities.reduce((result, entity) => {                           
+    result[entity[attribute]] = entity[attribute];                                         
     return result;                                                              
   }, {});                                                                       
 }   
+
+export function mapLabel<T>(
+  entities: T[],        
+): { [key: string]: string } {
+  return mapFormOptions(entities, 'label');        
+}

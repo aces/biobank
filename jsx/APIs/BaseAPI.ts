@@ -1,5 +1,6 @@
 declare const loris: any;
-import { QueryBuilder, QueryParam } from './';
+import Query, { QueryParam } from './Query';
+import fetchDataStream from 'jslib/fetchDataStream';
 
 interface ApiResponse<T> {
     data: T,
@@ -12,49 +13,39 @@ interface ApiError {
     // Additional error details can be added here
 }
 
-// XXX: IAPI might not actually be necessary
-// interface IAPI<T> {
-//   getAll(): Promise<T[]>,
-//   getById(id: string): Promise<T>,
-//   create(data: T): Promise<T>,
-//   batchCreate(entities: T[]): Promise<T[]>,
-//   update(id: string, data: T): Promise<T>,
-//   batchUpdate(entities: T[]): Promise<T[]>,
-//   streamData(setProgress: (progress: number) => void): Promise<T[]>,
-//   handleError(response: Response): void;
-// }
-
 export default class BaseAPI<T> {
   protected baseUrl: string;
+  protected subEndpoint: string;
 
   constructor(baseUrl: string) {
     this.baseUrl = loris.BaseURL+'/biobank/'+baseUrl;
   }
 
-  async get<U = T>(path: string = this.baseUrl, queryParam?: QueryParam): Promise<U[]> {
-    const queryBuilder = new QueryBuilder();
-    if (queryParam) {
-       queryBuilder.addParam(queryParam);
-    }
-    const queryString = queryBuilder.build();
-    const endpoint = `${path}?${queryString}`;
-    return await BaseAPI.fetchJSON<U[]>(endpoint);
+  setSubEndpoint(subEndpoint: string): this {
+    this.subEndpoint = subEndpoint;
+    return this;
+  }
+
+  async get<U = T>(query?: Query): Promise<U[]> {
+    const path = this.subEndpoint ? `${this.baseUrl}/${this.subEndpoint}` : this.baseUrl;
+    const queryString = query ? query.build() : '';
+    const url = queryString ? `${path}?${queryString}` : path;
+    return BaseAPI.fetchJSON<U[]>(url);
+  }
+
+  async getLabels(...params: QueryParam[]): Promise<string[]> {
+    const query = new Query();
+    params.forEach(param => query.addParam(param));
+    return this.get<string>(query.addField('label'));
   }
 
   async getById(id: string): Promise<T> {
-    return await BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`);
+    return BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`);
   }
 
-  async getSubEndpoint<U>(
-    subEndpoints: string[],
-    queryParam?: QueryParam
-  ): Promise<U[]> {
-    const path = `${this.baseUrl}/${subEndpoints.join('/')}`;
-    return this.get<U>(path, queryParam);
-  }
 
   async create(data: T): Promise<T> {
-    return await BaseAPI.fetchJSON<T>(this.baseUrl, {
+    return BaseAPI.fetchJSON<T>(this.baseUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,7 +55,7 @@ export default class BaseAPI<T> {
   }
 
   async batchCreate(entities: T[]): Promise<T[]> {
-    return await BaseAPI.fetchJSON<T[]>(`${this.baseUrl}/batch-create`, {
+    return BaseAPI.fetchJSON<T[]>(`${this.baseUrl}/batch-create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -74,7 +65,7 @@ export default class BaseAPI<T> {
   }
   
   async update(id: string, data: T): Promise<T> {
-    return await BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`, {
+    return BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -84,50 +75,13 @@ export default class BaseAPI<T> {
   }
   
   async batchUpdate(entities: T[]): Promise<T[]> {
-    return await BaseAPI.fetchJSON<T[]>(`${this.baseUrl}/batch-update`, {
+    return BaseAPI.fetchJSON<T[]>(`${this.baseUrl}/batch-update`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(entities),
     });
-  }
-
-  async fetchStream(setProgress: (progress: number) => void, signal: AbortSignal): Promise<T[]> {
-    try {
-      const response = await fetch(this.baseUrl, { signal });
-      ErrorHandler.handleResponse(response, { url: this.baseUrl });
-
-      if (!response.body) {
-        throw new Error('No response body');
-      }
-
-      const reader = response.body.getReader();
-      const contentLength = +response.headers.get('Content-Length') || 0;
-      let receivedLength = 0;
-      let chunks = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        chunks.push(value);
-        receivedLength += value.length;
-        const progress = Math.round((receivedLength / contentLength) * 100);
-        setProgress(progress);
-      }
-
-      const chunksAll = new Uint8Array(receivedLength);
-      let position = 0;
-      for (let chunk of chunks) {
-        chunksAll.set(chunk, position);
-        position += chunk.length;
-      }
-
-      return JSON.parse(new TextDecoder("utf-8").decode(chunksAll));
-    } catch (error) {
-      ErrorHandler.handleError(error, { url: this.baseUrl} );
-    }
   }
 
   static async fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
@@ -139,6 +93,85 @@ export default class BaseAPI<T> {
     } catch (error) {
       ErrorHandler.handleError(error, { url, options} );
     }
+  }
+
+  async fetchStream(
+    addEntity: (entity: T) => void,
+    setProgress: (progress: number) => void,
+    signal: AbortSignal
+  ): Promise<void> {
+    const url = new URL(this.baseUrl);
+    url.searchParams.append('format', 'json');
+  
+    try {
+      await this.streamData(url.toString(), addEntity, setProgress, signal);
+    } catch (error) {
+      if (signal.aborted) {
+        console.log('Fetch aborted');
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  async streamData(
+    dataURL: string,
+    addEntity: (entity: T) => void,
+    setProgress: (progress: number) => void,
+    signal: AbortSignal
+  ): Promise<void> {
+    const response = await fetch(dataURL, {
+      method: 'GET',
+      credentials: 'same-origin',
+      signal,
+    });
+  
+    const reader = response.body.getReader();
+    const utf8Decoder = new TextDecoder('utf-8');
+    let remainder = ''; // For JSON parsing
+    let processedSize = 0;
+    const contentLength = +response.headers.get('Content-Length') || 0;
+    console.log('Content Length: '+contentLength);
+  
+    while (true) {
+      const { done, value } = await reader.read();
+  
+      if (done) {
+        if (remainder.trim()) {
+          try {
+            console.log(remainder);
+            addEntity(JSON.parse(remainder));
+          } catch (e) {
+            console.error("Failed to parse final JSON object:", e);
+          }
+        }
+        break;
+      }
+  
+      const chunk = utf8Decoder.decode(value, { stream: true });
+      remainder += chunk;
+  
+      let boundary = remainder.indexOf('\n'); // Assuming newline-delimited JSON objects
+      while (boundary !== -1) {
+        const jsonStr = remainder.slice(0, boundary);
+        remainder = remainder.slice(boundary + 1);
+  
+        try {
+          addEntity(JSON.parse(jsonStr));
+        } catch (e) {
+          console.error("Failed to parse JSON object:", e);
+        }
+  
+        boundary = remainder.indexOf('\n');
+      }
+  
+      processedSize += value.length;
+      if (setProgress && contentLength > 0) {
+        setProgress(Math.min((processedSize / contentLength) * 100, 100));
+      }
+    }
+  
+    setProgress(100); // Ensure progress is set to 100% on completion
   }
 }
 

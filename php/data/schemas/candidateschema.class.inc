@@ -2,15 +2,14 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\TableKey;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\schema\Join;
-use LORIS\biobank\data\schema\Relation;
-use LORIS\biobank\data\schema\LoadingStrategy;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\TableKey;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\schema\Join;
+use \LORIS\biobank\data\schema\Relation;
+use \LORIS\biobank\data\schema\LoadingStrategy;
 
 /**
  * Candidate Schema Class
@@ -27,14 +26,19 @@ use LORIS\biobank\data\schema\LoadingStrategy;
  */
 class CandidateSchema extends Schema
 {
+    protected function getModel(): string
+    {
+        return \LORIS\biobank\models\Candidate::class;
+    }
+
     protected function getTable(): Table
     {
         return new Table(name: 'candidate');
     }
 
-    protected function getId(): Key
+    protected function getId(): string
     {
-        return new Key('CandID');
+        return 'CandID';
     }
 
     protected function getLabel(): string
@@ -47,15 +51,15 @@ class CandidateSchema extends Schema
         return [
             'label' => new Column(
                 name: 'PSCID',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
             'dob' => new Column(
                 name: 'DoB',
-                type: ColumnType::DATE
+                table: $this->table,
             ),
             'sex' => new Column(
                 name: 'Sex',
-                type: ColumnType::ENUM,
+                table: $this->table,
             ),
         ];
     }
@@ -69,14 +73,14 @@ class CandidateSchema extends Schema
                     table: new Table(
                         name: 'candidate_diagnosis_rel'
                     ),
-                    key: new Key('CandID')
+                    key: 'CandID'
                 ),
             ),
             'session' => new Join(
                 from: $this->idKey,
                 to: new TableKey(
                     table: new Table(name: 'session'), // to be replaced with call to sesion schema once table name is a static property
-                    key: new Key('CandID')
+                    key: 'CandID'
                 )
             ),
         ];
@@ -88,19 +92,17 @@ class CandidateSchema extends Schema
             'diagnoses' => new Relation(
                 from: new TableKey(
                     table: $this->joins['diagnosis']->to->table,
-                    key: new Key(name: 'DiagnosisID')
+                    key: 'DiagnosisID'
                 ),
                 to: DiagnosisSchema::class,
-                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
             'sessions' => new Relation(
                 from: new TableKey(
                     table: $this->joins['session']->to->table,
-                    key: new Key(name: 'ID')
+                    key: 'ID'
                 ),
                 to: SessionSchema::class,
-                strategy: LoadingStrategy::LAZY,
                 many: true
             ),
         ];

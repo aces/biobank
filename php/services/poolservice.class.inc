@@ -14,15 +14,18 @@
  */
 namespace LORIS\biobank\services;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
 use LORIS\biobank\data\DAO;
+use LORIS\biobank\data\query\QueryParams;
+use LORIS\biobank\data\query\With;
 use LORIS\biobank\data\schemas\PoolSchema;
 use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\validators\PoolValidator;
 use LORIS\biobank\models\Pool;
-use LORIS\Data\Filters\UserProjectMatch; 
+use LORIS\Data\Filters; 
 
 /**
  * This class features the code that enables access to the Pools of the
@@ -39,17 +42,32 @@ use LORIS\Data\Filters\UserProjectMatch;
  */
 class PoolService extends Service
 {
-    public function __construct(\Database $db)
-    {
-        $dao = (new DAO($db,
-            new PoolSchema(
-                name: 'pool',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Pool::class)))
-            ->filter(new UserProjectMatch()); 
-        $validator = new PoolValidator($dao);
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            (new ModelProvisioner(new PoolSchema('pool')))
+                ->filter(new Filters\UserSiteMatch())                                  
+                ->filter(new Filters\UserProjectMatch()),                                                      
+            new PoolValidator($this),                                         
+        );                                                                         
+    }          
 
-        parent::__construct($dao, $validator);
+    public function applyDefaultParams(QueryParams $params): QueryParams
+    {
+        return $params->include(
+                new With(name: 'specimens',
+                    // subIncludes: [
+                    //     new With(
+                    //         name: 'container',
+                    //         subIncludes: [
+                    //             new With(name: 'center')
+                    //         ]
+                    //     ),
+                    //     new With(name: 'projects')
+                    // ]
+                ),
+                new With(name: 'unit')
+            );        
     }
 
     /**

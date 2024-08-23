@@ -8,6 +8,6 @@ class Examiner extends Model
 {                                                                               
     public function __construct(                                                
         public string $label,                                                 
-        private ?int $id = null,                                                         
+        private ?int $id,                                                         
     ) {}                                                                        
 }  

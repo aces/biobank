@@ -2,15 +2,15 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\schemas;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\TableKey;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\schema\Relation;
-use LORIS\biobank\data\schema\LoadingStrategy;
-use LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schemas;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\TableKey;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\schema\Relation;
+use \LORIS\biobank\data\schema\RelationType;
+use \LORIS\biobank\data\schema\LoadingStrategy;
+use \LORIS\biobank\data\Schema;
 
 /**
  * Session Schema Class
@@ -27,14 +27,19 @@ use LORIS\biobank\data\Schema;
  */
 final class SessionSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\Session::class;                              
+    }  
+
     protected function getTable(): Table                                       
     {                                                                              
         return new Table(name: 'session');
     }                                                                              
                                                                                    
-    protected function getId(): Key                                            
+    protected function getId(): string                                            
     {                                                                              
-        return new Key('ID');                                                  
+        return 'ID';                                                  
     }                                                                              
                                                                                    
     protected function getLabel(): string                                      
@@ -47,7 +52,7 @@ final class SessionSchema extends Schema
         return [                                                                   
             'label' => new Column(
                 name: 'Visit_label',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];                                                                         
     }                                                                              
@@ -63,18 +68,17 @@ final class SessionSchema extends Schema
             'candidate' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key('CandID')
+                    key: 'CandID'
                 ),
                 to: schemas\CandidateSchema::class,
-                strategy: LoadingStrategy::LAZY,
+                many: true,
             ),
             'center' => new schema\Relation(
                 from: new schema\TableKey(
                     table: $this->table,
-                    key: new schema\Key('CenterID')
+                    key: 'CenterID'
                 ),
                 to: schemas\CenterSchema::class,
-                strategy: LoadingStrategy::LAZY,
             ),
         ];
     }                                                                              

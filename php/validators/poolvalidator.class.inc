@@ -35,7 +35,7 @@ class PoolValidator extends Validator
 
     private function validateLabel(Pool $pool) : void
     {
-        $poolList = $this->dao->findByLabel($pool->label);
+        $poolList = $this->service->findByLabel($pool->label);
 
         if (!empty($poolList)) {
             $this->addError('Pool Label must be unique');

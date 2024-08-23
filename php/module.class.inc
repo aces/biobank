@@ -64,36 +64,32 @@ class Module extends \Module
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        // TODO: both of these should evenutally be got from the request or the
-        // loris object
-        // Get the stripped path from the request URI
-        $user = $request->getAttribute('user');
-        $db = \NDB_Factory::singleton()->database();
-
         // Set the session variable for group_concat_max_len
         ini_set('memory_limit', '-1');
-        //ini_set('max_execution_time', 30);
+        ini_set('max_execution_time', 200);
         ini_set('display_errors', 1);
         ini_set('display_startup_errors', 1);
         error_reporting(E_ALL);
 
-        $db->run("SET SESSION group_concat_max_len = 536870912;");
+        $this->loris->getDatabaseConnection()->run("SET SESSION group_concat_max_len = 536870912;");
 
+        // Get the stripped path from the request URI
         $path = trim($request->getURI()->getPath(), "/");
         $pathparts = explode('/', $path);
 
         // Determine the handler based on the stripped path
         $handler = match ($pathparts[0]) {
-            'specimens' => new endpoints\Specimens($user, $db),
-            'containers' => new endpoints\Containers($user, $db),
-            'shipments' => new endpoints\Shipments($user, $db),
-            'pools' => new endpoints\Pools($user, $db),
-            'centers' => new endpoints\Centers($user, $db),
-            'examiners' => new endpoints\Examiners($user, $db),
-            'candidates' => new endpoints\Candidates($user, $db),
-            'projects' => new endpoints\Projects($user, $db),
-            'users' => new endpoints\Users($user, $db),
-            'session' => new endpoints\Sessions($user, $db),
+            'specimens' => new endpoints\Specimens($this->loris),
+            'containers' => new endpoints\Containers($this->loris),
+            'shipments' => new endpoints\Shipments($this->loris),
+            'pools' => new endpoints\Pools($this->loris),
+            'centers' => new endpoints\Centers($this->loris),
+            'diagnoses' => new endpoints\Diagnoses($this->loris),
+            'examiners' => new endpoints\Examiners($this->loris),
+            'candidates' => new endpoints\Candidates($this->loris),
+            'projects' => new endpoints\Projects($this->loris),
+            'users' => new endpoints\Users($this->loris),
+            'session' => new endpoints\Sessions($this->loris),
             default => null
         };
 

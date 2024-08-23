@@ -3,23 +3,15 @@
 namespace LORIS\biobank\endpoints;                                                 
 
 use LORIS\biobank\Endpoint;                                                        
-use LORIS\biobank\Controller;                                                   
+use LORIS\biobank\Service;
 use LORIS\biobank\services\CandidateService;                                       
-use LORIS\biobank\Factory;                                                         
-use LORIS\biobank\models\Candidate;                                             
-use LORIS\biobank\Permission;                                              
                                                                                    
 class Candidates extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user, \Database $db)                                       
+    protected function getService(): Service                                       
     {                                                                              
-        $controller = new Controller(                                              
-            new CandidateService($db),                                                
-            new Factory(Candidate::class)                                          
-        );                                                                         
-                                                                                   
-        parent::__construct($user, $db, $controller);                                   
-    }                                                                              
+        return new CandidateService();                            
+    }      
 
     protected static function getPermission(Permission $permission) : string         
     {                                                                              
@@ -32,9 +24,4 @@ class Candidates extends Endpoint
     {                                                                              
         return null;                                                               
     }    
-                                                                                   
-    public static function getName() : string                                      
-    {                                                                              
-        return 'Candidate Endpoint';                                               
-    }                                                                              
 }  

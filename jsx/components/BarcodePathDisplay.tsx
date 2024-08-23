@@ -3,11 +3,9 @@ import { IContainer, Container } from '../entities';
 import Loader from 'jsx/Loader';
 import { Link } from 'react-router-dom';
 
-export const BarcodePathDisplay: React.FC<{
-  container: Partial<IContainer>
-}> = ({
-  container,
-}) => {
+export const BarcodePathDisplay = (
+  { container }: { container: Partial<IContainer> }
+) => {
   const [barcodeData, setBarcodeData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 

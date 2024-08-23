@@ -7,12 +7,11 @@ use LORIS\biobank\data\DAO;
 abstract class Validator
 {
     private array $errors = [];
-    protected DAO $dao;
 
-    public function __construct(DAO $dao)
-    {
-        $this->dao = $dao;
-    }
+    public function __construct(
+        protected Service $service
+    )
+    {}
 
     abstract protected function getRequiredFields(): array;
     abstract protected function getRequiredIfFields(): array;

@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\services;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
@@ -18,15 +19,12 @@ use LORIS\biobank\models\Project;
  */
 class ProjectService extends Service
 {
-    function __construct(\Database $db)
-    {
-        $dao = new DAO($db,
-            new ProjectSchema(
-                name: 'project',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Project::class));
-        parent::__construct($dao);
-    }
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            new ModelProvisioner(new ProjectSchema('project')),
+        );                                                                         
+    }          
 
     /**
      * Handles actions to be performed after saving a Project.

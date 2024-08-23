@@ -6,15 +6,12 @@ import { mapFormOptions } from '../utils';
 import { IContainer, ISpecimen, ContainerHook } from '../entities';
 import { ContainerAPI } from '../APIs';
 import { Current } from './ContainerPage';
-import Form from 'Form';
-const {
-  FormElement,
-  StaticElement,
-  SearchableDropdown,
-  TextboxElement,
-  CheckboxElement,
-  ButtonElement,
-} = Form;
+import {
+  StaticField,
+  TextField,
+  CheckboxField,
+  Button,
+} from '../forms';
 declare const loris: any;
 
 interface ContainerDisplayProps {
@@ -146,38 +143,37 @@ function ContainerDisplay({
   };
 
   const barcodeField = (editable||{}).loadContainer && 
-    <TextboxElement
+    <TextField
       name='barcode'
       label='Barcode'
-      onUserInput={setBarcode}
+      onChange={setBarcode}
       value={current.barcode}
-      placeHolder='Please Scan or Type Barcode'
-      autoFocus={true}
+      placeholder='Please Scan or Type Barcode'
+      autofocus={true}
     />
 
   let load = (
     <div className={((editable||{}).loadContainer) ? 'open' : 'closed'}>
-      <FormElement>
-        <StaticElement
+        <StaticField
           label='Note'
-          text='Scan Containers to be Loaded. If Sequential is checked,
+          value='Scan Containers to be Loaded. If Sequential is checked,
            the Coordinate will Auto-Increment after each Load.'
         />
-        <CheckboxElement
+        <CheckboxField
           name='sequential'
           label='Sequential'
           value={current.sequential}
-          onUserInput={updateCurrent}
+          onChange={updateCurrent}
         />
         {barcodeField}
-        <ButtonElement
+        <Button
           label='Load'
-          onUserInput={loadContainer}
+          onClick={loadContainer}
         />
-        <StaticElement
-          text={<a onClick={clearAll} style={{cursor: 'pointer'}}>Cancel</a>}
+        <Button
+          label='Cancel'
+          onClick={clearAll}
         />
-      </FormElement>
     </div>
   );
 
@@ -214,22 +210,20 @@ function ContainerDisplay({
 
   let checkout = (
     <div className={((editable||{}).containerCheckout) ? 'open' : 'closed'}>
-      <FormElement>
-        <StaticElement
+        <StaticField
           label='Note'
-          text="Click, Select or Scan Containers to be
+          value="Click, Select or Scan Containers to be
                 Unloaded and Press 'Confirm'"
         />
         {barcodeField}
-        <ButtonElement
+        <Button
           label='Confirm'
-          type='button'
-          onUserInput={checkoutContainers}
+          onClick={checkoutContainers}
         />
-        <StaticElement
-          text={<a onClick={clearAll} style={{cursor: 'pointer'}}>Cancel</a>}
+        <Button
+          label='Cancel'
+          onClick={clearAll}
         />
-      </FormElement>
     </div>
 
   );

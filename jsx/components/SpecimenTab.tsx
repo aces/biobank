@@ -1,16 +1,17 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import { Fragment, useState, useEffect, ReactElement } from 'react';
+import { mapLabel } from '../utils';
 import { Link } from 'react-router-dom';
 import { ISpecimen } from '../entities';
-import { clone, mapFormOptions } from '../utils';
 import FilterableDataTable from 'FilterableDataTable';
 import { useBiobankContext, useEditable, useRequest } from '../hooks';
-import {
-  SpecimenForm,
-  PoolForm,
-  BatchProcessForm,
-  BatchEditForm,
-  Search,
-} from '../components';
+// import {
+//   SpecimenForm,
+//   PoolForm,
+//   BatchProcessForm,
+//   EditEntitiesForm,
+// } from '../forms';
+import { Search } from '../components';
+import { EntityType } from '../contexts';
 import {
   ContainerAPI,
   SpecimenAPI,
@@ -19,13 +20,13 @@ import {
 
 declare const loris: any;
 
-/**
- * JSX Component representing the specimen tab of the biobank
- * module.
- */
-const SpecimenTab: React.FC = () => {
-  const { specimens, specProg: progress } = useBiobankContext();
+const SpecimenTab = () => {
+  const { specimens, initializeEntity } = useBiobankContext();
   const { editable, edit, clear } = useEditable();
+
+  useEffect(() => {
+    initializeEntity(EntityType.Specimens);
+  });
 
   /**
    * Format columns for a specimen row
@@ -55,10 +56,10 @@ const SpecimenTab: React.FC = () => {
 
         const barcodes = Array.isArray(value) ? value.map((barcode, index) => (
           // Use React.Fragment to wrap each Link and comma
-          <React.Fragment key={barcode}>
+          <Fragment key={barcode}>
             <Link to={'/specimens/'+barcode}>{barcode}</Link>
             {index < value.length - 1 ? ', ' : ''}
-          </React.Fragment>
+          </Fragment>
         )) : null; // Handle case where 'value' is not an array
 
         return <td>{barcodes}</td>;
@@ -88,7 +89,7 @@ const SpecimenTab: React.FC = () => {
      }
   }
 
-  const specimenData = Object.values(specimens).map((specimen: ISpecimen) => {
+  const data = Object.values(specimens.data).map((specimen: ISpecimen) => {
      let specimenAttributeData = [];
   //   Object.keys(options.specimen.processAttributes)
   //     .forEach((processId) => {
@@ -153,12 +154,12 @@ const SpecimenTab: React.FC = () => {
     {label: 'Type', show: true, filter: {
       name: 'type',
       type: 'select',
-      options: useRequest(new SpecimenAPI('types')),
+      options: mapLabel(useRequest(() => new SpecimenAPI().getTypes())),
     }},
     {label: 'Container Type', show: true, filter: {
       name: 'containerType',
       type: 'select',
-      options: useRequest(new ContainerAPI('types?primary=1')),
+      options: mapLabel(useRequest(() => new ContainerAPI().getTypes())),
     }},
     {label: 'Quantity', show: true},
     {label: 'F/T Cycle', show: false, filter: {
@@ -187,7 +188,7 @@ const SpecimenTab: React.FC = () => {
     {label: 'Diagnosis', show: true, filter: {
       name: 'diagnosis',
       type: 'multiselect',
-      options: useRequest(new BaseAPI('diagnoses')),
+      options: mapLabel(useRequest(() => new BaseAPI('diagnoses').get())),
     }},
     {label: 'Visit Label', show: true, filter: {
       name: 'session',
@@ -201,22 +202,22 @@ const SpecimenTab: React.FC = () => {
     {label: 'Status', show: true, filter: {
       name: 'status',
       type: 'select',
-      options: useRequest(new ContainerAPI('status')),
+      options: mapLabel(useRequest(() => new ContainerAPI().getStatuses())),
     }},
     {label: 'Projects', show: true, filter: {
       name: 'projects',
       type: 'multiselect',
-      options: useRequest(new BaseAPI('projects')),
+      options: mapLabel(useRequest(() => new BaseAPI('projects').get())),
     }},
     {label: 'Current Site', show: true, filter: {
       name: 'currentSite',
       type: 'select',
-      options: useRequest(new BaseAPI('centers')),
+      options: mapLabel(useRequest(() => new BaseAPI('centers').get())),
     }},
     {label: 'Draw Site', show: true, filter: {
       name: 'drawSite',
       type: 'select',
-      options: useRequest(new BaseAPI('centers')),
+      options: mapLabel(useRequest(() => new BaseAPI('centers').get()))
     }},
     {label: 'Collection Date', show: true, filter: {
       name: 'collectionDate',
@@ -258,40 +259,42 @@ const SpecimenTab: React.FC = () => {
     <>
       <FilterableDataTable
         name='specimen'
-        progress={progress}
-        data={specimenData}
+        progress={specimens.progress}
+        data={data}
         fields={fields}
         actions={actions}
         getFormattedCell={formatSpecimenColumns}
       />
-      <Search
-        title='Go To Specimen'
-        show={editable.searchSpecimen}
-        onClose={clear}
-        barcodes={specimens}
-      />
-      {loris.userHasPermission('biobank_specimen_create') ?
-      <SpecimenForm
-        title='Add New Specimen'
-        show={editable.specimenForm}
-        onClose={clear}
-      /> : null}
-      {loris.userHasPermission('biobank_pool_create') ?
-      <PoolForm show={editable.poolForm} onClose={clear} /> : null}
-      {loris.userHasPermission('biobank_specimen_update') &&
-        <BatchProcessForm
-          show={editable.batchProcessForm}
-          onClose={clear}
-        />
-      }
-      {loris.userHasPermission('biobank_specimen_update') &&
-        <BatchEditForm
-          show={editable.batchEditForm}
-          onClose={clear}
-        />
-      }
     </>
   );
 }
+      // <Search
+      //   title='Go To Specimen'
+      //   show={editable.searchSpecimen}
+      //   onClose={clear}
+      //   barcodes={specimens.data}
+      // />
+      // {loris.userHasPermission('biobank_specimen_create') ?
+      // <SpecimenForm
+      //   title='Add New Specimen'
+      //   show={editable.specimenForm}
+      //   onClose={clear}
+      // /> : null}
+      // {loris.userHasPermission('biobank_pool_create') ?
+      // <PoolForm show={editable.poolForm} onClose={clear} /> : null}
+      // {loris.userHasPermission('biobank_specimen_update') &&
+      //   <BatchProcessForm
+      //     show={editable.batchProcessForm}
+      //     onClose={clear}
+      //   />
+      // }
+      // {loris.userHasPermission('biobank_specimen_update') &&
+      //   <EditEntitiesForm
+      //     show={editable.batchEditForm}
+      //     options={specimens}
+      //     entityType={}
+      //     onClose={clear}
+      //   />
+      // }
 
 export default SpecimenTab;

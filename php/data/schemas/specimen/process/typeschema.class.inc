@@ -2,11 +2,10 @@
 
 namespace LORIS\biobank\data\schemas\specimen\process;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
 
 /**
  * Specimen Process Type Schema Descriptor Class
@@ -23,14 +22,19 @@ use LORIS\biobank\data\schema\ColumnType;
  */
 final class TypeSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\specimen\process\Type::class;                                
+    }   
+
     protected function getTable(): Table
     {
         return new Table(name: 'biobank_specimen_process');
     }
 
-    protected function getId(): Key
+    protected function getId(): string
     {
-        return new Key('SpecimenProcessID');
+        return 'SpecimenProcessID';
     }
 
     protected function getLabel(): string
@@ -43,7 +47,7 @@ final class TypeSchema extends Schema
         return [
             'label' => new Column(
                 name: 'Label',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];
     }

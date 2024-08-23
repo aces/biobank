@@ -1,14 +1,24 @@
+import {                                                                           
+  ICandidate,                                                                      
+  IProject,                                                                        
+  ICenter,                                                                         
+  ISession,                                                                        
+  IUnit,                                                                           
+  ISpecimen,
+  ISpecimenType,
+} from '../';  
+
 export interface IPool {                                                            
   id: string,                                                                   
-  candidate: string,                                                       
-  center: string,                                                             
-  date: string,                                                                 
   label: string,                                                                
-  projects: string[],                                                         
+  candidate: ICandidate,                                                       
+  center: ICenter,                                                             
+  session: ISession,                                                            
+  date: string,                                                                 
+  projects: IProject[],                                                         
   quantity: number,                                                             
-  session: string,                                                            
-  specimens: string[],                                                   
+  specimens: ISpecimen[],                                                   
   time: string,                                                                 
-  type: string,                                                                 
-  unit: string,                                                               
+  type: ISpecimenType,                                                                 
+  unit: IUnit,                                                               
 }; 

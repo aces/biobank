@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode } from 'react';
+import React, { createContext, useCallback, ReactNode } from 'react';
 import { ISpecimen, IContainer, IPool, IShipment } from '../entities';
 import {                                                                        
   SpecimenAPI,                                                                  
@@ -6,56 +6,62 @@ import {
   PoolAPI,                                                                      
   ShipmentAPI                                                                   
 } from '../APIs'; 
-import { useRequest, useStream } from '../hooks';
+import { useRequest, useStream, Stream } from '../hooks';
 
-// TODO: bring context to another file:                                         
-export interface BiobankContextType {                                              
-  specimens?: Record<string, ISpecimen>,                                            
-  containers?: Record<string, IContainer>,                                            
-  pools?: Record<string, IPool>,                                            
-  shipments?: Record<string, IShipment>,                                            
-  contProg?: number,
-  specProg?: number,
-  poolProg?: number,
-  shipProg?: number,
-}                                                                               
-                                                                                
-const BiobankContext = React.createContext(undefined);
+export enum EntityType {
+  Containers = 'containers',
+  Specimens = 'specimens',
+  Pools = 'pools',
+  Shipments = 'shipments',
+}
 
-export const BiobankProvider: React.FC = ({ children }) => {
-  
-  const { data: containers, progress: contProg, error: containersError }
-    = useStream(new ContainerAPI());
-  
-  //const { data: specimens, progress: specProg, error: specimensError }
-  //  = useStream(new SpecimenAPI());
-  
-  const { data: pools, progress: poolProg, error: poolsError }
-    = useStream(new PoolAPI());
-  
-  const { data: shipments, progress: shipProg, error: shipmentsError }
-    = useStream(new ShipmentAPI());
+export interface BiobankContextType {
+  containers: Stream<IContainer>;
+  specimens: Stream<ISpecimen>;
+  pools: Stream<IPool>;
+  shipments: Stream<IShipment>;
+  updateEntity: (type: EntityType, id: string, newEntity: any) => void;
+  updateEntities: (type: EntityType, newEntities: Record<string, any>) => void;
+  initializeEntity: (type: EntityType) => void;
+}
 
-  // const update = useCallback((newShipments: any) => {
-  //   setState(prevState => ({
-  //     ...prevState,
-  //     shipments: newShipments
-  //   }));
-  // }, []);
+const BiobankContext = React.createContext<BiobankContextType | null>(null);
 
-  const data = {
-    containers: containers,
-    specimens: {},
-    shipments: shipments,
-    pools: pools,
-    contProg: contProg,
-    specProg: 0,
-    poolProg: poolProg,
-    shipProg: shipProg,
-  }
+export const BiobankProvider = ({
+  children
+}: { children: ReactNode } ) => {
+  const streams = {
+    [EntityType.Containers]: useStream(new ContainerAPI()),
+    [EntityType.Specimens]: useStream(new SpecimenAPI()),
+    [EntityType.Pools]: useStream(new PoolAPI()),
+    [EntityType.Shipments]: useStream(new ShipmentAPI()),
+  };
+
+  const updateEntity = useCallback((type: EntityType, id: string, newEntity: any) => {
+    const stream = streams[type];
+    if (stream && stream.data) {
+      stream.data = { ...stream.data, [id]: newEntity };
+    }
+  }, [streams]);
+
+  const updateEntities = useCallback((type: EntityType, newEntities: Record<string, any>) => {
+    const stream = streams[type];
+    if (stream) {
+      stream.data = newEntities;
+    }
+  }, [streams]);
+
+  const initializeEntity = useCallback((type: EntityType) => {
+    const stream = streams[type];
+    if (stream && !stream.initialized) {
+      stream.initialize();
+    }
+  }, [streams]);
 
   return (
-    <BiobankContext.Provider value={data}>
+    <BiobankContext.Provider
+      value={{ ...streams, updateEntity, updateEntities, initializeEntity }}
+    >
       {children}
     </BiobankContext.Provider>
   );

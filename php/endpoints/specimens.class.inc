@@ -6,30 +6,23 @@ use LORIS\biobank\endpoints\specimen\Types;
 use LORIS\biobank\endpoints\specimen\Protocols;
 use LORIS\biobank\endpoints\specimen\Attributes;
 use LORIS\biobank\Endpoint;                                                        
-use LORIS\biobank\Controller;                                                   
+use LORIS\biobank\Service;                                                   
 use LORIS\biobank\services\SpecimenService;                                       
-use LORIS\biobank\Factory;                                                         
-use LORIS\biobank\models\Specimen;                                             
-use LORIS\biobank\Permission;                                              
+use LORIS\Data\Filters;
                                                                                    
 class Specimens extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user, \Database $db)                                       
+    protected function getService(): Service                                       
     {                                                                              
-        $controller = new Controller(                                              
-            new SpecimenService($db),                                                
-            new Factory(Specimen::class)                                          
-        );                                                                         
-                                                                                   
-        parent::__construct($user, $db, $controller);                                   
-    }                                                                              
+        return new SpecimenService();
+    }      
 
     protected function getSubHandler(string $subpath): ?Endpoint
     {
         return match ($subpath) {
-            'types' => new Types($this->user, $this->db),
-            'protocols' => new Protocols($this->user, $this->db),
-            'attributes' => new Attributes($this->user, $this->db),
+            'types' => new Types($this->loris),
+            'protocols' => new Protocols($this->loris),
+            'attributes' => new Attributes($this->loris),
             default => null
         };
     }
@@ -41,10 +34,5 @@ class Specimens extends Endpoint
             Permission::PUT => 'biobank_specimen_update',                            
             Permission::POST => 'biobank_specimen_create',                          
         };                                                                         
-    }                                                                              
-                                                                                   
-    public static function getName() : string                                      
-    {                                                                              
-        return 'Specimen Endpoint';                                               
     }                                                                              
 }  

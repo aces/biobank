@@ -12,8 +12,9 @@ abstract class Schema
 {
     use LoadingStrategyTrait;
 
+    public readonly string $model;
     public readonly Table $table;
-    public readonly Key $id;
+    public readonly string $id;
     public readonly TableKey $idKey;
     public readonly string $label;
     public readonly array $columns;
@@ -22,35 +23,21 @@ abstract class Schema
 
     public function __construct(
         public readonly string $name,
-        protected LoadingStrategy $strategy,
+        // protected LoadingStrategy $strategy,
     ) {
-
+        $this->model = $this->getModel();
         $this->table = $this->getTable();
         $this->id = $this->getId();
         $this->label = $this->getLabel();
         $this->idKey = new TableKey(table: $this->getTable(), key: $this->getId());
-        $this->columns = $this->getColumns();
         $this->joins = $this->getJoins();
-        $this->relations = $this->buildRelations();
+        $this->relations = $this->getRelations();
+        $this->columns = $this->getColumns();
     }
 
-    protected function buildRelations(): array
-    {
-        if ($this->isLazy()) {
-            return [];
-        }
-
-        $relations = [];
-        foreach ($this->getRelations() as $field => $relation) {
-            $relation->buildSchema($this->name, $field);
-            $relations[$field] = $relation;
-        }
-
-        return $relations;
-    }
-
+    abstract protected function getModel(): string;
     abstract protected function getTable(): Table;
-    abstract protected function getId(): Key;
+    abstract protected function getId(): string;
     abstract protected function getLabel(): string;
     abstract protected function getColumns(): array;
     abstract protected function getJoins(): array;

@@ -4,6 +4,14 @@ namespace LORIS\biobank\data\schema;
 
 use LORIS\biobank\data\Schema;
 
+enum RelationType: string
+{
+    case OnetoOne = 'OnetoOne';
+    case OnetoMany = 'OnetoMany';
+    case ManytoOne = 'ManytoOne';
+    case ManytoMany = 'ManytoMany';
+}
+
 class Relation
 {
     public readonly Schema $schema;
@@ -11,8 +19,8 @@ class Relation
     public function __construct(
         public TableKey $from,
         private string $to, // schema fully qualified class name
-        private ?LoadingStrategy $strategy = LoadingStrategy::LAZY,
-        public ?bool $many = false,
+        public bool $many = false,
+        public ?RelationType $type = null,
     ) {
         if (!is_subclass_of($to, Schema::class)) {
             throw new \InvalidArgumentException(
@@ -21,12 +29,12 @@ class Relation
         }
     }
 
-    public function buildSchema(string $parentName, string $fieldName): void
+    public function buildSchema(string $parentName, string $fieldName): self
     {
         $this->schema = new $this->to(
             name: $parentName . '_' . $fieldName,
-            strategy: $this->strategy
         );
+        return $this;
     }
 }
 

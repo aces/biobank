@@ -6,6 +6,6 @@ class TableKey
 {
     public function __construct(
         public Table $table,
-        public Key $key
+        public string $key
     ) {}
 }

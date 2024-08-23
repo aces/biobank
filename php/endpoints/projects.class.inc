@@ -1,25 +1,17 @@
-<?php declare(strict_projects=1);                                                     
+<?php declare(strict_types=1);                                                     
                                                                                    
 namespace LORIS\biobank\endpoints;                                                 
 
 use LORIS\biobank\Endpoint;                                                        
-use LORIS\biobank\Controller;                                                   
+use LORIS\biobank\Service;                                                   
 use LORIS\biobank\services\ProjectService;                                       
-use LORIS\biobank\Factory;                                                         
-use LORIS\biobank\models\Project;                                             
-use LORIS\biobank\Permission;                                              
                                                                                    
 class Projects extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user, \Database $db)                                       
+    protected function getService(): Service                                       
     {                                                                              
-        $controller = new Controller(                                              
-            new ProjectService($db),                                                
-            new Factory(Project::class)                                          
-        );                                                                         
-                                                                                   
-        parent::__construct($user, $db, $controller);                                   
-    }                                                                              
+        return new ProjectService();                            
+    }     
 
     protected static function getPermission(Permission $permission) : string         
     {                                                                              
@@ -32,9 +24,4 @@ class Projects extends Endpoint
     {                                                                              
         return null;                                                               
     }    
-                                                                                   
-    public static function getName() : string                                      
-    {                                                                              
-        return 'Project Endpoint';                                               
-    }                                                                              
 }  

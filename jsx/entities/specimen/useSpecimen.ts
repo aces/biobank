@@ -1,4 +1,4 @@
-import { useEffect, useContext } from 'react';
+import { useEffect } from 'react';
 import {
   Specimen,
   Process,
@@ -6,7 +6,6 @@ import {
   ISpecimen,
   IProcess,
   IData,
-  SpecimenContext
 } from './';
 import { useEntity, EntityHook } from '../';
 import {
@@ -21,17 +20,6 @@ export interface SpecimenHook extends EntityHook<Specimen, ISpecimen> {
   preparation: ProcessHook;
   analysis: ProcessHook;
 }
-                                                                                
-export const useSpecimenContext = (): SpecimenHook => {                         
-  const context = useContext(SpecimenContext);                                  
-                                                                                
-  if (context === undefined) {                                                  
-    console.error('useSpecimenContext must be used within a BiobankProvider');   
-    throw new Error('useSpecimenContext must be used within a BiobankProvider'); 
-  }                                                                             
-                                                                                
-  return context;                                                               
-};  
 
 export function useSpecimen(
   initialSpecimen: Partial<ISpecimen> = {}

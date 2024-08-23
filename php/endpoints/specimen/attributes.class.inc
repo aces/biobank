@@ -3,23 +3,16 @@
 namespace LORIS\biobank\endpoints\specimen;                                                 
 
 use LORIS\biobank\Endpoint;                                                        
-use LORIS\biobank\Controller;                                                   
+use LORIS\biobank\Service;                                                   
 use LORIS\biobank\services\specimen\AttributeService;                                       
-use LORIS\biobank\Factory;                                                         
-use LORIS\biobank\models\specimen\Attribute;                                             
-use LORIS\biobank\Permission;                                              
+use LORIS\biobank\endpoints\Permission;                                              
                                                                                    
 class Attributes extends Endpoint                                                  
 {                                                                                  
-    public function __construct(\User $user, \Database $db)                                       
+    protected function getService(): Service                                       
     {                                                                              
-        $controller = new Controller(                                              
-            new AttributeService($db),                                                
-            new Factory(Attribute::class)                                          
-        );                                                                         
-                                                                                   
-        parent::__construct($user, $db, $controller);                                   
-    }                                                                              
+        return new AttributeService();                               
+    }      
 
     protected static function getPermission(Permission $permission) : string         
     {                                                                              
@@ -32,9 +25,4 @@ class Attributes extends Endpoint
     {                                                                              
         return null;                                                               
     }    
-                                                                                   
-    public static function getName() : string                                      
-    {                                                                              
-        return 'Attribute Endpoint';                                               
-    }                                                                              
 }  

@@ -1,8 +1,7 @@
 import { useState, ReactElement } from 'react';
 import { useHistory } from 'react-router-dom';
 import Modal from 'Modal';
-import Form from 'Form';
-const { FormElement, TextboxElement } = Form;
+import { TextField } from '../forms';
 
 /**
  * Provides a modal window that can be used to search barcodes.
@@ -48,18 +47,16 @@ export const Search: React.FC<{
       show={show}
       onClose={onClose}
       throwWarning={false}
+      onSubmit={() => Promise.resolve()}
     >
-      <FormElement>
-        <TextboxElement
-          name="barcode"
-          label="Barcode"
-          value={barcode}
-          options={barcodes}
-          onUserInput={onInput}
-          placeHolder="Please Scan or Type Barcode"
-          autoFocus={true}
-        />
-      </FormElement>
+      <TextField
+        name="barcode"
+        label="Barcode"
+        value={barcode}
+        onChange={onInput}
+        placeholder="Please Scan or Type Barcode"
+        autofocus={true}
+      />
     </Modal>
   );
 }

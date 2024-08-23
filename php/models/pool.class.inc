@@ -37,22 +37,39 @@ use LORIS\biobank\types\Time;
 final class Pool extends Model implements \LORIS\StudyEntities\SiteHaver
 {
      public function __construct(
-        public readonly string $label,
+        public readonly ?string $label,
         public readonly float $quantity,
         public readonly Date $date,
         public readonly Time $time,
-        private readonly ?int $id = null,
-        public readonly ?Unit $unit = null,
-        public readonly ?Specimens $specimens = null,
+        public readonly ?int $id,
+        public readonly ?Unit $unit,
+        public readonly ?Specimens $specimens,
     ) {}
 
     public function getCenterID(): \CenterID
     {
-        return $this->specimens[0]->center->id;
+        return $this->specimens[0]->getCenterID();
     }
 
     public function getProjectIDs(): array
     {
         return $this->specimens[0]->getProjectIDs();
     }
+
+
+    /**
+     * Returns additional properties to be included in JSON serialization.
+     * Child classes should override this method to add extra properties.
+     *
+     * @return array
+     */
+    // protected function toJSON(): array
+    // {
+    //     return [
+    //       'center' => $this->specimens[0]->center,,
+    //       'candidate' => $this->specimens[0]->candidate,
+    //       'session' => $this->specimens[0]->candidate,
+    //       'type' => $this->specimens[0]->type,
+    //     ];
+    // }
 }

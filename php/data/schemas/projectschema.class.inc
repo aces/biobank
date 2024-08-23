@@ -2,11 +2,10 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
 
 /**
  * Project Schema Class
@@ -23,14 +22,19 @@ use LORIS\biobank\data\schema\ColumnType;
  */
 class ProjectSchema extends Schema
 {
-        protected function getTable(): Table
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\Project::class;                              
+    }  
+
+    protected function getTable(): Table
     {
         return new Table(name: 'Project');
     }
 
-    protected function getId(): Key
+    protected function getId(): string
     {
-        return new Key('ProjectID');
+        return 'ProjectID';
     }
 
     protected function getLabel(): string
@@ -43,7 +47,7 @@ class ProjectSchema extends Schema
         return [
             'label' => new Column(
                 name: 'Alias',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];
     }

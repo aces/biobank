@@ -2,6 +2,7 @@
 
 namespace LORIS\biobank\services\specimen;
 
+use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
@@ -19,16 +20,13 @@ use LORIS\biobank\validators\specimen\AttributeValidator;
  */
 class AttributeService extends Service
 {
-    function __construct(\Database $db)
-    {
-        $dao = new DAO($db,
-            new AttributeSchema(
-                name: 'attribute',
-                strategy: LoadingStrategy::EAGER
-            ), new Factory(Attribute::class));
-        $validator = new AttributeValidator($dao);
-        parent::__construct($dao, $validator);
-    }
+    function __construct()                                                         
+    {                                                                              
+        parent::__construct(                                                       
+            new ModelProvisioner(new AttributeSchema('attribute')),
+            new AttributeValidator($this),                                         
+        );                                                                         
+    }          
 
     /**
      * Handles actions to be performed after saving a Attribute.

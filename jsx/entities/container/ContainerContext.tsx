@@ -1,18 +1,28 @@
-import React, { createContext, useContext } from 'react';
-import { ContainerHook, useContainer} from './';
+import { createContext, useContext, ReactNode } from 'react';
+import { ContainerHook } from './';
 
-const ContainerContext = createContext<ContainerHook>(undefined);
+const ContainerContext = createContext<ContainerHook | null>(null);
 
-export const useContainerContext = (): ContainerHook => {
-    return useContext(ContainerContext);
-};
+interface ContainerProviderProps {
+  container: ContainerHook;
+  children?: ReactNode;
+}
 
-export const ContainerProvider: React.FC<{
-  container: ContainerHook
-}> = ({ container, children }) => {
+export const ContainerProvider = ({                                                 
+  children,                                                                        
+  container                                                                         
+}: ContainerProviderProps): JSX.Element => {   
   return (
     <ContainerContext.Provider value={container}>
       {children}
     </ContainerContext.Provider>
   );
+};
+
+export const useContainerContext = (): ContainerHook => {
+  const context = useContext(ContainerContext);
+  if (context === null) {
+    throw new Error('useContainerContext must be used within a ContainerProvider');
+  }
+  return context;
 };

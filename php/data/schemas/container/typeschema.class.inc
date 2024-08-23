@@ -2,15 +2,16 @@
 
 namespace LORIS\biobank\data\schemas\container;
 
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\TableKey;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\schema\Relation;
-use LORIS\biobank\data\schemas\container;
-use LORIS\biobank\data\schema\LoadingStrategy;
-use LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Key;
+use \LORIS\biobank\data\schema\TableKey;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\schema\Relation;
+use \LORIS\biobank\data\schema\RelationType;
+use \LORIS\biobank\data\schemas\container;
+use \LORIS\biobank\data\schema\LoadingStrategy;
+use \LORIS\biobank\data\Schema;
 
 /**
  * Type Schema Class
@@ -27,14 +28,19 @@ use LORIS\biobank\data\Schema;
  */
 final class TypeSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\container\Type::class;                              
+    }  
+
     protected function getTable(): Table
     {
         return new Table(name: 'biobank_container_type');
     }
 
-    protected function getId(): Key
+    protected function getId(): string
     {
-        return new Key(name: 'ContainerTypeID');
+        return 'ContainerTypeID';
     }
 
     protected function getLabel(): string
@@ -46,20 +52,20 @@ final class TypeSchema extends Schema
         return [
             'label' => new Column(
                 name: 'Label',
-                type: ColumnType::VARCHAR
+                table: $this->table
             ),
             // primary is a reserved word in sql
             'prime' => new Column( 
                 name: 'Prime',
-                type: ColumnType::BOOLEAN
+                table: $this->table,
             ),
             'brand' => new Column(
                 name: 'Brand',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
             'productNumber' => new Column(
                 name: 'ProductNumber',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             )
         ];
     }
@@ -69,18 +75,16 @@ final class TypeSchema extends Schema
             'capacity' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key(name: 'ContainerCapacityID')
+                    key: 'ContainerCapacityID'
                 ),
                 to: container\type\CapacitySchema::class,
-                strategy: LoadingStrategy::EAGER
             ),
             'dimension' => new Relation(
                 from: new TableKey(
                     table: $this->table,
-                    key: new Key(name: 'ContainerDimensionID')
+                    key: 'ContainerDimensionID'
                 ),
                 to: container\type\DimensionSchema::class,
-                strategy: LoadingStrategy::EAGER
             )
         ];
     }

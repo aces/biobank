@@ -2,11 +2,11 @@
 
 namespace LORIS\biobank\data\schemas\container\type;
 
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
-use LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Key;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\Schema;
 
 /**
  * Dimension Schema Class
@@ -23,12 +23,17 @@ use LORIS\biobank\data\Schema;
  */
 final class DimensionSchema extends Schema
 {
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\container\type\Dimension::class;                          
+    }  
+
     protected function getTable(): Table {
         return new Table(name: 'biobank_container_dimension');
     }
 
-    protected function getId(): Key {
-        return new Key(name: 'ContainerDimensionID');
+    protected function getId(): string {
+        return 'ContainerDimensionID';
     }
 
     protected function getLabel(): string
@@ -40,27 +45,27 @@ final class DimensionSchema extends Schema
         return [
             'x' => new Column(
                 name: 'X',
-                type: ColumnType::DECIMAL
+                table: $this->table,
             ),
             'xNum' => new Column(
                 name: 'XNumerical',
-                type: ColumnType::DECIMAL
+                table: $this->table,
             ),
             'y' => new Column(
                 name: 'Y',
-                type: ColumnType::DECIMAL
+                table: $this->table,
             ),
             'yNum' => new Column(
                 name: 'YNumerical',
-                type: ColumnType::DECIMAL
+                table: $this->table,
             ),
             'z' => new Column(
                 name: 'Z',
-                type: ColumnType::DECIMAL
+                table: $this->table,
             ),
             'zNum' => new Column(
                 name: 'ZNumerical',
-                type: ColumnType::DECIMAL
+                table: $this->table,
             ),
         ];
     }

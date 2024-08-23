@@ -1,9 +1,10 @@
 import { ReactElement } from 'react';
-import Form from 'Form';
-const { FormElement } = Form;
-import { ProcessForm } from '../components';
+import { ProcessForm } from '../forms';
 import { IProtocol, ProcessType, useSpecimenContext } from '../entities';
-import { useBarcodePageContext, useBiobankContext } from '../hooks';
+import { useRequest, useBarcodePageContext, useBiobankContext } from '../hooks';
+import { Button } from '../forms'
+import { SpecimenAPI } from '../APIs';
+
 declare const loris: any;
 
 // Define the type for your props
@@ -51,7 +52,9 @@ function ProcessPanel({
     }
   };
 
-  const protocolExists = Object.values(options.specimen.protocols).find(
+  // TODO: replace with API that does this itself....
+  const protocolExists = Object.values(useRequest(new SpecimenAPI().getProtocols()))
+    .find(
     (protocol: IProtocol) => {
       return protocol.type == specimen.type &&
       protocol.process == process.replace(/^\w/, (c) => c.toUpperCase());
@@ -73,16 +76,11 @@ function ProcessPanel({
     );
   }
 
-  const form = (
-    <FormElement>
-      <ProcessForm
-        edit={editable[process]}
-        specimen={specimen}
-        process={specimen[process]}
-        processStage={process}
-        type={editable[process] ? specimen.type : specimen.type}
-      />
-    </FormElement>
+  const updateButton = specimen && (
+    <Button
+      label="Update"
+      onClick={ () => new SpecimenAPI().update(specimen)}
+    />
   );
 
   if (specimen[process] || editable[process]) {
@@ -100,8 +98,14 @@ function ProcessPanel({
           {alterProcess()}
         </div>
         <div className='panel-body'>
-          {form}
+          <ProcessForm
+            edit={editable[process]}
+            process={specimen[process]}
+            processStage={process}
+            type={editable[process] ? specimen.type : specimen.type}
+          />
           {cancelAlterProcess()}
+          {updateButton}
         </div>
       </div>
     );

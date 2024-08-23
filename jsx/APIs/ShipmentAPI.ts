@@ -1,5 +1,5 @@
 import BaseAPI from './BaseAPI';
-import { QueryParam } from './';
+import Query, { QueryParam } from './Query';
 import { IShipment, IShipmentStatus, IShipmentType } from '../entities';
 
 export enum ShipmentSubEndpoint {
@@ -13,11 +13,24 @@ export default class ShipmentAPI extends BaseAPI<IShipment> {
     super('shipments');
   }
 
-  async getStatuses(queryParam?: QueryParam): Promise<IShipmentStatus[]> {
-    return this.getSubEndpoint<IShipmentStatus>([ShipmentSubEndpoint.Statuses], queryParam);
+  async getStatuses(queryParam?: QueryParam): Promise<string[]> {
+    this.setSubEndpoint(ShipmentSubEndpoint.Statuses);
+    const query = new Query();
+    if (queryParam) {
+      query.addParam(queryParam);
+    }
+
+    return this.get<string>(query);
   }
 
   async getTypes(queryParam?: QueryParam): Promise<IShipmentType[]> {
-    return this.getSubEndpoint<IShipmentType>([ShipmentSubEndpoint.Types], queryParam);
+    this.setSubEndpoint(ShipmentSubEndpoint.Types);
+    const query = new Query();
+
+    if (queryParam) {
+      query.addParam(queryParam);
+    }
+
+    return this.get<IShipmentType>(query);
   }
 }

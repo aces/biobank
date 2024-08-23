@@ -1,15 +1,5 @@
 <?php declare(strict_types=1);
-/**
- * This implement the Specimen endpoint class for the Biobank Module.
- *
- * PHP Version 7.2
- *
- * @category Biobank
- * @package  Loris
- * @author   Henri Rabalais <henri.rabalais@mcin.ca>
- * @license  http://www.gnu.org/licenses/gpl-3.0.text GPLv3
- * @link     http://www.github.com/aces/Loris/
- */
+
 namespace LORIS\biobank;
 
 use \Psr\Http\Server\RequestHandlerInterface;                                      
@@ -17,6 +7,7 @@ use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Message\ResponseInterface;
 use LORIS\Http\Endpoint as LORISEndpoint;
 use LORIS\biobank\data\query\QueryParamsHandler;
+use LORIS\biobank\endpoints\Permission;
 
 /**
  * A class for handling the /biobank/specimens/ endpoint.
@@ -27,7 +18,9 @@ use LORIS\biobank\data\query\QueryParamsHandler;
  * @license  http://www.gnu.org/licenses/gpl-3.0.text GPLv3
  * @link     http://www.github.com/aces/Lors/
  */
-abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ETagCalculator
+abstract class Endpoint
+    extends LORISEndpoint
+    // implements \LORIS\Middleware\ETagCalculator
 {
     /**
      * A cache of the results of the projects/ endpoint, so that it doesn't
@@ -35,19 +28,18 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
      */
     private $_cache;
     private $controller;
-    protected $user;
-    protected $db;
 
-    public function __construct(\User $user, \Database $db, Controller $controller)
+    public function __construct(\Loris\LorisInstance $loris)
     {
-        $this->db = $db;
-        $this->user = $user;
-        $this->controller = $controller;
+        parent::__construct($loris);
+        $this->controller = new Controller($this->getService());
     }
 
     // Abstract method to initialize the controller
-    abstract protected static function getPermission(Permission $permission): string;
-    abstract protected static function getName(): string;
+    abstract protected static function getPermission(
+        Permission $permission
+    ): string;
+    abstract protected function getSubHandler(string $subpath): ?Endpoint;
 
     /**
      * Return which methods are supported by this endpoint.
@@ -59,14 +51,17 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
         return ['GET', 'PUT', 'POST', 'OPTIONS'];
     }
 
-    protected function checkPermission(Permission $permission) : bool                       
+    protected function checkPermission(
+        \User $user,
+        Permission $permission
+    ) : void
     {                                                                              
-        if (!$this->user->hasPermission($this->getPermission($permission))) {
-            throw new Forbidden($this->getName() . ": {$permission->name()} Permission Denied");
+        if (!$user->hasPermission($this->getPermission($permission))) {
+            throw new Forbidden(
+                get_called_class() . ": {$permission->name()} Permission Denied"
+            );
         }
     }     
-
-    abstract protected function getSubHandler(string $subpath): ?Endpoint;
 
     public function process(
         ServerRequestInterface $request,
@@ -95,7 +90,6 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
 
         // Default processing for the main endpoint if no subendpoint matches
         return parent::process($request, $handler);
-        // return $this->handle($request); // Adjusted to call the controller's handle method
     }
 
     /**
@@ -125,99 +119,59 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
         ServerRequestInterface $request
     ): ResponseInterface
     {
-        $this->getPermission(Permission::GET);
-
-        // TODO: not convinced this is the best way to unpack the path. It feels
-        // like should already be done by the module.
+        $this->checkPermission($request->getAttribute('user'), Permission::GET);
+    
         $path = trim($request->getURI()->getPath(), "/");
         $pathparts = explode('/', $path);
-
-
-        $queryParams = (new QueryParamsHandler($request->getQueryParams()))->parse();
-
+    
+        $queryParams = (new QueryParamsHandler(
+            $request->getQueryParams()))->parse();
+    
         if (count($pathparts) === 1) {
-            if (isset($this->_cache)) {
-                return $this->_cache;
-            }
-
-            $result = $this->controller->get($queryParams);
-
-            $this->_cache = new \LORIS\Http\Response\JSON\OK($result);
-
-            return $this->_cache;
+            return $this->controller->handleRootRequest(
+                $request, $queryParams, $this->_cache);
         } else {
-            $label  = $pathparts[1];                                 
-            $result = $this->controller->getByLabel($label);     
-            return new \LORIS\Http\Response\JSON\OK([$result]);        
+            return $this->controller->handleResourceRequest(
+                $request, $pathparts[1]);
         }
+    }
 
-        // XXX: might be needed to properly send data....
-        // $specimens = (new \LORIS\Data\Table())
-        //     ->withDataFrom($this->controller->dao)
-        //     ->toArray($user);
+    private function _handlePUT(
+        ServerRequestInterface $request
+    ): ResponseInterface
+    {
+        $this->checkPermission($request->getAttribute('user'), Permission::PUT);
+    
+        $path = trim($request->getURI()->getPath(), "/");
+        $pathparts = explode('/', $path);
+    
+        if (count($pathparts) === 2) {
+            return $this->controller->handleUpdateRequest(
+                $request, $pathparts[1]
+            );
+        } else {
+            throw new \LORIS\Http\Exception\NotFoundException("Invalid path.");
+        }
     }
 
     private function _handlePOST(
         ServerRequestInterface $request
     ): ResponseInterface
-    {                                                                           
-        $this->checkPermission(Permission::POST);
-
-        $data = json_decode((string) $request->getBody()->getContents(), true);                
-        $result = $this->controller->create($data);
-
-        if (!empty($request->getUploadedFiles())) {
-            $response = $this->uploadFiles($request);
-            if ($response->getStatusCode() !== 200) {
-                return $response;
-            }
-        }
-
-        return new \LORIS\Http\Response\JSON\OK($result);
-    }       
-
-    private function _handlePUT(                                                
-        ServerRequestInterface $request                                         
-    ) : ResponseInterface
-    {                                                     
-        $this->checkPermission(Permission::PUT);
-
-        $data = json_decode($request->getBody()->getContents(), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return new \LORIS\Http\Response\JSON\BadRequest(
-                ['error' => 'Invalid JSON provided']
-            );
-        }
-
-        $result = $this->controller->update($data);
-        return new \LORIS\Http\Response\JSON\OK($result);
-    }  
-
-    /**
-     * Validates and Uploades files
-     *
-     * @param ServerRequestInterface $request The incoming PSR7 request
-     *                                        containg the files to be uploaded.
-     *
-     * @return ResponseInterface
-     */
-    public function uploadFiles(ServerRequestInterface $request) : ResponseInterface
     {
-        $config = \NDB_Config::singleton();
-        $path   = $config->getSetting('biobankPath');
-
-        if (!isset($path)) {
-            throw new \NotFound('Biobank File Upload Path is not configured');
-        }
-        $targetdir = new \SplFileInfo($path);
-
-        $uploader = (new \LORIS\FilesUploadHandler($targetdir))
-            ->withPermittedMIMETypes(
-                'text/plain'
+        $user = $request->getAttribute('user');
+        $this->getPermission($user, Permission::POST);
+    
+        $contentType = $request->getHeaderLine('Content-Type');
+    
+        if (strpos($contentType, 'multipart/form-data') !== false) {
+            $uploadedFiles = $request->getUploadedFiles();
+            return $this->controller->handleFileUploadRequest(
+                $request, $uploadedFiles
             );
-
-        return $uploader->handle($request);
-    }
+        } else {
+            return $this->controller->handleCreateRequest($request);
+        }
+    }    
 
     /**
      * Implements the ETagCalculator interface
@@ -226,8 +180,8 @@ abstract class Endpoint extends LORISEndpoint // implements \LORIS\Middleware\ET
      *
      * @return string etag summarizing value of this request.
      */
-    // public function ETag(ServerRequestInterface $request) : string
-    // {
-    //     return md5(json_encode($this->_handleGET($request)->getBody()));
-    // }
+    //public function ETag(ServerRequestInterface $request) : string
+    //{
+    //    return md5(json_encode($this->_handleGET($request)->getBody()));
+    //}
 }

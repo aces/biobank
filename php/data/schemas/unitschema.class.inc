@@ -2,22 +2,27 @@
 
 namespace LORIS\biobank\data\schemas;
 
-use LORIS\biobank\data\Schema;
-use LORIS\biobank\data\schema\Table;
-use LORIS\biobank\data\schema\Key;
-use LORIS\biobank\data\schema\Column;
-use LORIS\biobank\data\schema\ColumnType;
+use \LORIS\biobank\data\Schema;
+use \LORIS\biobank\data\schema\Table;
+use \LORIS\biobank\data\schema\Column;
+use \LORIS\biobank\data\schema\ColumnType;
 
 final class UnitSchema extends Schema
 {
+
+    protected function getModel(): string
+    {
+        return \LORIS\biobank\models\Unit::class;
+    }
+
     protected function getTable(): Table
     {
         return new Table(name: 'biobank_unit');
     }
 
-    protected function getId(): Key
+    protected function getId(): string
     {
-        return new Key('UnitID');
+        return 'UnitID';
     }
 
     protected function getLabel(): string
@@ -30,7 +35,7 @@ final class UnitSchema extends Schema
         return [
             'label' => new Column(
                 name: 'Label',
-                type: ColumnType::VARCHAR
+                table: $this->table,
             ),
         ];
     }

@@ -19,6 +19,6 @@ class Column
 {
     public function __construct(
         public string $name,
-        public ColumnType $type,
+        public Table $table,
     ) {}
 }

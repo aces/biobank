@@ -50,7 +50,7 @@ class ContainerValidator extends Validator
     {
         $id            = $container->getId();
         $barcode       = $container->getBarcode();
-        $containerList = $this->dao->selectInstances(
+        $containerList = $this->service->selectInstances(
             [
                 ['column'=>'bc.Barcode', 'value'=>$barcode],
             ],
@@ -68,7 +68,7 @@ class ContainerValidator extends Validator
         }
 
         if ($id) {
-            $prevContainer = $this->dao->getInstanceFromId($id);
+            $prevContainer = $this->service->getInstanceFromId($id);
             if ($prevContainer && ($container->getBarcode() !== $prevContainer->getBarcode())) {
                 $this->addError('barcode', 'Barcode can not be changed.');
             }
@@ -110,9 +110,9 @@ class ContainerValidator extends Validator
             $result->addError('statusId', 'Status value must be set.');
         }
         if ($container->getId()) {
-            $prevContainer = $this->dao->getInstanceFromId($container->getId());
+            $prevContainer = $this->service->getInstanceFromId($container->getId());
             if ($prevContainer) {
-                $stati         = $this->dao->getStati();
+                $stati         = $this->service->getStati();
                 $statusLabel   = $stati[$prevContainer->getStatusId() ?? '']['label'];
                 if ($statusLabel == 'Dispensed') {
                     // TODO: figure out what else should not be changed if the container
@@ -165,7 +165,7 @@ class ContainerValidator extends Validator
 
         $parentContainerId = $container->getParentContainerId();
         if (false) {
-            $parentContainer = $this->dao->getInstanceFromId($parentContainerId);
+            $parentContainer = $this->service->getInstanceFromId($parentContainerId);
             if ($container->getCenterID() !== $parentContainer->getCenterID()) {
                 $this->addError('centers',
                     $container->getBarcode()." must be at the same location
@@ -180,7 +180,7 @@ class ContainerValidator extends Validator
     {
         $parentContainerId = $container->getParentContainerId();
         if (isset($parentContainerId)) {
-            $childContainerIds = $this->dao->getAllChildContainerIds($container);
+            $childContainerIds = $this->service->getAllChildContainerIds($container);
             if ($container->getId() == $parentContainerId
                 || in_array($container->getId(), $childContainerIds)
             ) {
@@ -210,11 +210,11 @@ class ContainerValidator extends Validator
                 );
             }
 
-            $parentContainer = $this->dao->getInstanceFromId(
+            $parentContainer = $this->service->getInstanceFromId(
                 $parentContainerId
             );
 
-            $dimensions = $this->dao->getDimensions()[$parentContainer
+            $dimensions = $this->service->getDimensions()[$parentContainer
                 ->getDimensionId() ?? ''];
 
             $capacity = $dimensions['x'] * $dimensions['y'] * $dimensions['z'];

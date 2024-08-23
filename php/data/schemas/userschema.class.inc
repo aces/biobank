@@ -2,14 +2,12 @@
                                                                                    
 namespace LORIS\biobank\data\schemas;                                     
                                                                                    
-use LORIS\biobank\data\schema\Table;                                               
-use LORIS\biobank\data\schema\Key;                                                 
-use LORIS\biobank\data\schema\TableKey;                                            
-use LORIS\biobank\data\schema\Column;                                              
-use LORIS\biobank\data\schema\ColumnType;                                          
-use LORIS\biobank\data\schema\Relation;                                            
-use LORIS\biobank\data\schema\Join;                                                
-use LORIS\biobank\data\Schema;                                             
+use \LORIS\biobank\data\schema\Table;                                               
+use \LORIS\biobank\data\schema\TableKey;                                            
+use \LORIS\biobank\data\schema\Column;                                              
+use \LORIS\biobank\data\schema\ColumnType;                                          
+use \LORIS\biobank\data\schema\Join;                                                
+use \LORIS\biobank\data\Schema;                                             
                                                                                    
 /**                                                                                
  * User Schema Class                                                    
@@ -27,12 +25,17 @@ use LORIS\biobank\data\Schema;
                                                                                    
 class UserSchema extends Schema                                          
 {                                                                                  
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\User::class;                              
+    }  
+
     protected function getTable(): Table {                                            
         return new Table(name: 'users');                                 
     }                                                                              
                                                                                    
-    protected function getId(): Key {                                                 
-        return new Key(name: 'ID');                                          
+    protected function getId(): string {                                                 
+        return 'ID';                                          
     }                                                                              
                                                                                    
     protected function getLabel(): string {                                           
@@ -43,7 +46,7 @@ class UserSchema extends Schema
         return [                                                                   
             'name' => new Column(                                                 
                 name: 'Real_name',                                                     
-                type: ColumnType::VARCHAR                                          
+                table: $this->table,
             )                                                                      
         ];                                                                         
     }                                                                              

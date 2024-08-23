@@ -2,8 +2,8 @@
 
 namespace LORIS\biobank\data\schemas\specimen\process;
 
-use LORIS\biobank\data\schema;
-use LORIS\biobank\data\schemas\specimen\ProcessSchema;
+use \LORIS\biobank\data\schema;
+use \LORIS\biobank\data\schemas\specimen\ProcessSchema;
 
 /**
  * Specimen Analysis Schema Descriptor Class
@@ -18,7 +18,13 @@ use LORIS\biobank\data\schemas\specimen\ProcessSchema;
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-class AnalysisSchema extends ProcessSchema {
+class AnalysisSchema extends ProcessSchema
+{
+    protected function getModel(): string                                          
+    {                                                                              
+        return \LORIS\biobank\models\specimen\process\Analysis::class;                            
+    }   
+
     protected function getTable(): schema\Table
     {
         return new schema\Table(name: 'biobank_specimen_analysis');

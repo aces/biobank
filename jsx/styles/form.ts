@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { Layout } from './layout';
+import Layout from './layout';
 
 export const HorizontalRule = styled.hr`
   border-top: 1.5px solid #DDDDDD;
@@ -28,14 +28,17 @@ export const ListItem = styled(Layout.Row).attrs({
 `;
 
 // Icon with clickable action
-export const Icon = styled.span`
+export const Icon = styled.span<{className?: string, onClick?: () => void}>`
   color: #DDDDDD;
   margin-left: 10px;
   cursor: pointer;
   font-size: 20px; // Assuming you're using a font icon like FontAwesome or Glyphicons
 `;
 
-export const CollapsibleContent = styled.div<{collapsed: boolean}>`
+export const CollapsibleContent = styled.div<{
+  collapsed: boolean
+  children: React.ReactNode
+}>`
   transition: max-height 0.3s ease, opacity 0.3s ease;
   max-height: ${(props) => (props.collapsed ? '0' : '1000px')}; // Adjust as necessary for your content
   opacity: ${(props) => (props.collapsed ? '0' : '1')};
@@ -43,7 +46,10 @@ export const CollapsibleContent = styled.div<{collapsed: boolean}>`
 `;
 
 // display: ${(props) => (props.collapsed ? 'none' : 'inline-block')};
-export const CollapseButton = styled.span<{collapsed: boolean}>`
+export const CollapseButton = styled.span<{
+  collapsed: boolean
+  onClick: () => void;
+}>`
   cursor: pointer;
   font-size: 15px;
   position: relative;
@@ -86,7 +92,7 @@ export const CollapseButton = styled.span<{collapsed: boolean}>`
 //   />
 // );
 
-export const Form = {
+const Form = {
   HorizontalRule,
   ListContainer,
   ListItem,
@@ -94,3 +100,5 @@ export const Form = {
   CollapsibleContent,
   CollapseButton,
 };
+
+export default Form;
