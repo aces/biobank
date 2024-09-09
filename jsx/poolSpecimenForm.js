@@ -14,6 +14,7 @@ import Swal from 'sweetalert2';
 const initialState = {
   pool: {},
   list: {},
+  candidateId: null,
   count: 0,
   current: {},
   errors: {},
@@ -53,7 +54,7 @@ class PoolSpecimenForm extends React.Component {
    * @param {int} containerId - container with pool?
    */
   setPoolList(containerId) {
-    let {current, list, pool, count} = clone(this.state);
+    let {current, list, pool, candidateId, count} = clone(this.state);
 
     // Increase count
     count++;
@@ -62,9 +63,12 @@ class PoolSpecimenForm extends React.Component {
     const container = this.props.data.containers[containerId];
     const specimen = this.props.data.specimens[container.specimenId];
 
+    if (!candidateId) {
+      candidateId = specimen.candidateId;
+    }
+
     // Set current global values
     if (isEmpty(list)) {
-      current.candidateId = specimen.candidateId;
       current.sessionId = specimen.sessionId;
       current.typeId = specimen.typeId;
       current.centerId = container.centerId;
@@ -79,7 +83,7 @@ class PoolSpecimenForm extends React.Component {
     pool.specimenIds = specimenIds;
 
     this.setState(
-      {pool, list, count, current, containerId},
+      {pool, list, count, current, candidateId, containerId},
       this.setState({containerId: null})
     );
   }
@@ -115,13 +119,13 @@ class PoolSpecimenForm extends React.Component {
    * @return {Promise} - a resolved or rejected promise
    */
   validateListItem(containerId) {
-    const {current, list} = clone(this.state);
+    const {current, list, candidateId} = clone(this.state);
     const container = this.props.data.containers[containerId];
     const specimen = this.props.data.specimens[container.specimenId];
 
     // Throw error if new list item does not meet requirements.
     if (!isEmpty(list) &&
-      (specimen.candidateId !== current.candidateId ||
+      (specimen.candidateId != candidateId || // loose check b/c candidateId is string
       specimen.sessionId !== current.sessionId ||
       specimen.typeId !== current.typeId ||
       container.centerId !== current.centerId)
@@ -144,7 +148,7 @@ class PoolSpecimenForm extends React.Component {
    */
   render() {
     const {data, options} = this.props;
-    const {current, pool, list, containerId, errors} = this.state;
+    const {current, pool, list, candidateId, containerId, errors} = this.state;
 
     // generate barcode list from list object.
     const barcodeList = Object.entries(list)
@@ -189,11 +193,13 @@ class PoolSpecimenForm extends React.Component {
                 (options.specimen.types[current.typeId]||{}).label || '—'
               }
             />
-            <StaticElement
+            <SearchableDropdown
+              name='candidateId'
               label='PSCID'
-              text={
-                (options.candidates[current.candidateId]||{}).pscid || '—'
-              }
+              onUserInput={(name, candidateId) => this.setState({candidateId})}
+              disabled={!isEmpty(list)}
+              value={candidateId}
+              options={mapFormOptions(options.candidates, 'pscid')}
             />
             <StaticElement
               label='Visit Label'
@@ -206,6 +212,7 @@ class PoolSpecimenForm extends React.Component {
                 <BarcodeInput
                   list={list}
                   data={data}
+                  candidateId={candidateId}
                   options={options}
                   errors={errors}
                   containerId={containerId}
@@ -302,7 +309,7 @@ class BarcodeInput extends PureComponent {
    * @return {JSX}
    */
   render() {
-    const {list, data, options, errors, containerId} = this.props;
+    const {list, data, candidateId, options, errors, containerId} = this.props;
 
     // Restrict list of barcodes to only those that would be valid.
     const barcodesPrimary = Object.values(data.containers)
@@ -315,10 +322,14 @@ class BarcodeInput extends PureComponent {
         const inList = Object.values(list)
         .find((i) => i.container.id == container.id);
 
+        const candidateMatch = !candidateId || specimen.candidateId == candidateId;
+
         if (specimen.quantity > 0 &&
             container.statusId == availableId &&
             specimen.poolId == null &&
-            !inList) {
+            !inList &&
+            candidateMatch
+        ) {
           result[container.id] = container.barcode;
         }
       }
