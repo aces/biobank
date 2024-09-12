@@ -14,9 +14,14 @@ import Swal from 'sweetalert2';
 const initialState = {
   pool: {},
   list: {},
-  candidateId: null,
+  filter: {
+    candidateId: null,
+    sessionid: null,
+    typeId: null,
+    centerId: null
+  },
+  poolId: null,
   count: 0,
-  current: {},
   errors: {},
   containerId: null,
 };
@@ -32,6 +37,7 @@ class PoolSpecimenForm extends React.Component {
     super();
     this.state = initialState;
     this.setPool = this.setPool.bind(this);
+    this.setFilter = this.setFilter.bind(this);
     this.validateListItem = this.validateListItem.bind(this);
     this.setPoolList = this.setPoolList.bind(this);
   }
@@ -48,13 +54,25 @@ class PoolSpecimenForm extends React.Component {
     this.setState({pool});
   }
 
+  setFilter(name, value) {
+    console.log(name+': '+value);
+    const {filter} = clone(this.state);
+
+    if (name == 'candidateId') {
+      filter.sessionId = null;
+    }
+
+    filter[name] = value;
+    this.setState({filter});
+  }
+
   /**
    * Sets the current pool list being displayed?
    *
    * @param {int} containerId - container with pool?
    */
   setPoolList(containerId) {
-    let {current, list, pool, candidateId, count} = clone(this.state);
+    let {centerId, list, pool, filter, count} = clone(this.state);
 
     // Increase count
     count++;
@@ -63,15 +81,12 @@ class PoolSpecimenForm extends React.Component {
     const container = this.props.data.containers[containerId];
     const specimen = this.props.data.specimens[container.specimenId];
 
-    if (!candidateId) {
-      candidateId = specimen.candidateId;
-    }
-
     // Set current global values
     if (isEmpty(list)) {
-      current.sessionId = specimen.sessionId;
-      current.typeId = specimen.typeId;
-      current.centerId = container.centerId;
+      filter.candidateId = specimen.candidateId;
+      filter.sessionId = specimen.sessionId;
+      filter.typeId = specimen.typeId;
+      filter.centerId = container.centerId;
     }
 
     // Set list values
@@ -83,7 +98,7 @@ class PoolSpecimenForm extends React.Component {
     pool.specimenIds = specimenIds;
 
     this.setState(
-      {pool, list, count, current, candidateId, containerId},
+      {pool, list, count, filter},
       this.setState({containerId: null})
     );
   }
@@ -94,7 +109,7 @@ class PoolSpecimenForm extends React.Component {
    * @param {string} key - the key to be removed
    */
   removeListItem(key) {
-    let {pool, list, current} = clone(this.state);
+    let {pool, list, filter} = clone(this.state);
     // remove specimenId from pool.
     pool.specimenIds = pool.specimenIds
     .filter((id) => id != this.state.list[key].specimen.id);
@@ -102,13 +117,13 @@ class PoolSpecimenForm extends React.Component {
     // delete list at key.
     delete list[key];
 
-    // reset current values if list is empty.
-    current = isEmpty(list) ? {} : current;
+    // remove center if list is empty
+    filter = isEmpty(list) ? {} : filter;
 
     // empty barcode input.
     const containerId = null;
 
-    this.setState({pool, list, current, containerId});
+    this.setState({pool, list, containerId, filter});
   }
 
   /**
@@ -119,16 +134,16 @@ class PoolSpecimenForm extends React.Component {
    * @return {Promise} - a resolved or rejected promise
    */
   validateListItem(containerId) {
-    const {current, list, candidateId} = clone(this.state);
+    const {list, filter } = clone(this.state);
     const container = this.props.data.containers[containerId];
     const specimen = this.props.data.specimens[container.specimenId];
 
     // Throw error if new list item does not meet requirements.
     if (!isEmpty(list) &&
-      (specimen.candidateId != candidateId || // loose check b/c candidateId is string
-      specimen.sessionId !== current.sessionId ||
-      specimen.typeId !== current.typeId ||
-      container.centerId !== current.centerId)
+      (specimen.candidateId != filter.candidateId || // loose check b/c candidateId is string
+      specimen.sessionId != filter.sessionId ||
+      specimen.typeId != filter.typeId ||
+      container.centerId !== filter.centerId)
     ) {
       Swal.fire({
         title: 'Oops!',
@@ -148,7 +163,7 @@ class PoolSpecimenForm extends React.Component {
    */
   render() {
     const {data, options} = this.props;
-    const {current, pool, list, candidateId, containerId, errors} = this.state;
+    const { pool, list, filter, containerId, errors} = this.state;
 
     // generate barcode list from list object.
     const barcodeList = Object.entries(list)
@@ -187,23 +202,29 @@ class PoolSpecimenForm extends React.Component {
                     a pool. Once pooled, the Status of specimen will be changed
                     to 'Dispensed' and there Quantity set to '0'"
             />
-            <StaticElement
+            <SearchableDropdown
+              name='typeId'
               label='Specimen Type'
-              text={
-                (options.specimen.types[current.typeId]||{}).label || '—'
-              }
+              onUserInput={this.setFilter}
+              disabled={!isEmpty(list)}
+              value={filter.typeId}
+              options={mapFormOptions(options.specimen.types, 'label')}
             />
             <SearchableDropdown
               name='candidateId'
               label='PSCID'
-              onUserInput={(name, candidateId) => this.setState({candidateId})}
+              onUserInput={this.setFilter}
               disabled={!isEmpty(list)}
-              value={candidateId}
+              value={filter.candidateId}
               options={mapFormOptions(options.candidates, 'pscid')}
             />
-            <StaticElement
+            <SearchableDropdown
+              name='sessionId'
               label='Visit Label'
-              text={(options.sessions[current.sessionId]||{}).label || '—'}
+              onUserInput={this.setFilter}
+              disabled={!isEmpty(list) || !filter.candidateId}
+              value={filter.sessionId}
+              options={mapFormOptions((options?.candidateSessions?.[filter.candidateId] || {}), 'label')}
             />
             <div className='row'>
               <div className='col-xs-6'>
@@ -212,7 +233,7 @@ class PoolSpecimenForm extends React.Component {
                 <BarcodeInput
                   list={list}
                   data={data}
-                  candidateId={candidateId}
+                  filter={filter}
                   options={options}
                   errors={errors}
                   containerId={containerId}
@@ -309,7 +330,7 @@ class BarcodeInput extends PureComponent {
    * @return {JSX}
    */
   render() {
-    const {list, data, candidateId, options, errors, containerId} = this.props;
+    const {list, data, filter, options, errors, containerId} = this.props;
 
     // Restrict list of barcodes to only those that would be valid.
     const barcodesPrimary = Object.values(data.containers)
@@ -322,13 +343,17 @@ class BarcodeInput extends PureComponent {
         const inList = Object.values(list)
         .find((i) => i.container.id == container.id);
 
-        const candidateMatch = !candidateId || specimen.candidateId == candidateId;
+        const candidateMatch = !filter.candidateId || specimen.candidateId == filter.candidateId;
+        const sessionMatch = !filter.sessionId || specimen.sessionId == filter.sessionId;
+        const typeMatch = !filter.typeId || specimen.typeId == filter.typeId;
 
         if (specimen.quantity > 0 &&
             container.statusId == availableId &&
             specimen.poolId == null &&
             !inList &&
-            candidateMatch
+            candidateMatch &&
+            sessionMatch &&
+            typeMatch
         ) {
           result[container.id] = container.barcode;
         }
