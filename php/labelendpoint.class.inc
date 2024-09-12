@@ -12,6 +12,7 @@
  * @link       http://www.github.com/aces/Loris/
  */
 namespace LORIS\biobank;
+use \LORIS\Http\Response\JSON\InternalServerError;
 use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Server\RequestHandlerInterface;
 use \Psr\Http\Message\ResponseInterface;
@@ -50,8 +51,6 @@ class LabelEndpoint implements RequestHandlerInterface
     protected function allowedMethods() : array
     {
         return [
-            'GET',
-            'PUT',
             'POST',
             'OPTIONS',
         ];
@@ -98,26 +97,75 @@ class LabelEndpoint implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        // TODO: Place a try catch here in case printing doesn't work for some
-        // reason.
-        switch ($request->getMethod()) {
-        case 'POST':
-            $params = json_decode($request->getBody()->getContents(), true);;
-            foreach ($params as $param) {
-                $barcode = $param['barcode'];
-                $type    = $param['type'];
-                $zpl     = "^XA,^FO330,80^BY1,^BCN,100,Y,Y,N,^CFA,"
-                    . "20^A0N,30,29^BCN,100,Y,Y,N^FD$barcode^FS,"
-                    . "^FO323,190,^CFA,20^A0N,30,29^FD$type^XZ";
-                $config  = \NDB_Config::singleton();
-                $path    = $config->getSetting('labelPrintingPath');
-                $path    = $path.'barcode.zpl';
-                $fp      = fopen($path, 'w');
-                fwrite($fp, $zpl);
-                fclose($fp);
-                shell_exec('lp -d ZDesigner -o raw '.escapeshellarg($path));
+        try {
+            switch ($request->getMethod()) {
+            case 'POST':
+                return $this->_handlePOST($request); 
             }
-            return new \LORIS\Http\Response\JSON\OK();
+        } catch (\Exception $e) {
+            // Log the error
+            error_log($e->getMessage());
+            return new InternalServerError('Printing failed');
         }
+    }
+
+    /**
+     * Handle the logic of an incoming HTTP GET request
+     *
+     * @param ServerRequestInterface $request The incoming PSR7 request
+     * @return ResponseInterface
+     */
+    private function _handlePOST(
+        ServerRequestInterface $request
+    ) : ResponseInterface {
+        $params = json_decode($request->getBody()->getContents(), true);;
+        foreach ($params as $param) {
+            $barcode   = $param['barcode'];
+            $type      = $param['type'];
+            $pscid     = $param['pscid'];
+            $sampleNum = $param['sampleNumber'];
+
+            // Construct ZPL string
+            $zpl = "^XA"                                
+                 . "^FO330,80"                          
+                 . "^BY1"                               
+                 . "^BCN,100,Y,Y,N"                    
+                 . "^CFA,20"                          
+                 . "^A0N,30,29"                      
+                 . "^BCN,100,Y,Y,N^FD$barcode^FS"       
+                 . "^FO323,190"                         
+                 . "^CFA,20"                        
+                 . "^A0N,30,29^FD$type^FS"              
+                 . "^FO323,250"                    
+                 . "^CFA,20"                      
+                 . "^A0N,30,29^FD$pscid $sampleNum^FS"  
+                 . "^XZ";                               
+
+            $config  = \NDB_Config::singleton();
+            $path    = $config->getSetting('labelPrintingPath') . 'barcode.zpl';
+
+            // Ensure directory exists
+            $directory = dirname($path);
+            if (!is_dir($directory)) {
+                mkdir($directory, 0777, true);
+            }
+
+            // Write ZPL to file
+            if (false === ($fp = fopen($path, 'w'))) {
+                throw new \RuntimeException("Unable to open file: $path");
+            }
+            if (false === fwrite($fp, $zpl)) {
+                fclose($fp);
+                throw new \RuntimeException("Unable to write to file: $path");
+            }
+            fclose($fp);
+
+            // Send the file to the printer
+            $output = shell_exec('lp -d ZDesigner -o raw ' . escapeshellarg($path));
+            if ($output === null) {
+                throw new \RuntimeException("Failed to send print job to printer");
+            }
+        }
+        return new \LORIS\Http\Response\JSON\OK();
     }
 }
