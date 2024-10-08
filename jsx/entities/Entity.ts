@@ -1,7 +1,7 @@
 export abstract class Entity<I extends object> {                                           
   protected data: Partial<I>;                                                            
   protected initialData: Partial<I>;                                                     
-  protected errors: Partial<Record<keyof I, string>> = {};                                
+  public errors: Partial<Record<keyof I, string>> = {};                                
                                                                                 
   constructor(initialData: Partial<I>) {                                                 
     this.data = initialData;                                                    
@@ -9,11 +9,11 @@ export abstract class Entity<I extends object> {
   }                                                                             
 
   protected clone(newData: Partial<I> = {}): this {
-    const clone = Object.create(this.constructor.prototype) as this;
-    // Assuming a method to initialize or copy properties to the cloned instance
-    clone.initialize(newData);
+    const clone = Object.create(Object.getPrototypeOf(this));
+    Object.assign(clone, this); // Copy all properties
+    clone.data = { ...this.data, ...newData }; // Update data with newData
     return clone;
-  }
+  }  
 
   // Example initialization method that you might define in your class
   protected initialize(data: Partial<I>): void {
@@ -28,7 +28,7 @@ export abstract class Entity<I extends object> {
   set(key: keyof I, value: I[keyof I]): this {                      
     return this.clone({...this.data, [key]: value});                                         
   }                                                                             
-                                                                                
+
   // Method to remove a property in an immutable way.                           
   remove(key: keyof I): this {                                
     const { [key]: _, ...rest } = this.data;                                    
@@ -53,9 +53,16 @@ export abstract class Entity<I extends object> {
   getData(): Partial<I> {                                                                
     return this.data;                                                           
   }                                                                             
+
+  // Set errors after validation
+  setErrors(errors: Partial<Record<keyof I, string>>): this {
+    const clone = this.clone(); // Create a new clone
+    clone.errors = errors; // Set the errors on the clone
+    return clone; // Return the new entity with errors
+  }
                                                                                 
   // Method to get the current errors.                                          
-  getErrors(): Partial<Record<keyof I, string>> {                                         
+  getErrors(): Partial<Record<keyof I, string>> {
     return this.errors;                                                         
   }                                                                             
 }

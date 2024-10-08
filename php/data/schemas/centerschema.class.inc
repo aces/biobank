@@ -23,37 +23,37 @@ use \LORIS\biobank\data\Schema;
  */
 class CenterSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\Center::class;                              
     }  
 
-    protected function getTable(): Table {
+    public static function table(): Table {
         return new Table(name: 'psc');
     }
 
-    protected function getId(): string {
+    public static function id(): string {
         return 'CenterID';
     }
 
-    protected function getLabel(): string {
+    public static function label(): string {
         return 'label';
     }
 
-    protected function getColumns(): array {
+    public static function columns(): array {
         return [
             'label' => new Column(
                 name: 'Name',
-                table: $this->table,
+                table: self::table(),
             ),
         ];
     }
 
-    protected function getRelations(): array {
+    public static function relations(): array {
         return []; // Add relation definitions if needed
     }
 
-    protected function getJoins(): array {
+    public static function joins(): array {
         return []; // Add join definitions if needed
     }
 }

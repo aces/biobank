@@ -4,6 +4,7 @@ import {
   ISpecimen,
   IContainer,
   useContainer,
+  Container,
   ContainerProvider,
   IDimension,
 } from '../entities';
@@ -42,7 +43,7 @@ export const ContainerPage: React.FC<RouteComponentProps<{barcode: string}>> = (
   const [current, setCurrent] = useState<Current>(initCurrent);                          
   const { editable, edit, clear } = useBarcodePageContext();
   const { options, containers } = useBiobankContext();
-  const container = useContainer(containers[match.params.barcode]);
+  const container = useContainer(new Container(containers[match.params.barcode]));
 
   const drag = useCallback((e) => {                                             
     const cont = JSON.stringify(containers[e.target.id]);             

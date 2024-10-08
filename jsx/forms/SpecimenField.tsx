@@ -3,6 +3,7 @@ import { FieldConfiguration } from '../types';
 import { ISpecimen, SpecimenHook, useSpecimenContext, useProcessContext, IProcess, ProcessHook, IData, DataHook } from '../entities';
 import { DynamicField } from '../forms';
 import { useRequest } from '../hooks';
+import Utils from '../utils';
 import { SpecimenAPI, BaseAPI } from '../APIs';
 import { Operator } from '../APIs/Query';
 import { mapFormOptions } from '../utils';
@@ -18,7 +19,7 @@ const getSpecimenFieldConfig = (
     type: 'search',
     required: true,
     placeholder: 'Search for a PSCID',
-    getOptions: () => useRequest(new BaseAPI('candidates').get()),
+    getOptions: () => Utils.mapLabel(useRequest(new BaseAPI('candidates').get())),
   },
   session: {
     label: 'Visit Label',
@@ -26,10 +27,10 @@ const getSpecimenFieldConfig = (
     required: true,
     disabled: !specimen.candidate,
     // autoSelect: true,
-    getOptions: () => {
+    getOptions: (context) => {
       return specimen.candidate ?
-        useRequest(new BaseAPI('sessions').get({field: 'candidate', value:
-                                    specimen.candidate.label}))
+        Utils.mapLabel(useRequest(new BaseAPI('sessions').get({field: 'candidate', value:
+                                    specimen.candidate.label})))
       : {}
     },
   },
@@ -37,17 +38,17 @@ const getSpecimenFieldConfig = (
     label: 'Specimen Type',
     type: 'select',
     required: true,
-    getOptions: () => {
+    getOptions: (context) => {
       // let specimenTypes;
       if (specimen.parents) {
-        return useRequest(new SpecimenAPI().getTypes({
+        return Utils.mapLabel(useRequest(new SpecimenAPI().getTypes({
           field: 'parents',
           value: specimen.parents[0].type.label,
           operator: Operator.Includes 
-        }));
+        })));
       }
 
-      return useRequest(new SpecimenAPI().getTypes());
+      return Utils.mapLabel(useRequest(new SpecimenAPI().getTypes()));
     }
   },
   quantity: {
@@ -60,8 +61,8 @@ const getSpecimenFieldConfig = (
     type: 'text',
     required: true,
     disabled: !specimen.type,
-    getOptions: () => {
-      return specimen.type ? specimen.type.units : [];
+    getOptions: (context) => {
+      return specimen.type ? Utils.mapLabel(specimen.type.units) : {};
     }
   },
   fTCycle: {
@@ -113,24 +114,17 @@ type ProcessFields = Pick<IProcess, 'protocol' | 'quantity' | 'unit' |
   'examiner' | 'date' | 'time' | 'comments'>;
 type ProcessFieldConfig = FieldConfiguration<IProcess, keyof ProcessFields>;
 
-const processFieldConfig: Record<keyof ProcessFields, ProcessFieldConfig> = {
+const getProcessFieldConfig = (
+  specimen: SpecimenHook
+): Record<keyof ProcessFields, ProcessFieldConfig> => ({
   protocol: {
     label: 'Protocol',
     type: 'select',
     required: true,
-    getOptions: () => {
-      return [];
-     // let specimenProtocols = {};
-     // Object.entries(context.options.specimen?.protocols as { [key: string]: Protocol }).forEach(([id, protocol]) => {
-     //   // FIXME: I really don't like 'toLowerCase()' function, but it's the
-     //   // only way I can get it to work at the moment.
-     //   if (typeId == protocol.typeId &&
-     //       context.options.specimen.processes[protocol.processId].label.toLowerCase() ==
-     //       processStage) {
-     //     specimenProtocols[id] = protocol.label;
-     //   }
-     // });
-     // return specimenProtocols;
+    getOptions: (context)  => {
+       return Utils.mapLabel(useRequest(new SpecimenAPI().getProtocols())
+       .find(protocol => protocol.type.label === specimen.type.label));
+       // TODO: I need to add to this that it matches the current process stage.
     },
   },
   quantity: {
@@ -142,21 +136,16 @@ const processFieldConfig: Record<keyof ProcessFields, ProcessFieldConfig> = {
     label: 'Unit',
     type: 'select',
     required: true,
-    getOptions: ()  => {
-    // XXX: THIS IS A HUGE PROBLEM BECAUSE THE SPECIMEN TYPE NEEDS TO BE KNOWN!
-    // Object.keys(context.options.specimen.typeUnits[entity.typeId]||{})
-    //  .reduce((result, id) => {
-    //    result[id] = context.options.specimen.typeUnits[entity.typeId][id].label;
-    //    return result;
-    //  }, {}),
-      return [];
+    getOptions: (context)  => {
+       return Utils.mapLabel(useRequest(new SpecimenAPI().getTypes())
+       .find(type => type.label === specimen.type.label));
     },
   },
   examiner: {
     label: 'Done By',
     type: 'text',
     required: true,
-    getOptions: () => useRequest(new BaseAPI('examiner').get()),
+    getOptions: () => Utils.mapLabel(useRequest(new BaseAPI('examiner').get())),
   },
   date: {
     label: 'Date',
@@ -173,15 +162,16 @@ const processFieldConfig: Record<keyof ProcessFields, ProcessFieldConfig> = {
     type: 'textarea',
     required: true,
   },
-};
+});
 
 export const ProcessField: React.FC<{
   property: keyof IProcess,
 }> = ({
   property,
 }) => {
+  const specimen = useSpecimenContext()
   const process = useProcessContext();
-  const field = processFieldConfig[property];
+  const field = getProcessFieldConfig(specimen)[property];
   return <DynamicField property={property} hook={process} field={field}/>;
 }
 

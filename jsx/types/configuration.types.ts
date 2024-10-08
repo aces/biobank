@@ -13,6 +13,5 @@ export interface FieldConfiguration<I extends object, K extends keyof I> {
   autoSelect?: boolean, 
   placeholder?: string,
   emptyOption?: boolean,
-  getOptions?: (context: BiobankContextType) => ElementType<I[K]>[],
-  format?: (object: ElementType<I[K]>) => string,
+  getOptions?: (context: BiobankContextType) => Record<string, string>,
 }    

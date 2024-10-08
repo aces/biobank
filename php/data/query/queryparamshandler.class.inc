@@ -2,15 +2,43 @@
 
 namespace LORIS\biobank\data\query;
 
+/**
+ * Class QueryParamsHandler
+ *
+ * Handles the parsing of query parameters into a `QueryParams` object.
+ * This includes parsing fields, conditions, includes, limits, offsets, and
+ * count-only queries from the provided array of query parameters.
+ *
+ * @package    LORIS
+ * @subpackage Biobank
+ * @final
+ * @author     Henri Rabalais <henri.j.rabalais@gmail.com>
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License
+ */
 final class QueryParamsHandler
 {
+    /**
+     * Stores the raw query parameters array to be processed.
+     *
+     * @var array
+     */    
     protected $queryParams;
 
+    /**
+     * Constructs the QueryParamsHandler.
+     *
+     * @param array $queryParams The array of query parameters to parse.
+     */    
     public function __construct(array $queryParams)
     {
         $this->queryParams = $queryParams;
     }
 
+    /**
+     * Parses the raw query parameters into a QueryParams object.
+     *
+     * @return QueryParams The parsed QueryParams object.
+     */    
     public function parse(): QueryParams
     {
         $queryParams = new QueryParams();
@@ -32,6 +60,11 @@ final class QueryParamsHandler
         // );
     }
 
+    /**
+     * Parses the 'fields' query parameter.
+     *
+     * @return array The parsed fields.
+     */    
     protected function parseFields(): array
     {
         return !empty($this->queryParams['fields']) ? 
@@ -39,6 +72,11 @@ final class QueryParamsHandler
             [];
     }
 
+    /**
+     * Parses the 'include' query parameter for relationships.
+     *
+     * @return array The parsed includes as With objects.
+     */    
     protected function parseIncludes(): array
     {
         $includes = [];
@@ -50,6 +88,12 @@ final class QueryParamsHandler
         return $includes;
     }
 
+   /**
+     * Recursively parses nested includes.
+     *
+     * @param array $includes The array of includes to process.
+     * @return array The parsed includes as With objects.
+     */    
     protected function parseNestedIncludes(array $includes): array
     {
         $result = [];
@@ -61,6 +105,12 @@ final class QueryParamsHandler
         return $result;
     }
 
+    /**
+     * Creates a With object representing an included relation.
+     *
+     * @param string $include The include string representing the relation.
+     * @return With The With object representing the relation.
+     */    
     protected function createWithObject(string $include): With
     {
         // Split the include string into parts
@@ -79,16 +129,32 @@ final class QueryParamsHandler
         return new With($name, $conditions, $subIncludes);
     }    
 
+    /**
+     * Parses the 'conditions' query parameter.
+     *
+     * @return array The parsed conditions.
+     */    
     protected function parseConditions(): array
     {
         return $this->parseComplexConditions('conditions');
     }
 
+    /**
+     * Parses the 'exclude_conditions' query parameter.
+     *
+     * @return array The parsed exclude conditions.
+     */    
     protected function parseExcludeConditions(): array
     {
         return $this->parseComplexConditions('exclude_conditions');
     }
 
+    /**
+     * Parses complex conditions from the query parameters.
+     *
+     * @param string $key The key of the query parameter to parse.
+     * @return array The parsed conditions.
+     */    
     protected function parseComplexConditions(string $key): array
     {
         $conditions = [];
@@ -110,6 +176,12 @@ final class QueryParamsHandler
         return $conditions;
     }
 
+    /**
+     * Parses a field with operator information.
+     *
+     * @param string $field The field string containing operators.
+     * @return array An array containing the operator, logical operator, and field.
+     */    
     protected function parseFieldWithOperators(string $field): array
     {
         $parts = explode('_', $field, 3);
@@ -121,7 +193,11 @@ final class QueryParamsHandler
     }
 
 
-    //TODO: I feel like there's a better way to make these functions.
+    /**
+     * Parses the 'limit' query parameter.
+     *
+     * @return ?int The parsed limit or null.
+     */
     protected function parseLimit(): ?int
     {
         return isset($this->queryParams['limit']) && is_numeric($this->queryParams['limit'])
@@ -129,6 +205,11 @@ final class QueryParamsHandler
             : null;
     }
 
+    /**
+     * Parses the 'offset' query parameter.
+     *
+     * @return ?int The parsed offset or null.
+     */    
     protected function parseOffset(): ?int
     {
         return isset($this->queryParams['offset']) && is_numeric($this->queryParams['offset'])
@@ -136,6 +217,11 @@ final class QueryParamsHandler
             : null;
     }
 
+    /**
+     * Parses the 'order_by' query parameter.
+     *
+     * @return array The parsed order by fields.
+     */    
     protected function parseOrderBy(): array
     {
         $orderBy = [];
@@ -151,6 +237,11 @@ final class QueryParamsHandler
         return $orderBy;
     }
 
+    /**
+     * Parses the 'countOnly' query parameter.
+     *
+     * @return bool True if only count should be returned, false otherwise.
+     */    
     protected function parseCountOnly(): bool
     {
         return isset($this->queryParams['countOnly']) && $this->queryParams['countOnly'] === 'true';

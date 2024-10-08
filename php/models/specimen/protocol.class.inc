@@ -9,7 +9,7 @@ use LORIS\biobank\models\specimen\process;
 final class Protocol extends Model
 {
     public function __construct(
-        public readonly string $label,
+        public readonly ?string $label,
         public readonly ?Type $type = null,
         public readonly ?process\Type $process = null,
         private readonly ?int $id = null,

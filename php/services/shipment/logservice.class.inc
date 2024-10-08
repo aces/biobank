@@ -2,13 +2,10 @@
 
 namespace LORIS\biobank\services\shipment;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\shipment\LogProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\shipment\LogSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\shipment\Log;
 use LORIS\biobank\validators\shipment\LogValidator;
 
@@ -23,7 +20,8 @@ class LogService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            new ModelProvisioner(new LogSchema('log')),
+            new LogProvisioner(),
+            new Factory(Log::class),
             new LogValidator($this),                                         
         );                                                                         
     }          

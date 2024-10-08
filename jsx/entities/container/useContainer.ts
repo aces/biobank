@@ -5,8 +5,7 @@ export interface ContainerHook extends EntityHook<Container, IContainer> {
 }
 
 export function useContainer(
-  initContainer: Partial<IContainer> = {}
+  initContainer: Container
 ): ContainerHook {
-
-  return useEntity<Container, IContainer>(() => new Container(initContainer));
+  return useEntity<Container, IContainer>(initContainer);
 }

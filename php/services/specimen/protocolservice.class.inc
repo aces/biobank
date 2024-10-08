@@ -2,13 +2,10 @@
 
 namespace LORIS\biobank\services\specimen;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\specimen\ProtocolProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\specimen\ProtocolSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\specimen\Protocol;
 use LORIS\biobank\validators\specimen\ProtocolValidator;
 
@@ -23,7 +20,8 @@ class ProtocolService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            new ModelProvisioner(new ProtocolSchema('protocol')),
+            new ProtocolProvisioner(),
+            new Factory(Protocol::class),
             new ProtocolValidator($this),                                         
         );                                                                         
     }          

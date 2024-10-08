@@ -47,19 +47,21 @@ export const useBiobankContext = (): BiobankContextType => {
     throw new Error('useBiobankContext must be used within a BiobankProvider');
   }
 
-  // Wrap streams' data with Proxy
-  const wrappedStreams = Object.keys(context).reduce((acc, key) => {
-    if (context[key].data) {
-      acc[key] = {
-        ...context[key],
-        data: wrapDataWithProxy(context[key].data, key, context), // Pass the context correctly here
-      };
-    } else {
-      acc[key] = context[key];
-    }
-    return acc;
-  }, {} as BiobankContextType);
+  return context;
 
-  return wrappedStreams;
+  // // Wrap streams' data with Proxy
+  // const wrappedStreams = Object.keys(context).reduce((acc, key) => {
+  //   if (context[key].data) {
+  //     acc[key] = {
+  //       ...context[key],
+  //       data: wrapDataWithProxy(context[key].data, key, context), // Pass the context correctly here
+  //     };
+  //   } else {
+  //     acc[key] = context[key];
+  //   }
+  //   return acc;
+  // }, {} as BiobankContextType);
+
+  // return wrappedStreams;
 };
 

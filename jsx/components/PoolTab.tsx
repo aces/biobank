@@ -36,18 +36,17 @@ export const PoolTab: React.FC = () => {
     value: any,
     row: any
   ): ReactElement {
-    console.log(value);
     const handlers = {
-      'Pooled Specimens': () => (
-        value.map((specimen, i) => (
-          <Fragment key={i}>
-            {i > 0 && ', '}
-            <Link to={'/specimens/'+specimen.container.barcode}>
-              {specimen.container.barcode}
-            </Link>
-          </Fragment>
-        ))
-      ),
+      //'Pooled Specimens': () => (
+      //  value.map((barcode, i) => (
+      //    <Fragment key={i}>
+      //      {i > 0 && ', '}
+      //      <Link to={'/specimens/'+barcode}>
+      //        {barcode}
+      //      </Link>
+      //    </Fragment>
+      //  ))
+      //),
       'PSCID': () => (
         <Link href={loris.BaseURL+'/'+value.id} condition={!!value.id}>
           {value.label}
@@ -58,7 +57,7 @@ export const PoolTab: React.FC = () => {
           href={loris.BaseURL+'/instrument_list/?candID='+row['PSCID'].id+'&sessionID='+value.id}
           condition={!!value.id}
         >
-          {value}
+          {value.label}
         </Link>
       ),
       'Aliquot': () => (
@@ -68,22 +67,23 @@ export const PoolTab: React.FC = () => {
       ),
       'default': () => value
     };
+
     // Return the result wrapped in a <td> tag, falling back to 'default' if the column is not found.
     return <td>{(handlers[column] || handlers['default'])()}</td>;
   }
 
-  console.log('pools:', pools);  // Check if `pools` is defined and what it contains
-  console.log('pools.data:', pools.data);  // Check if `pools.data` is defined
+  //console.log('pools:', pools);  // Check if `pools` is defined and what it contains
+  //console.log('pools.data:', pools.data);  // Check if `pools.data` is defined
 
-  const poolData = (pools.data || {}).map((pool: IPool) => {
+  const poolData = pools?.data?.map((pool: IPool) => {
     return [
       pool.label,
       Math.round(pool.quantity*100)/100 + ' ' + pool.unit.label,
-      pool.specimens.map((specimen) => specimen.container.barcode),
-      pool.specimens[0].candidate.label,
-      pool.specimens[0].session.label,
-      pool.specimens[0].type.label,
-      pool.specimens[0].container.center.label,
+      pool.specimens?.map((specimen) => specimen.barcode),
+      pool.candidate,
+      pool.session,
+      pool.type.label,
+      pool.center.label,
       pool.date,
       pool.time,
     ];

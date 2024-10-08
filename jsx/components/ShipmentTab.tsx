@@ -126,7 +126,7 @@ const ShipmentInformation: React.FC<{
   shipment,
 }) => {
 
-  const shipmentHook = useShipment(shipment);
+  const shipmentHook = useShipment(new Shipment(shipment));
 
   const logs = shipment.logs.map((log, i) => (
     <LogEntry key={i} log={log} index={i} />
@@ -154,7 +154,7 @@ const ShipmentInformation: React.FC<{
 }
 
 const LogEntry: React.FC<{ log: Partial<ILog>; index: number }> = ({ log, index }) => {
-  const logHook = useLog(log); // Assuming useLog is your custom hook
+  const logHook = useLog(new Log(log)); // Assuming useLog is your custom hook
 
   return (
     <LogProvider log={logHook}>
@@ -178,7 +178,8 @@ const CreateShipment: React.FC = () => {
   const { containers, updateEntities } = useBiobankContext();
 
   const logIndex = 0;
-  const shipment = useShipment({logs: [{status: {label: 'created'}}]});
+  const shipment = useShipment(new Shipment({logs: [{status: {label:
+                                            'created'}}]}));
   const log = shipment.logs[logIndex];
 
   const setLog = (log) => shipment.setLog(logIndex, log);
@@ -218,7 +219,7 @@ const CreateShipment: React.FC = () => {
 const ReceiveShipment = ({
   shipment: initShipment
 }: { shipment: IShipment }) => {
-  const shipment = useShipment(initShipment);
+  const shipment = useShipment(new Shipment(initShipment));
   const logIndex = shipment.logs.length-1;
   const onSuccess = ({shipments, containers}) => {
     // updateShipments(shipments);
@@ -258,7 +259,7 @@ const ShipmentLogForm: React.FC<{
   setLog: (log: Partial<ILog>) => void,
 }> = ({ log, setLog }) => {
 
-  const logHook = useLog(log);
+  const logHook = useLog(new Log(log));
 
   useEffect(() => {
     setLog(logHook.getData());

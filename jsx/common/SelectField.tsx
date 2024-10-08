@@ -11,6 +11,7 @@ const SelectField = ({
   ...props
 }: SelectProps<string>) => {
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log(event.target.value);
     onChange(event.target.name, event.target.value);
   };
 

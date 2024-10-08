@@ -7,7 +7,7 @@ use LORIS\biobank\Model;
 final class DataType extends Model
 {
     public function __construct(
-        public readonly string $label,
+        public readonly ?string $label,
         private readonly ?int $id = null,
     ) {}
 }

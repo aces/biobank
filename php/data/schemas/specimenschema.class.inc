@@ -42,79 +42,99 @@ use \LORIS\biobank\data\schema\RelationType;
  */
 class SpecimenSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\Specimen::class;                                 
     }  
 
-    protected function getTable(): Table
+    public static function table(): Table
     {
-        return new Table(name: 'biobank_specimen');
+        return new Table(name: 'biobank_specimen', alias: 'specimen');
     }
 
-    protected function getId(): string                                            
+    public static function id(): string                                            
     {                                                                              
         return 'SpecimenID';                                                  
     }        
 
-    protected function getLabel(): string                                      
+    public static function label(): string                                      
     {                                                                              
         return 'barcode';                                                            
     }   
 
-    protected function getColumns(): array
+    public static function columns(): array
     {
         return [
+            'id' => new Column(
+                name: 'SpecimenID',
+                table: self::table()
+            ),
+            'containerId' => new Column(
+                name: 'ContainerID',
+                table: self::table()
+            ),
             'quantity' => new Column(
                 name: 'Quantity',
-                table: $this->table,
+                table: self::table()
             ),
             'freezethaw' => new Column(
-                name: 'Quantity',
-                table: $this->joins['freezethaw_rel']->to->table,
+                name: 'FreezeThawCycle',
+                table: self::joins()['freezethaw_rel']->to->table,
             ),
             'sampleNumber' => new Column(
                 name: 'SampleNumber',
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getJoins(): array
+    public static function joins(): array
     {
         return [
             'freezethaw_rel' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_freezethaw',
                         alias: 'freezethaw_rel',
                     ),
-                    key: $this->id
+                    key: self::id()
                 )
             ),
             'pool_rel' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_pool_rel',
                         alias: 'pool_rel',
                     ),
-                    key: $this->id
+                    key: self::id()
                 )
             ),
             'parents_rel' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_parent',
                         alias: 'parents_rel',
                     ),
-                    key: $this->id
+                    key: self::id()
                 )
             ),
             'children_rel' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_parent',
@@ -124,18 +144,21 @@ class SpecimenSchema extends Schema
                 )
             ),
             'projects_rel' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_project_rel',
                         alias: 'projects_rel',
                     ),
-                    key: $this->id
+                    key: self::id(),
                 )
             ),
             'session_rel' => new Join(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'SessionID'
                 ),
                 to: new TableKey(
@@ -149,61 +172,69 @@ class SpecimenSchema extends Schema
         ];
     }
 
-    protected function getRelations(): array                                   
+    public static function relations(): array                                   
     {                                                                              
         return [
             'container' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'ContainerID'
                 ),
                 to: ContainerSchema::class,
             ),
             'type' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'SpecimenTypeID'
                 ),
                 to: specimen\TypeSchema::class,
             ),
             'unit' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'UnitID'
                 ),
                 to: UnitSchema::class,
-                many: true,
             ),
             'collection' => new Relation(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id()
+                ),
                 to: specimen\process\CollectionSchema::class,
             ),
             'preparation' => new Relation(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id()
+                ),
                 to: specimen\process\PreparationSchema::class,
             ),
             'analysis' => new Relation(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id()
+                ),
                 to: specimen\process\AnalysisSchema::class,
             ),
             'pool' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['pool_rel']->to->table,
+                    table: self::joins()['pool_rel']->to->table,
                     key: 'PoolID'
                 ),
                 to: PoolSchema::class,
             ),
             'children' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['children_rel']->to->table,
-                    key: $this->id
+                    table: self::joins()['children_rel']->to->table,
+                    key: self::id()
                 ),
                 to: self::class,
                 many: true
             ),
             'parents' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['parents_rel']->to->table,
+                    table: self::joins()['parents_rel']->to->table,
                     key: 'ParentSpecimenID'
                 ),
                 to: self::class,
@@ -211,24 +242,25 @@ class SpecimenSchema extends Schema
             ),
             'session' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'SessionID'
                 ),
                 to: SessionSchema::class,
             ),
             'candidate' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['session_rel']->to->table,
+                    table: self::joins()['session_rel']->to->table,
                     key: 'CandID'
                 ),
                 to: CandidateSchema::class,
             ),
             'projects' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['projects_rel']->to->table,
+                    table: self::joins()['projects_rel']->to->table,
                     key: 'ProjectID'
                 ),
                 to: ProjectSchema::class,
+                many: true
             ),
         ];
     }

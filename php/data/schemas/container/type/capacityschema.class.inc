@@ -29,41 +29,41 @@ use \LORIS\biobank\data\Schema;
 final class CapacitySchema extends Schema
 {
 
-    protected function getModel(): string
+    public static function model(): string
     {
         return \LORIS\biobank\models\container\type\Capacity::class;
     }
 
-    protected function getTable(): Table
+    public static function table(): Table
     {
         return new Table(name: 'biobank_container_capacity');
     }
 
-    protected function getId(): string
+    public static function id(): string
     {
         return 'ContainerCapacityID';
     }
 
-    protected function getLabel(): string
+    public static function label(): string
     {
         return '';
     }
 
-    protected function getColumns(): array
+    public static function columns(): array
     {
         return [
             'quantity' => new Column(
                 name: 'Quantity',
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getRelations(): array {
+    public static function relations(): array {
         return [
             'unit' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'UnitID'
                 ),
                 to: UnitSchema::class,
@@ -72,7 +72,7 @@ final class CapacitySchema extends Schema
         ];
     }
 
-    protected function getJoins(): array {
+    public static function joins(): array {
         return []; // Add join definitions if needed
     }
 }

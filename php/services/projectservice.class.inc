@@ -2,11 +2,10 @@
 
 namespace LORIS\biobank\services;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\ProjectProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
 use LORIS\biobank\data\schemas\ProjectSchema;
 use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\Project;
@@ -22,7 +21,8 @@ class ProjectService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            new ModelProvisioner(new ProjectSchema('project')),
+            new ProjectProvisioner(),
+            new Factory(Project::class)
         );                                                                         
     }          
 

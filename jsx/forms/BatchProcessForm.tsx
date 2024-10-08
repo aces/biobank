@@ -3,8 +3,8 @@ import {VerticalTabs, TabPane} from 'Tabs';
 import Modal from 'Modal';
 import { StaticField, ListField, ProcessForm, PoolField, SpecimenField } from '../forms';
 import { useBiobankContext, useEditable } from '../hooks';
-import { IContainer, IProcess, Specimen, ISpecimen, useProcess, usePool,
-  useEntities, EntitiesHook,
+import { IContainer, Specimen, ISpecimen, useProcess, usePool,
+  useEntities, EntitiesHook, Pool, Process
 } from '../entities';
 import Swal, { SweetAlertOptions, SweetAlertResult } from 'sweetalert2';
 import dict from '../i18n/en.json'
@@ -23,8 +23,8 @@ const BatchProcessForm: React.FC<{
 }) => {
 
   const context = useBiobankContext();
-  const preparation = useProcess();
-  const pool = usePool();
+  const preparation = useProcess(new Process({}));
+  const pool = usePool(new Pool({}));
   const specimens = useEntities(Specimen);
   const { editable, edit, clear } = useEditable();
   const type = !specimens.isEmpty() ? specimens.toArray()[0].getData().type
@@ -102,11 +102,13 @@ const BatchProcessForm: React.FC<{
       <ListField
         name={'specimens'}
         label={'Barcode'}
-        onAdd={specimens.update}
+        onAdd={(barcode) =>
+          specimens.update(barcode, context.specimens.data.find(s => s.container.barcode
+        == barcode))}
         onRemove={specimens.remove}
-        list={specimens.toData()}
-        options={context.specimensi.data}
-        format={(specimen) => specimen.container.barcode}
+        list={specimens.keys().reduce((acc, item) => ({ ...acc, [item]: item }), {})}
+        options={context.specimens.data.map(specimen =>
+                                            specimen.container.barcode)}
       />
       {editForms}
     </Modal>

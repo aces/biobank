@@ -2,16 +2,10 @@
 
 namespace LORIS\biobank\services;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
-use LORIS\biobank\Service;
-use LORIS\biobank\Model;
-use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\query;
-use LORIS\biobank\data\schemas\ShipmentSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
-use LORIS\biobank\models\Shipment;
-use LORIS\biobank\validators\ShipmentValidator;
+use \LORIS\biobank\Service;
+use \LORIS\biobank\Model;
+use \LORIS\biobank\provisioners\ShipmentProvisioner;
+use \LORIS\biobank\validators\ShipmentValidator;
 
 /**
  * Service class for handling Container operations.
@@ -24,18 +18,11 @@ class ShipmentService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            new ModelProvisioner(new ShipmentSchema('shipment')),
+            new ShipmentProvisioner(),
+            new \LORIS\biobank\Factory(\LORIS\biobank\models\Shipment::class),
             new ShipmentValidator($this),                                         
         );                                                                         
     }          
-
-    public function applyDefaultParams(query\QueryParams $params): query\QueryParams
-    {
-        return $params
-            ->include(
-                new query\With('logs')
-            );
-    }
 
     /**
      * Handles actions to be performed after saving a Container.
@@ -48,24 +35,27 @@ class ShipmentService extends Service
         $this->saveContainers($shipment);
     }
 
-    public function saveLogs(Shipment $shipment): void {
-        $logDAO = new DAO($dao->db);
-        foreach ($shipment->getLogs() as $log) {
-            $log->setShipmentId($shipment->getId());
-            $logDAO->save($log);
-        }
+    public function saveLogs(Shipment $shipment): void
+    {
+        
+        // $logDAO = new DAO($dao->db);
+        // foreach ($shipment->getLogs() as $log) {
+        //     $log->setShipmentId($shipment->getId());
+        //     $logDAO->save($log);
+        // }
     }
 
-    public function saveContainers(Shipment $shipment): void {
-        $containerDAO = new ContainerDAO($dao->db);
-        foreach ($shipment->getContainerIds() as $containerId) {
-            $container = $containerDAO->getInstanceById((int) $containerId);
-            if (!$shipment->getId()) {
-                $container->setParentContainerId(null);
-            } else {
-                $container->setCenterId(new \CenterID(strval($shipment->getDestinationCenterId())));
-            }
-            $containerDAO->save($container);
-        }
+    public function saveContainers(Shipment $shipment): void
+    {
+        //$containerDAO = new ContainerDAO($dao->db);
+        //foreach ($shipment->getContainerIds() as $containerId) {
+        //    $container = $containerDAO->getInstanceById((int) $containerId);
+        //    if (!$shipment->getId()) {
+        //        $container->setParentContainerId(null);
+        //    } else {
+        //        $container->setCenterId(new \CenterID(strval($shipment->getDestinationCenterId())));
+        //    }
+        //    $containerDAO->save($container);
+        //}
     }
 }

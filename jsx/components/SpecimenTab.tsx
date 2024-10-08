@@ -48,16 +48,17 @@ const SpecimenTab = () => {
       Dispensed: 'red',
       Discarded: 'red',
     };
+    console.log(value);
     switch (column) {
       case 'Barcode':
         return <td><Link to={`/specimens/${value}`}>{value}</Link></td>;
       case 'Parent Specimens':
         // Check if 'value' is an array and map over it to produce Link elements
 
-        const barcodes = Array.isArray(value) ? value.map((barcode, index) => (
+        const barcodes = Array.isArray(value) ? value.map((specimen, index) => (
           // Use React.Fragment to wrap each Link and comma
-          <Fragment key={barcode}>
-            <Link to={'/specimens/'+barcode}>{barcode}</Link>
+          <Fragment key={index}>
+            <Link to={'/specimens/'+specimen.id}>{specimen.id}</Link>
             {index < value.length - 1 ? ', ' : ''}
           </Fragment>
         )) : null; // Handle case where 'value' is not an array
@@ -108,9 +109,10 @@ const SpecimenTab = () => {
   //         });
   //     });
      return [
-       specimen.type,
-       specimen.container.type,
-       specimen.quantity+' '+specimen.unit,
+       specimen.container.barcode,
+       specimen.type.label,
+       specimen.container.type.label,
+       specimen.quantity+' '+specimen.unit.label,
        specimen.fTCycle,
        specimen.parents,
        specimen.candidate,
@@ -121,12 +123,12 @@ const SpecimenTab = () => {
        specimen.pool.label,
        specimen.container.status,
        specimen.projects,
-       specimen.container.center,
-       specimen.session.center,
+       specimen.container.center.label,
+       specimen.session.center.label,
        specimen.collection.date,
        specimen.collection.time,
        specimen.preparation?.time,
-       specimen.container.parent,
+       specimen.container.parent.barcode,
        specimen.container.coordinate,
        ...specimenAttributeData,
      ];

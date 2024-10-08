@@ -28,60 +28,60 @@ use \LORIS\biobank\data\Schema;
  */
 final class TypeSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\container\Type::class;                              
     }  
 
-    protected function getTable(): Table
+    public static function table(): Table
     {
         return new Table(name: 'biobank_container_type');
     }
 
-    protected function getId(): string
+    public static function id(): string
     {
         return 'ContainerTypeID';
     }
 
-    protected function getLabel(): string
+    public static function label(): string
     {
         return 'label';
     }
 
-    protected function getColumns(): array {
+    public static function columns(): array {
         return [
             'label' => new Column(
                 name: 'Label',
-                table: $this->table
+                table: self::table()
             ),
             // primary is a reserved word in sql
             'prime' => new Column( 
                 name: 'Prime',
-                table: $this->table,
+                table: self::table()
             ),
             'brand' => new Column(
                 name: 'Brand',
-                table: $this->table,
+                table: self::table()
             ),
             'productNumber' => new Column(
                 name: 'ProductNumber',
-                table: $this->table,
+                table: self::table()
             )
         ];
     }
 
-    protected function getRelations(): array {
+    public static function relations(): array {
         return [
             'capacity' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'ContainerCapacityID'
                 ),
                 to: container\type\CapacitySchema::class,
             ),
             'dimension' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'ContainerDimensionID'
                 ),
                 to: container\type\DimensionSchema::class,
@@ -89,7 +89,7 @@ final class TypeSchema extends Schema
         ];
     }
 
-    protected function getJoins(): array {
+    public static function joins(): array {
         return []; // Add join definitions if needed
     }
 }

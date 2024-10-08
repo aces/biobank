@@ -1,7 +1,7 @@
 // Re-export exports from each file
 export * from './clone';
 export * from './mapFormOptions';
-export * from './normalizeOptions';
+export * from './formatOptions';
 export * from './isEmpty';
 export * from './padBarcode';
 
@@ -9,7 +9,7 @@ export * from './padBarcode';
 import { clone } from './clone';
 import { mapFormOptions } from './mapFormOptions';
 import { mapLabel } from './mapFormOptions';
-import { normalizeOptions } from './normalizeOptions';
+import { formatOptions } from './formatOptions';
 import { isEmpty } from './isEmpty';
 import { padBarcode } from './padBarcode';
 
@@ -18,7 +18,7 @@ const Utils = {
     clone,
     mapLabel,
     mapFormOptions,
-    normalizeOptions,
+    formatOptions,
     isEmpty,
     padBarcode
 };

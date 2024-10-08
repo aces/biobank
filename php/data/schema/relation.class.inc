@@ -18,7 +18,7 @@ class Relation
 
     public function __construct(
         public TableKey $from,
-        private string $to, // schema fully qualified class name
+        public string $to, // schema fully qualified class name
         public bool $many = false,
         public ?RelationType $type = null,
     ) {

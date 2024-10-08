@@ -25,37 +25,37 @@ use \LORIS\biobank\data\Schema;
                                                                                    
 class UserSchema extends Schema                                          
 {                                                                                  
-    protected function getModel(): string                                          
+    protected function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\User::class;                              
     }  
 
-    protected function getTable(): Table {                                            
+    protected function table(): Table {                                            
         return new Table(name: 'users');                                 
     }                                                                              
                                                                                    
-    protected function getId(): string {                                                 
+    protected function id(): string {                                                 
         return 'ID';                                          
     }                                                                              
                                                                                    
-    protected function getLabel(): string {                                           
+    protected function label(): string {                                           
         return 'name';                                                            
     }                                                                              
                                                                                    
-    protected function getColumns(): array {                                          
+    protected function columns(): array {                                          
         return [                                                                   
             'name' => new Column(                                                 
                 name: 'Real_name',                                                     
-                table: $this->table,
+                table: self::table()
             )                                                                      
         ];                                                                         
     }                                                                              
                                                                                    
-    protected function getRelations(): array {                                        
+    protected function relations(): array {                                        
         return [];                                                                 
     }                                                                              
                                                                                    
-    protected function getJoins(): array {                                            
+    protected function joins(): array {                                            
         return [];                                                                 
     }                                                                              
 }      

@@ -5,9 +5,6 @@ import { IContainer, Container, useEntities, EntitiesHook, ContainerProvider, us
 import { useBiobankContext} from '../hooks';
 import { ContainerAPI } from '../APIs';
 
-/**
- * A form for editing Containers in the Biobank
- */
 const ContainerForm: React.FC<{
   show: boolean,
   onClose: () => void,
@@ -15,17 +12,34 @@ const ContainerForm: React.FC<{
   show = false,
   onClose
 }) => {
+  if (!show) return null; //XXX temporary until Modal does this properly.
+
+  const container = useContainer(new Container({}));
   const containers = useEntities(Container);
+
+  useEffect(() => {
+    containers.add({});
+  }, [containers.add]);                                 
+
+  useEffect(() => {
+    containers.setAll('center', {label: container.center});
+  }, [container.center, containers.entities.size]);                                 
+
+  const onSubmit = () => {
+    return containers.saveAll(data => new ContainerAPI().create(data));
+  };
 
   return (
     <Modal
       title='Add New Container'
       show={show}
       onClose={onClose}
-      onSubmit={() => new ContainerAPI().create(containers)}
+      onSubmit={onSubmit}
       throwWarning={true}
     >
-      <ContainerField property={'center'}/>
+      <ContainerProvider container={container}>
+        <ContainerField property={'center'}/>
+      </ContainerProvider>
       <ListForm list={containers} listItemComponent={ContainerListItem}/>
     </Modal>
   );
@@ -39,7 +53,7 @@ const ContainerListItem: React.FC<{
   update: EntitiesHook<Container, IContainer>['update']
 }> = React.memo(({ id, entity, update }) => {
 
-  const container = useContainer(entity.getData());
+  const container = useContainer(entity);
 
   // Memoize callback
   const handleUpdate = useCallback(() => {

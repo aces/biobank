@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import { FieldConfiguration } from '../types';
 import { Entity, EntityHook } from '../entities';
 import { useBiobankContext } from '../hooks';
+import Utils from '../utils';
 import Form from './Form';
 
 const fieldComponentMapping: {
@@ -26,45 +27,33 @@ interface DynamicFieldProps<E extends Entity<I>, I extends object> {
   isStatic?: boolean,
 };
 
+// Define OptionType with required structure
+interface OptionType {
+  label: string;
+  value: any; // Customize based on the actual value structure you expect
+}
+
 export const DynamicField = <E extends Entity<I>, I extends object>({
   property,
   hook,
   field,
   isStatic,
 }: DynamicFieldProps<E, I>): ReactElement | null => { 
-
-  // const [options, setOptions] = useState<Record<string, any>>({});
-  // const [loading, setLoading] = useState(false);
-  // const [error, setError] = useState('');/
   const context = useBiobankContext();
 
- //  useEffect(() => {
- //    const fetchOptions = async () => {
- //      if (field.getOptions) {
- //        try {
- //          const fetchedOptions = await field.getOptions(context);
- //          setOptions(fetchedOptions);
- //        } catch (error) {
- //          console.error("Failed to fetch options", error);
- //          setError("Failed to fetch options");
- //        }
- //      }
- //    };
- //    fetchOptions();
- //  }, [property, field, context]);
+  if (!field) return null; // might not be necessary1
 
-  // Decide rendering based on fieldConfig type
-  if (!field) return null;
-
-  const fieldType = isStatic || hook.locked ? 'static' : field.type
+  const fieldType = isStatic || hook.locked ? 'static' : field.type;
   const Field = fieldComponentMapping[fieldType];
 
-  if (!Field) return null;
+  if (!Field) return null; // might not be necessary
+
+  const value = hook.getData()[property] as any;
 
   const commonProps = {
     name: property as string,
     label: field.label,
-    value: hook.getData()[property] as any,
+    value: value,
     required: field.required || false,
     error: hook.errors[property] || '',
     disabled: field.disabled || false,
@@ -72,15 +61,16 @@ export const DynamicField = <E extends Entity<I>, I extends object>({
   };
 
   let additionalProps = {};
+
+  // Check if the field type requires handling `select`, `search`, etc.
   if (['select', 'search', 'input'].includes(field.type)) {
     additionalProps = {
-      options: field.getOptions ? field.getOptions(context) : {},
-      format: field.format || ((option) => (option as {label: string}).label), //current hack to allow this default, find better solution later
-      //multiple: field.multiple,
+      options: field.getOptions(context),
+      value: value,
       placeholder: field.placeholder || 'Search for a ' + field.label,
       emptyOption: field.emptyOption || false,
     };
   }
 
-  return <Field {...commonProps} {...additionalProps}/>
+  return <Field {...commonProps} {...additionalProps} />;
 };

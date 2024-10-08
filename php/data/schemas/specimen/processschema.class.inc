@@ -13,68 +13,68 @@ use \LORIS\biobank\data\schema\RelationType;
 
 abstract class ProcessSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\specimen\Process::class;                            
     }   
 
-    protected function getId(): string                                            
+    public static function id(): string                                            
     {                                                                              
         return 'SpecimenID';                                          
     }              
 
-    protected function getLabel(): string                                      
+    public static function label(): string                                      
     {                                                                              
         return '';                                                            
     }            
 
-    protected function getColumns(): array                                     
+    public static function columns(): array                                     
     {    
         return [
             'date' => new Column(
                 name: 'Date',
-                table: $this->table,
+                table: static::table()
             ),
             'time' => new Column(
                 name: 'Time',
-                table: $this->table,
+                table: static::table()
             ),
             'comments' => new Column(
                 name: 'Comments',
-                table: $this->table,
+                table: static::table()
             ),
             'data' => new Column(
                 name: 'Data',
-                table: $this->table,
+                table: static::table()
             )
         ];
     }
 
-    protected function getJoins(): array                                     
+    public static function joins(): array                                     
     {    
         return [];
     }
 
-    protected function getRelations(): array
+    public static function relations(): array
     {
         return [
             'protocol' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: static::table(),
                     key: 'SpecimenProtocolID'
                 ),
                 to: ProtocolSchema::class,
             ),
             'center' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: static::table(),
                     key: 'CenterID'
                 ),
                 to: schemas\CenterSchema::class,
             ),
             'examiner' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: static::table(),
                     key: 'ExaminerID'
                 ),
                 to: schemas\ExaminerSchema::class,

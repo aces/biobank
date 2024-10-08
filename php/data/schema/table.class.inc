@@ -9,5 +9,5 @@ class Table
         public ?string $alias = null
     ) {
         $this->alias = $alias ?? $name;
-    }                                                                           
+    }
 }  

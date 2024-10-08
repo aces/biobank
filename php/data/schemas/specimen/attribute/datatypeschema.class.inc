@@ -9,42 +9,42 @@ use \LORIS\biobank\data\schema\ColumnType;
 
 final class DatatypeSchema extends Schema
 {
-    protected function getModel(): string                                          
+    protected function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\specimen\attribute\DataType::class;                            
     }   
 
-    protected function getTable(): Table
+    protected function table(): Table
     {
         return new Table(name: 'biobank_specimen_attribute_datatype');
     }
 
-    protected function getId(): string
+    protected function id(): string
     {
         return 'DatatypeID';
     }
 
-    protected function getLabel(): string
+    protected function label(): string
     {
         return 'label';
     }
 
-    protected function getColumns(): array
+    protected function columns(): array
     {
         return [
             'label' => new Column(
                 name: 'Datatype',
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getJoins(): array
+    protected function joins(): array
     {
         return [];
     }
 
-    protected function getRelations(): array
+    protected function relations(): array
     {
         return [];
     }

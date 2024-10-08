@@ -27,47 +27,47 @@ use \LORIS\biobank\data\Schema;
  */
 final class SessionSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\Session::class;                              
     }  
 
-    protected function getTable(): Table                                       
+    public static function table(): Table                                       
     {                                                                              
         return new Table(name: 'session');
     }                                                                              
                                                                                    
-    protected function getId(): string                                            
+    public static function id(): string                                            
     {                                                                              
         return 'ID';                                                  
     }                                                                              
                                                                                    
-    protected function getLabel(): string                                      
+    public static function label(): string                                      
     {                                                                              
         return 'label';                                                            
     }                                                                              
                                                                                    
-    protected function getColumns(): array                                     
+    public static function columns(): array                                     
     {                                                                              
         return [                                                                   
             'label' => new Column(
                 name: 'Visit_label',
-                table: $this->table,
+                table: self::table()
             ),
         ];                                                                         
     }                                                                              
                                                                                    
-    protected function getJoins(): array                                       
+    public static function joins(): array                                       
     {                                                                              
         return [];                                                                 
     }                                                                              
                                                                                    
-    protected function getRelations(): array                                   
+    public static function relations(): array                                   
     {                                                                              
         return [
             'candidate' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'CandID'
                 ),
                 to: schemas\CandidateSchema::class,
@@ -75,7 +75,7 @@ final class SessionSchema extends Schema
             ),
             'center' => new schema\Relation(
                 from: new schema\TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'CenterID'
                 ),
                 to: schemas\CenterSchema::class,

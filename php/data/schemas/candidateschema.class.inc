@@ -9,66 +9,69 @@ use \LORIS\biobank\data\schema\Column;
 use \LORIS\biobank\data\schema\ColumnType;
 use \LORIS\biobank\data\schema\Join;
 use \LORIS\biobank\data\schema\Relation;
-use \LORIS\biobank\data\schema\LoadingStrategy;
 
 /**
- * Candidate Schema Class
- * 
- * This class defines the schema for the `candidate` table.
- * 
- * PHP Version 7.2
- * 
- * @category   Data
- * @package    Loris
+ * CandidateSchema Class
+ *
+ * This class defines the schema for the `candidate` table. It specifies
+ * the model, table structure, columns, joins, and relationships with
+ * other tables in the biobank system.
+ *
+ * @package    LORIS
  * @subpackage Biobank
- * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
+ * @category   Data
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
 class CandidateSchema extends Schema
 {
-    protected function getModel(): string
+    public static function model(): string
     {
         return \LORIS\biobank\models\Candidate::class;
     }
 
-    protected function getTable(): Table
+    public static function table(): Table
     {
         return new Table(name: 'candidate');
     }
 
-    protected function getId(): string
+    public static function id(): string
     {
         return 'CandID';
     }
 
-    protected function getLabel(): string
+    public static function label(): string
     {
         return 'label';
     }
 
-    protected function getColumns(): array
+    public static function columns(): array
     {
         return [
             'label' => new Column(
                 name: 'PSCID',
-                table: $this->table,
+                table: self::table(),
             ),
             'dob' => new Column(
                 name: 'DoB',
-                table: $this->table,
+                table: self::table(),
             ),
             'sex' => new Column(
                 name: 'Sex',
-                table: $this->table,
+                table: self::table(),
             ),
         ];
     }
 
-    protected function getJoins(): array
+    public static function joins(): array
     {
+        $tableKey = new TableKey(
+            table: self::table(),
+            key: self::id()
+        );
         return [
             'diagnosis' => new Join(
-                from: $this->idKey,
+                from: $tableKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'candidate_diagnosis_rel'
@@ -77,7 +80,7 @@ class CandidateSchema extends Schema
                 ),
             ),
             'session' => new Join(
-                from: $this->idKey,
+                from: $tableKey,
                 to: new TableKey(
                     table: new Table(name: 'session'), // to be replaced with call to sesion schema once table name is a static property
                     key: 'CandID'
@@ -86,12 +89,12 @@ class CandidateSchema extends Schema
         ];
     }
 
-    protected function getRelations(): array
+    public static function relations(): array
     {
         return [
             'diagnoses' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['diagnosis']->to->table,
+                    table: self::joins()['diagnosis']->to->table,
                     key: 'DiagnosisID'
                 ),
                 to: DiagnosisSchema::class,
@@ -99,7 +102,7 @@ class CandidateSchema extends Schema
             ),
             'sessions' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['session']->to->table,
+                    table: self::joins()['session']->to->table,
                     key: 'ID'
                 ),
                 to: SessionSchema::class,

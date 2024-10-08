@@ -29,67 +29,75 @@ use \LORIS\biobank\data\schemas\container;
 
 class ContainerSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\Container::class;                              
     }  
 
-    protected function getTable(): Table
+    public static function table(): Table
     {
         return new Table(name: 'biobank_container');
     }
 
-    protected function getId(): string
+    public static function id(): string
     {
         return 'ContainerID';
     }
 
-    protected function getLabel(): string
+    public static function label(): string
     {
         return 'barcode';
     }
 
-    protected function getColumns(): array
+    public static function columns(): array
     {
         return [
+            'id' => new Column(
+                name: 'ContainerID', 
+                table: self::table()
+            ),
             'barcode' => new Column(
                 name: 'Barcode', 
-                table: $this->table,
+                table: self::table()
             ),
             'temperature' => new Column(
                 name: 'Temperature', 
-                table: $this->table,
+                table: self::table()
             ),
             'lotNumber' => new Column(
                 name: 'LotNumber', 
-                table: $this->table,
+                table: self::table()
             ),
             'expirationDate' => new Column(
                 name: 'ExpirationDate', 
-                table: $this->table,
+                table: self::table()
             ),
             'comments' => new Column(
                 name: 'Comments', 
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getJoins(): array
+    public static function joins(): array
     {
+        $idKey = new TableKey(
+            table: self::table(),
+            key: self::id(),
+        );
         return [
             'parent_rel' => new Join(
-                from: $this->idKey,
+                from: $idKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_container_parent', 
                         alias: 'parent_rel',
                     ),
-                    key: $this->id
+                    key: self::id()
                 )                
             ),
             'children_rel' => new Join(
-                from: $this->idKey,
+                from: $idKey,
                 to: new TableKey( 
                     table: new Table(
                         name: 'biobank_container_parent', 
@@ -99,45 +107,45 @@ class ContainerSchema extends Schema
                 ),
             ),
             'shipments_rel' => new Join(
-                from: $this->idKey,
+                from: $idKey,
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_container_shipment_rel', 
                         alias: 'shipments_rel'
                     ),
-                    key: $this->id
+                    key: self::id()
                 )                
             )
         ];
     }
 
-    protected function getRelations(): array
+    public static function relations(): array
     {
         return [
             'type' => new Relation(
                 from: new TableKey(
-                    table: $this->table, 
+                    table: self::table(), 
                     key: 'ContainerTypeID'
                 ),
                 to: container\TypeSchema::class,
             ),
             'center' => new Relation(
                 from: new TableKey(
-                    table: $this->table, 
+                    table: self::table(),
                     key: 'CenterID'
                 ),
                 to: CenterSchema::class,
             ),
             'parent' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['parent_rel']->to->table, 
+                    table: self::joins()['parent_rel']->to->table, 
                     key: 'ParentContainerID'
                 ),
                 to: self::class,
             ),
             'children' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['children_rel']->to->table, 
+                    table: self::joins()['children_rel']->to->table, 
                     key: 'ContainerID'
                 ),
                 to: self::class,
@@ -145,7 +153,7 @@ class ContainerSchema extends Schema
             ),
            'shipments' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['shipments_rel']->to->table, 
+                    table: self::joins()['shipments_rel']->to->table, 
                     key: 'ShipmentID'
                 ),
                 to: ShipmentSchema::class,

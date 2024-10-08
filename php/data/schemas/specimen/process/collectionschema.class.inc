@@ -21,32 +21,32 @@ use \LORIS\biobank\data\schemas\specimen\ProcessSchema;
  */
 class CollectionSchema extends ProcessSchema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\specimen\process\Collection::class;                                
     }   
     
-    protected function getTable(): schema\Table
+    public static function table(): schema\Table
     {
         return new schema\Table(name: 'biobank_specimen_collection');
     }
 
-    protected function getColumns(): array
+    public static function columns(): array
     {
-        return parent::getColumns() + [
+        return parent::columns() + [
             'quantity' => new schema\Column(
                 name: 'Quantity', 
-                table: $this->table,
+                table: self::table()
             )
         ];
     }
 
-    protected function getRelations(): array
+    public static function relations(): array
     {
-        return parent::getRelations() + [
+        return parent::relations() + [
             'unit' => new schema\Relation(
                 from: new schema\TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'UnitID'
                 ),
                 to: schemas\UnitSchema::class,

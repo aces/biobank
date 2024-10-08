@@ -8,9 +8,10 @@ export type EntitiesHook<E extends Entity<I>, I extends object> = {
   update: (key: string, entity: Partial<I>) => void,                            
   remove: (key: string) => void,                                                
   setAll: (property: keyof I, value: any) => void,                              
+  saveAll: (saveFunc: (data: Partial<I>[]) => Promise<any>) => Promise<any>,
   validateAll: () => boolean,                                                   
   toArray: () => E[],                                                   
-  toData: () => Map<string, Partial<I>>,
+  getData: () => Partial<I>[],
   keys: () => string[],
   isEmpty: () => boolean,                                                       
 }         
@@ -27,6 +28,15 @@ export const useEntities = <E extends Entity<I>, I extends object>(
 
   const [entities, setEntities] = useState(initialEntities);
 
+  const toArray = useCallback(() => Array.from(entities.values()), [entities]);
+
+  const getData = useCallback(() => toArray()
+                              .map(entity => entity.getData()), [toArray]);
+
+  const keys = useCallback(() => Array.from(entities.keys()), [entities]);
+
+  const isEmpty = useCallback(() => entities.size === 0, [entities]);
+
   const add = useCallback((entityData: Partial<I>) => {
     const id = uuidv4();
     const entity = new entityConstructor(entityData);
@@ -34,20 +44,6 @@ export const useEntities = <E extends Entity<I>, I extends object>(
     return id;
   }, [entityConstructor]);
                                                                                 
-//   const update = useCallback((id: string, entityData: Partial<I>) => {             
-//     setEntities(prev => {                                               
-//       const entity = prev.get(id);                             
-//       if (entity) {                                                     
-//         const updatedEntity = Object.entries(entityData).reduce((acc, [key, value]) => {
-//           return acc.set(key as keyof I, value);
-//         }, entity);
-//         return new Map(prev).set(id, updatedEntity);              
-//       }                                                                         
-//       return prev;                                                      
-//     });                                                                         
-//   }, []);                                                                       
-
-
   const update = useCallback((id: string, entityData: Partial<I>) => {
     setEntities(prev => {
       const entity = prev.get(id);
@@ -70,6 +66,14 @@ export const useEntities = <E extends Entity<I>, I extends object>(
       return prev;
     });
   }, []);
+
+  // const update = (id: string, updatedEntity: Entity<I>) => {
+  //   setEntities((prevEntities) => {
+  //     const newEntities = new Map(prevEntities);
+  //     newEntities.set(id, updatedEntity);
+  //     return newEntities;
+  //   });
+  // };
                                                                                 
   const remove = useCallback((key: string) => {                                 
     setEntities(prev => {                                               
@@ -80,36 +84,89 @@ export const useEntities = <E extends Entity<I>, I extends object>(
     });                                                                         
   }, []);                                                                       
                                                                                 
-  // New function to set a specific property for all entities                   
-  const setAll = useCallback((property: keyof I, value: any) => {               
-    setEntities(prev => new Map(
-      Array.from(prev.entries()).map(([key, entity]) => {
-        const updatedEntity = entity.set(property, value);
-        return [key, updatedEntity];
+  const setAll = useCallback((property: keyof I, value: any) => {
+    const updatedEntities = new Map(
+      Array.from(entities.entries()).map(([key, entity]) => {
+        const updatedEntity = entity.set(property, value); // Update the entity
+        return [key, updatedEntity]; // Return the updated entity
       })
-    ));                                                                        
-  }, []);                                                                       
-                                                                                
-  const validateAll = useCallback(() => {                              
-    return Array.from(entities.values()).every(entity => {                      
-      const errors = entity.validate();                               
-      return Object.keys(errors).length === 0; // True if no errors, hence valid
-    });                                                                         
-  }, [entities]);                                                               
-                                                                                
-  const toArray = useCallback(() => Array.from(entities.values()), [entities]);
-
-  const toData = useCallback(() => {
-    const dataMap =  new Map<string, Partial<I>>();
-    entities.forEach((entity, key) => {
-      dataMap.set(key, entity.getData());
-    });
-    return dataMap;
+    );
+    setEntities(updatedEntities); // Update the state
+    return updatedEntities; // Return updated entities so you can use them immediately
   }, [entities]);
 
-  const keys = useCallback(() => Array.from(entities.keys()), [entities]);
+  const validateAll = useCallback(() => {
+    const updatedEntities = new Map(entities); // Clone the entities map
+    let allValid = true;
+  
+    updatedEntities.forEach((entity, id) => {
+      const errors = entity.validate(); // Call the entity's validate method
+      const isValid = Object.keys(errors).length === 0;
+  
+      if (!isValid) {
+        allValid = false; // Set to false if any entity has errors
+      }
+  
+      // Update the entity with errors and store it in the map
+      updatedEntities.set(id, entity.setErrors(errors));
+    });
 
-  const isEmpty = useCallback(() => entities.size === 0, [entities]);
+    setEntities(updatedEntities); // Update the state only once after all iterations
+
+    return allValid;
+  }, [entities]);  
+
+  const saveAll = useCallback(async (saveFunc: (data: Partial<I>[]) => Promise<any>) => {
+    try {
+      const response = await saveFunc(getData());
+
+      console.log(response);
+  
+      if (response.status === 'error' && Array.isArray(response.errors)) {
+        // Handle validation errors
+        const updatedEntities = new Map(entities);
+        const entitiesArray = Array.from(entities.entries());
+
+        entitiesArray.forEach(([id, entity], index) => {
+          const errors = response.errors[index] || {};
+          const formattedErrors: Partial<Record<keyof I, string>> = {};
+        
+          // Iterate over each field in the errors object
+          Object.keys(errors).forEach((field) => {
+            // Concatenate the array of error messages into a single string
+            const messagesArray = errors[field];
+            formattedErrors[field as keyof I] = messagesArray.join(' ');
+          });
+        
+          // Set the concatenated errors on the entity
+          updatedEntities.set(id, entity.setErrors(formattedErrors));
+        });        
+  
+        setEntities(updatedEntities);
+  
+        // Throw an error to prevent the modal from closing
+        throw new Error('Validation errors occurred');
+      } else {
+        // Successful response
+        return response;
+      }
+    } catch (error) {
+      // Re-throw the error to be handled by the modal or higher-level error handlers
+      throw error;
+    }
+  }, [entities, getData, setEntities]);
                                                                                 
-  return { entities, add, update, remove, setAll, validateAll, toArray, toData, keys, isEmpty };       
+  return {
+    entities,
+    add,
+    update,
+    remove,
+    setAll,
+    validateAll,
+    saveAll,
+    toArray,
+    getData,
+    keys,
+    isEmpty
+  };       
 };    

@@ -20,12 +20,12 @@ use \LORIS\biobank\data\schemas\specimen\ProcessSchema;
  */
 class PreparationSchema extends ProcessSchema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\specimen\process\Preparation::class;                                
     }   
 
-    protected function getTable(): schema\Table
+    public static function table(): schema\Table
     {
         return new schema\Table(name: 'biobank_specimen_preparation');
     }

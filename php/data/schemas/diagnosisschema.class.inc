@@ -23,46 +23,46 @@ use \LORIS\biobank\data\schema\ColumnType;
  */
 class DiagnosisSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\Diagnosis::class;                              
     }  
 
-    protected function getTable(): Table                                           
+    public static function table(): Table                                           
     {                                                                              
         return new Table(name: 'diagnosis');                                    
     }      
 
-    protected function getId(): string                                                
+    public static function id(): string                                                
     {                                                                              
         return 'DiagnosisID';                                                  
     }                                                                              
                                                                                    
-    protected function getLabel(): string                                          
+    public static function label(): string                                          
     {                                                                              
         return 'label';                                                            
     }                                                                              
                                                                                    
-    protected function getColumns(): array                                         
+    public static function columns(): array                                         
     {                                                                              
         return [                                                                   
             'label' => new Column(                                                 
                 name: 'Name',                                                     
-                table: $this->table,
+                table: self::table()
             ),                                                                     
             'abbreviation' => new Column(
                 name: 'Abbreviation',
-                table: $this->table,
+                table: self::table()
             ),
         ];                                                                         
     }                                                                              
                                                                                    
-    protected function getJoins(): array                                           
+    public static function joins(): array                                           
     {                                                                              
         return [];                                                                 
     }                                                                              
                                                                                    
-    protected function getRelations(): array                                       
+    public static function relations(): array                                       
     {                                                                              
         return [];                                                                 
     }       

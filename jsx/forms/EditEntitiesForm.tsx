@@ -13,7 +13,7 @@ const EditEntitiesForm = ({
   const [selected, select] = useState(createInitialState<ISpecimen>());
 
   const context = useBiobankContext();
-  const specimen = useSpecimen();
+  const specimen = useSpecimen(new Specimen({}));
   const specimens = useEntities<Specimen, ISpecimen>(Specimen);
 
   const handleCheck = (key: keyof ISpecimen, value: boolean) => {
@@ -41,11 +41,12 @@ const EditEntitiesForm = ({
       <ListField
         name="specimens"
         label="Select Specimens"
-        onAdd={specimens.update}
+        onAdd={(barcode) => specimens
+          .update(barcode, context.specimens.data
+                  .find(specimen => specimen.container.barcode == barcode))}
         onRemove={specimens.remove}
-        list={specimens.toData()}
-        options={context.specimens}
-        format={(specimen) => specimen.container.barcode}
+        list={specimens.keys().reduce((acc, item) => ({ ...acc, [item]: item }), {})}
+        options={context.specimens.data.map(specimen => specimen.container.barcode)}
       />
       <h3>Edit Fields</h3>
       <SpecimenProvider specimen={specimen}>

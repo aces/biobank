@@ -16,7 +16,7 @@
 namespace LORIS\biobank\models;
 
 use LORIS\biobank\Model;
-use LORIS\biobank\models\container\Type;
+use LORIS\biobank\models\specimen\Type;
 use LORIS\biobank\types\Date;
 use LORIS\biobank\types\Time;
 
@@ -38,22 +38,27 @@ final class Pool extends Model implements \LORIS\StudyEntities\SiteHaver
 {
      public function __construct(
         public readonly ?string $label,
-        public readonly float $quantity,
-        public readonly Date $date,
-        public readonly Time $time,
+        public readonly ?float $quantity,
+        public readonly ?Date $date,
+        public readonly ?Time $time,
         public readonly ?int $id,
         public readonly ?Unit $unit,
         public readonly ?Specimens $specimens,
+        public ?Projects $projects,
+        public ?Center $center,
+        public ?Candidate $candidate,
+        public ?Session $session,
+        public ?Type $type,
     ) {}
 
     public function getCenterID(): \CenterID
     {
-        return $this->specimens[0]->getCenterID();
+        return $this->center->id;
     }
 
     public function getProjectIDs(): array
     {
-        return $this->specimens[0]->getProjectIDs();
+        return $this->projects->getIds();
     }
 
 

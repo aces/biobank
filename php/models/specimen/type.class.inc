@@ -15,6 +15,6 @@ final class Type extends Model
         public readonly ?ContainerTypes $containers,
         public readonly ?Types $parents,
         public readonly ?Protocols $protocols,
-        private readonly ?int $id = null,
+        public readonly ?int $id = null,
     ) {}
 }

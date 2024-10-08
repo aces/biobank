@@ -39,7 +39,7 @@ final class Specimen extends Model implements \LORIS\StudyEntities\SiteHaver
 {
     public function __construct(
         public readonly ?int $id,
-        public readonly ?float $quantity, //removed because parent empty? should not instantiate if empty
+        public readonly ?float $quantity,
         public readonly ?int $fTCycle,
         public readonly ?Unit $unit,
         public readonly ?Type $type,
@@ -51,7 +51,7 @@ final class Specimen extends Model implements \LORIS\StudyEntities\SiteHaver
         public readonly ?Collection $collection,
         public readonly ?Preparation $preparation,
         public readonly ?Analysis $analysis,
-        public readonly ?Container $container, //removed for the moment to account for parent specimsn not being able to loading containers but should be re-instated later.
+        public ?Container $container,
     ) {}
 
     public function getCenterID(): \CenterID
@@ -59,7 +59,7 @@ final class Specimen extends Model implements \LORIS\StudyEntities\SiteHaver
         return $this->container->center->id;
     }
 
-    public function getProjectIDs(): array
+    public function getProjectIDs(): ?array
     {
         return $this->projects->getIds();
     }

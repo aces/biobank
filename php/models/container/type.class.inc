@@ -8,15 +8,13 @@ use LORIS\biobank\models\container\type\Capacity;
 
 class Type extends Model
 {
-    // TODO: I don't think dimension and capacity should be nullable, but my
-    // query I think is messed up so it's temporary.
     public function __construct(
-        public string $label,
-        public string $brand,
-        public string $productNumber,
-        public bool $prime,
+        public ?string $label,
+        public ?string $brand,
+        public ?string $productNumber,
+        public ?bool $prime,
         public ?Dimension $dimension,
         public ?Capacity $capacity,
-        private ?int $id,
+        public ?int $id,
     ) {}
 }

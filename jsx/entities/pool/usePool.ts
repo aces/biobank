@@ -5,8 +5,9 @@ export interface PoolHook extends EntityHook<Pool, IPool> {
 };
 
 export function usePool(
-  initialPool: Partial<IPool> = {}
+  initialPool?: Pool
 ): PoolHook {
+  const instance = initialPool || new Pool({});        
 
-  return useEntity<Pool, IPool>(() => new Pool(initialPool))
+  return useEntity<Pool, IPool>(instance);
 }

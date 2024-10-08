@@ -36,7 +36,7 @@ function SpecimenForm({
   title,
 }: SpecimenFormProps): ReactElement {
 
-  const specimen = useSpecimen();
+  const specimen = useSpecimen(new Specimen({}));
   const specimens = useEntities<Specimen, ISpecimen>(Specimen);
   const [printBarcodes, setPrintBarcodes] = useState(false);
 
@@ -151,11 +151,11 @@ const SpecimenBarcodeForm: React.FC<{
   update,
 }) => {
 
-  const specimen = useSpecimen(entity.getData());
+  const specimen = useSpecimen(entity);
 
   useEffect(() => {
     update(id, specimen.getData());
-  }, [specimen]);
+  }, [specimen.getData()]);
 
   return (
     <SpecimenProvider specimen={specimen}>

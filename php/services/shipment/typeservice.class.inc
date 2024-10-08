@@ -2,13 +2,10 @@
 
 namespace LORIS\biobank\services\shipment;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\shipment\TypeProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\shipment\TypeSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\shipment\Type;
 use LORIS\biobank\validators\shipment\TypeValidator;
 
@@ -23,7 +20,8 @@ class TypeService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            new ModelProvisioner(new TypeSchema('type')),                                      
+            new TypeProvisioner(),                                      
+            new Factory(Type::class),
             new TypeValidator($this),                                         
         );                                                                         
     }          

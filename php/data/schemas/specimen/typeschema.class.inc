@@ -14,79 +14,88 @@ use \LORIS\biobank\data\schema\RelationType;
 
 class TypeSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\specimen\Type::class;                            
     }   
 
-    protected function getTable(): Table
+    public static function table(): Table
     {
         return new Table(name: 'biobank_specimen_type');
     }
 
-    protected function getId(): string
+    public static function id(): string
     {
         return 'SpecimenTypeID';
     }
 
-    protected function getLabel(): string
+    public static function label(): string
     {
         return 'label';
     }
 
-    protected function getColumns(): array
+    public static function columns(): array
     {
         return [
             'label' => new Column(
                 name: 'Label',
-                table: $this->table,
+                table: self::table()
             ),
             'freezeThaw' => new Column(
                 name: 'FreezeThaw',
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getJoins(): array                                       
+    public static function joins(): array                                       
     {               
         return [
             'type_unit' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_type_unit_rel', 
                     ),
-                    key: $this->id
+                    key: self::id()
                 )
             ),
             'type_container' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_type_container_type_rel', 
                     ),
-                    key: $this->id
+                    key: self::id()
                 )
             ),
             'type_parent' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_type_parent', 
                     ),
-                    key: $this->id
+                    key: self::id()
                 )
             )
         ];
     }
 
-    protected function getRelations(): array                                   
+    public static function relations(): array                                   
     { 
         return [
             'units' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['type_unit']->to->table,
+                    table: self::joins()['type_unit']->to->table,
                     key: 'UnitID'
                 ),
                 to: schemas\UnitSchema::class,
@@ -94,7 +103,7 @@ class TypeSchema extends Schema
             ),
             'containers' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['type_container']->to->table,
+                    table: self::joins()['type_container']->to->table,
                     key: 'ContainerTypeID'
                 ),
                 to: schemas\container\TypeSchema::class,
@@ -102,14 +111,17 @@ class TypeSchema extends Schema
             ),
             'parents' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['type_parent']->to->table,
+                    table: self::joins()['type_parent']->to->table,
                     key: 'ParentSpecimenTypeID'
                 ),
                 to: self::class,
                 many: true,
             ),
             'protocols' => new Relation(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: ProtocolSchema::class,
                 many: true,
             ),

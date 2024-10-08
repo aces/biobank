@@ -23,58 +23,58 @@ use \LORIS\biobank\data\Schema;
  */
 final class DimensionSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\container\type\Dimension::class;                          
     }  
 
-    protected function getTable(): Table {
+    public static function table(): Table {
         return new Table(name: 'biobank_container_dimension');
     }
 
-    protected function getId(): string {
+    public static function id(): string {
         return 'ContainerDimensionID';
     }
 
-    protected function getLabel(): string
+    public static function label(): string
     {
         return '';
     }
 
-    protected function getColumns(): array {
+    public static function columns(): array {
         return [
             'x' => new Column(
                 name: 'X',
-                table: $this->table,
+                table: self::table()
             ),
             'xNum' => new Column(
                 name: 'XNumerical',
-                table: $this->table,
+                table: self::table()
             ),
             'y' => new Column(
                 name: 'Y',
-                table: $this->table,
+                table: self::table()
             ),
             'yNum' => new Column(
                 name: 'YNumerical',
-                table: $this->table,
+                table: self::table()
             ),
             'z' => new Column(
                 name: 'Z',
-                table: $this->table,
+                table: self::table()
             ),
             'zNum' => new Column(
                 name: 'ZNumerical',
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getRelations(): array {
+    public static function relations(): array {
         return []; // Add relation definitions if needed
     }
 
-    protected function getJoins(): array {
+    public static function joins(): array {
         return []; // Add join definitions if needed
     }
 }

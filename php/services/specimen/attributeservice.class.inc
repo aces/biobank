@@ -2,13 +2,10 @@
 
 namespace LORIS\biobank\services\specimen;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\specimen\AttributeProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\specimen\AttributeSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\specimen\Attribute;
 use LORIS\biobank\validators\specimen\AttributeValidator;
 
@@ -23,7 +20,8 @@ class AttributeService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            new ModelProvisioner(new AttributeSchema('attribute')),
+            new AttributeProvisioner(),
+            new Factory(Attribute::class),
             new AttributeValidator($this),                                         
         );                                                                         
     }          

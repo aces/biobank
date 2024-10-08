@@ -1,7 +1,7 @@
 import { FieldConfiguration } from '../types';
 import { IContainer, ContainerHook, useContainerContext } from '../entities';
 import { BiobankContextType } from '../contexts';
-import { mapFormOptions } from '../utils';
+import Utils from '../utils';
 import { DynamicField } from '../forms';
 import { useRequest } from '../hooks';
 import { ContainerAPI, BaseAPI} from '../APIs';
@@ -23,7 +23,7 @@ import { ContainerAPI, BaseAPI} from '../APIs';
 // if (container) {                                                             
 //   containerBarcodesNonPrimary = removeChildContainers(                       
 //     containerBarcodesNonPrimary,                                             
-//     container.barcode                                                             
+//     container.label                                                             
 //   );                                                                         
 // }                                                                            
 
@@ -43,24 +43,21 @@ ContainerFields>> => ({
     label: 'Site',                                                              
     type: 'select',                                                             
     required: true,                                                             
-    getOptions: () => useRequest(new BaseAPI('centers').get())                                           
+    getOptions: () => Utils.mapLabel(useRequest(() => new
+                                                BaseAPI('centers').get())),
   },                                                                            
   parent: {                                                          
     label: 'Parent Container Barcode',                                          
     type: 'search',                                                             
     required: false,                                                            
-    getOptions: (context)  => {                                                  
-      return [];
-      // return Object.values(context.containers.data)                                  
-      // .reduce((result: Record<string, string>, container: IContainer) => { 
-      //   const dimension = container.dimension;
-      //   const capacity = dimension.x * dimension.y * dimension.z;            
-      //   const available = capacity - Number(container.children.length);        
-      //   result[container.barcode] = container.barcode +                              
-      //        ' (' +available + ' Available Spots)';                             
-      //   return result;                                                          
-      // }, {});                                                                   
-    }                                                                           
+    getOptions: (context)  => {
+      return context.containers.data.map(container => {
+        const dimension = container.dimension;
+        const capacity = dimension.x * dimension.y * dimension.z;            
+        const available = capacity - Number(container.children.length);        
+        return container.barcode + ' (' +available + ' Available Spots)';
+      });
+    }
   },                                                                            
   lotNumber: {                                                                  
     label: 'Lot Number',                                                        
@@ -84,33 +81,33 @@ ContainerFields>> => ({
     label: 'Container Type',                                                    
     type: 'select',                                                             
     required: true,                                                             
-    getOptions: () => useRequest(new ContainerAPI().getTypes()),
-
-      // const containerTypes = {};
-      // if (type && options.specimen.typeContainerTypes[typeId]) {
-      //   Object.keys(containerTypesPrimary).forEach((id) => {
-      //     options.specimen.typeContainerTypes[typeId].forEach((i) => {
-      //       if (id == i) {
-      //         containerTypes[id] = containerTypesPrimary[id];
-      //       }
-      //     });
-      //   });
-      // }
-      // const containerTypesPrimary = mapFormOptions(
-      //   options.container.typesPrimary,
-      //   'label',
-      // );
-     
-      // const validContainers = {};
-      // if (specimen.typeId && options.specimen.typeContainerTypes[specimen.typeId]) {
-      //   Object.keys(containerTypesPrimary).forEach((id) => {
-      //     options.specimen.typeContainerTypes[specimen.typeId].forEach((i) => {
-      //       if (id == i) {
-      //         validContainers[id] = containerTypesPrimary[id];
-      //       }
-      //     });
-      //   });
-      // }
+    getOptions: () => Utils.mapLabel(useRequest(() => new
+                                                ContainerAPI().getTypes())),
+    // const containerTypes = {};
+    // if (type && options.specimen.typeContainerTypes[typeId]) {
+    //   Object.keys(containerTypesPrimary).forEach((id) => {
+    //     options.specimen.typeContainerTypes[typeId].forEach((i) => {
+    //       if (id == i) {
+    //         containerTypes[id] = containerTypesPrimary[id];
+    //       }
+    //     });
+    //   });
+    // }
+    // const containerTypesPrimary = mapFormOptions(
+    //   options.container.typesPrimary,
+    //   'label',
+    // );
+    
+    // const validContainers = {};
+    // if (specimen.typeId && options.specimen.typeContainerTypes[specimen.typeId]) {
+    //   Object.keys(containerTypesPrimary).forEach((id) => {
+    //     options.specimen.typeContainerTypes[specimen.typeId].forEach((i) => {
+    //       if (id == i) {
+    //         validContainers[id] = containerTypesPrimary[id];
+    //       }
+    //     });
+    //   });
+    // }
   }                                                                             
 });                                                                              
                                                                                 

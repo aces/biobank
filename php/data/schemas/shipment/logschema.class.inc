@@ -28,63 +28,63 @@ use \LORIS\biobank\data\Schema;
  */
 class LogSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\shipment\Log::class;                                 
     }  
 
-    protected function getTable(): Table {
+    public static function table(): Table {
         return new Table(name: 'shipment_log');
     }
 
-    protected function getId(): string {
+    public static function id(): string {
         return 'ShipmentID';
     }
 
-    protected function getLabel(): string {
+    public static function label(): string {
         return '';
     }
 
-    protected function getColumns(): array {
+    public static function columns(): array {
         return [
             'temperature' => new Column(
                 name: 'Temperature',
-                table: $this->table,
+                table: self::table()
             ),
             'date' => new Column(
                 name: 'Date',
-                table: $this->table,
+                table: self::table()
             ),
             'time' => new Column(
                 name: 'Time',
-                table: $this->table,
+                table: self::table()
             ),
             'comments' => new Column(
                 name: 'Comments',
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getRelations(): array {
+    public static function relations(): array {
         return [
             'center' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'CenterID'
                 ),
                 to: schemas\CenterSchema::class,
             ),
             'status' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'StatusID'
                 ),
                 to: StatusSchema::class,
             ),
             'user' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'UserID'
                 ),
                 to: schemas\UserSchema::class,
@@ -92,7 +92,7 @@ class LogSchema extends Schema
         ];
     }
 
-    protected function getJoins(): array {
+    public static function joins(): array {
         return []; // Add join definitions if needed
     }
 }

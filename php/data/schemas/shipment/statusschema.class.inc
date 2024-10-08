@@ -23,37 +23,37 @@ use \LORIS\biobank\data\Schema;
 
 class StatusSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\shipment\Status::class;                            
     }   
     
-    protected function getTable(): Table {
+    public static function table(): Table {
         return new Table(name: 'shipment_status');
     }
 
-    protected function getId(): string {
+    public static function id(): string {
         return 'StatusID';
     }
 
-    protected function getLabel(): string {
+    public static function label(): string {
         return 'label';
     }
 
-    protected function getColumns(): array {
+    public static function columns(): array {
         return [
             'label' => new Column(
                 name: 'Label',
-                table: $this->table,
+                table: self::table()
             )
         ];
     }
 
-    protected function getRelations(): array {
+    public static function relations(): array {
         return [];
     }
 
-    protected function getJoins(): array {
+    public static function joins(): array {
         return [];
     }
 }

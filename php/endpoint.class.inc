@@ -10,47 +10,83 @@ use LORIS\biobank\data\query\QueryParamsHandler;
 use LORIS\biobank\endpoints\Permission;
 
 /**
- * A class for handling the /biobank/specimens/ endpoint.
+ * Abstract Endpoint class responsible for handling HTTP requests for
+ * Biobank-related operations.
  *
- * @category Biobank
- * @package  Loris
- * @author   Henri Rabalais <henri.rabalais@mcin.ca>
- * @license  http://www.gnu.org/licenses/gpl-3.0.text GPLv3
- * @link     http://www.github.com/aces/Lors/
+ * This class extends the LORIS Endpoint and implements the ETagCalculator
+ * interface. It manages permissions, handles sub-endpoints, and processes
+ * requests based on HTTP methods.
+ *
+ * @package    LORIS
+ * @subpackage Biobank
+ * @author     Henri Rabalais <henri.j.rabalais@gmail.com>
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU General Public
+ *             License
  */
 abstract class Endpoint
     extends LORISEndpoint
-    // implements \LORIS\Middleware\ETagCalculator
+    implements \LORIS\Middleware\ETagCalculator
 {
     /**
-     * A cache of the results of the projects/ endpoint, so that it doesn't
-     * need to be recalculated for the ETag and handler
-     */
-    private $_cache;
-    private $controller;
+     * Cache for storing intermediate results during request processing.
+     *
+     * @var ResponseInterface|null
+     */    
+    private ? ResponseInterface $_cache = null;
 
+    /**
+     * Controller responsible for handling the business logic of the endpoint.
+     *
+     * @var Controller
+     */    
+    private Controller $controller;
+
+    /**
+     * Constructs the Endpoint class with a Loris instance.
+     *
+     * @param \Loris\LorisInstance $loris The Loris instance.
+     */    
     public function __construct(\Loris\LorisInstance $loris)
     {
         parent::__construct($loris);
         $this->controller = new Controller($this->getService());
     }
 
-    // Abstract method to initialize the controller
+    /**
+     * Defines the permission required for accessing this endpoint.
+     *
+     * @param Permission $permission The permission object.
+     * @return string                 The name of the required permission.
+     */    
     abstract protected static function getPermission(
         Permission $permission
     ): string;
+    
+    /**
+     * Returns a sub-handler for a given subpath, if any exists.
+     *
+     * @param string $subpath The subpath to check for a sub-handler.
+     * @return ?Endpoint       The sub-handler for the subpath, or null if none.
+     */    
     abstract protected function getSubHandler(string $subpath): ?Endpoint;
 
     /**
-     * Return which methods are supported by this endpoint.
+     * Defines the allowed HTTP methods for this endpoint.
      *
-     * @return array supported HTTP methods
-     */
+     * @return array The array of allowed HTTP methods.
+     */    
     protected function allowedMethods() : array
     {
         return ['GET', 'PUT', 'POST', 'OPTIONS'];
     }
 
+    /**
+     * Checks if the user has the required permission to access this endpoint.
+     *
+     * @param \User       $user       The user attempting access.
+     * @param Permission  $permission The required permission for this endpoint.
+     * @throws Forbidden  If the user does not have the required permission.
+     */    
     protected function checkPermission(
         \User $user,
         Permission $permission
@@ -63,6 +99,13 @@ abstract class Endpoint
         }
     }     
 
+    /**
+     * Processes incoming requests, routing to sub-handlers if applicable.
+     *
+     * @param ServerRequestInterface   $request The incoming request.
+     * @param RequestHandlerInterface  $handler The request handler.
+     * @return ResponseInterface                 The response to the request.
+     */    
     public function process(
         ServerRequestInterface $request,
         RequestHandlerInterface $handler
@@ -93,12 +136,11 @@ abstract class Endpoint
     }
 
     /**
-     * Handles Endpoint requests
+     * Handles incoming requests for this endpoint.
      *
-     * @param ServerRequestInterface $request The incoming PSR7 request
-     *
-     * @return ResponseInterface The outgoing PSR7 response
-     */
+     * @param ServerRequestInterface $request The incoming PSR7 request.
+     * @return ResponseInterface              The outgoing PSR7 response.
+     */    
     public function handle(
         ServerRequestInterface $request
     ) : ResponseInterface
@@ -115,6 +157,15 @@ abstract class Endpoint
         };
     }
 
+    /**
+     * Handles GET requests for this endpoint.
+     *
+     * This method checks the user's permission and processes the request to
+     * either retrieve the root data or a specific resource based on the URI path.
+     *
+     * @param ServerRequestInterface $request The incoming PSR7 GET request.
+     * @return ResponseInterface              The response to the GET request.
+     */    
     private function _handleGET(
         ServerRequestInterface $request
     ): ResponseInterface
@@ -136,6 +187,16 @@ abstract class Endpoint
         }
     }
 
+    /**
+     * Handles PUT requests for this endpoint.
+     *
+     * This method checks the user's permission and processes the request to
+     * update a specific resource based on the URI path.
+     *
+     * @param ServerRequestInterface $request The incoming PSR7 PUT request.
+     * @return ResponseInterface              The response to the PUT request.
+     * @throws \LORIS\Http\Exception\NotFoundException If the path is invalid.
+     */    
     private function _handlePUT(
         ServerRequestInterface $request
     ): ResponseInterface
@@ -154,12 +215,21 @@ abstract class Endpoint
         }
     }
 
+    /**
+     * Handles POST requests for this endpoint.
+     *
+     * This method checks the user's permission and processes the request to
+     * either handle file uploads or create a new resource based on the request
+     * content type.
+     *
+     * @param ServerRequestInterface $request The incoming PSR7 POST request.
+     * @return ResponseInterface              The response to the POST request.
+     */    
     private function _handlePOST(
         ServerRequestInterface $request
     ): ResponseInterface
     {
-        $user = $request->getAttribute('user');
-        $this->getPermission($user, Permission::POST);
+        $this->checkPermission($request->getAttribute('user'), Permission::POST);
     
         $contentType = $request->getHeaderLine('Content-Type');
     
@@ -174,14 +244,13 @@ abstract class Endpoint
     }    
 
     /**
-     * Implements the ETagCalculator interface
+     * Implements the ETagCalculator interface.
      *
      * @param ServerRequestInterface $request The PSR7 incoming request.
-     *
-     * @return string etag summarizing value of this request.
-     */
-    //public function ETag(ServerRequestInterface $request) : string
-    //{
-    //    return md5(json_encode($this->_handleGET($request)->getBody()));
-    //}
+     * @return string                        The ETag summarizing the request.
+     */    
+    public function ETag(ServerRequestInterface $request) : string
+    {
+        return md5(json_encode($this->_handleGET($request)->getBody()));
+    }
 }

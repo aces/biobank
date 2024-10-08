@@ -2,14 +2,9 @@
 
 namespace LORIS\biobank\services;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
-use LORIS\biobank\Service;
 use LORIS\biobank\Model;
-use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\CandidateSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
-use LORIS\biobank\models\Candidate;
+use LORIS\biobank\Service;
+use LORIS\biobank\provisioners\CandidateProvisioner;
 
 /**
  * Service class for handling Candidate operations.
@@ -22,7 +17,8 @@ class CandidateService extends Service
     function __construct()
     {
         parent::__construct(
-            new ModelProvisioner(new CandidateSchema('candidate'))
+            new CandidateProvisioner(),
+            new LORIS\biobank\Factory(LORIS\biobank\models\Candidate::class)
         );
     }
 

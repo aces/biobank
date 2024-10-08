@@ -29,76 +29,79 @@ use \LORIS\biobank\data\schema\LoadingStrategy;
 
 class PoolSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\Pool::class;                              
     }  
 
-    protected function getTable(): Table
+    public static function table(): Table
     {
         return new Table(name: 'biobank_pool');
     }
 
-    protected function getId(): string
+    public static function id(): string
     {
         return 'PoolID';
     }
 
-    protected function getLabel(): string                                      
+    public static function label(): string                                      
     {                                                                              
         return 'label';                                                          
     }   
 
-    protected function getColumns(): array
+    public static function columns(): array
     {
         return [
             'label' => new Column(
                 name: 'Label', 
-                table: $this->table,
+                table: self::table()
             ),
             'quantity' => new Column(
                 name: 'Quantity', 
-                table: $this->table,
+                table: self::table()
             ),
             'date' => new Column(
                 name: 'Date', 
-                table: $this->table,
+                table: self::table()
             ),
             'time' => new Column(
                 name: 'Time', 
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getJoins(): array
+    public static function joins(): array
     {
         return [
             'specimen_rel' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id(),
+                ),
                 to: new TableKey(
                     table: new Table(
                         name: 'biobank_specimen_pool_rel', 
                     ),
-                    key: $this->id
+                    key: self::id()
                 )
             )
         ];
     }
 
-    protected function getRelations(): array
+    public static function relations(): array
     {
         return [
             'unit' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'UnitID'
                 ),
                 to: UnitSchema::class,
             ),
             'specimens' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['specimen_rel']->to->table,
+                    table: self::joins()['specimen_rel']->to->table,
                     key: 'SpecimenID'
                 ),
                 to: SpecimenSchema::class,

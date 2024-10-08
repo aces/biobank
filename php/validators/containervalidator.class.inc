@@ -34,12 +34,12 @@ class ContainerValidator extends Validator
     protected function validateFields(Model $container) : void
     {
         $this->validateBarcode($container);
-        $this->validateTypeId($container);
+        $this->validateType($container);
         $this->validateTemperature($container);
-        $this->validateStatusId($container);
-        $this->validateShipmentBarcodes($container);
-        $this->validateCenterId($container);
-        $this->validateParentContainerId($container);
+        // $this->validateStatusId($container);
+        // $this->validateShipmentBarcodes($container);
+        $this->validateCenter($container);
+        $this->validateParent($container);
         $this->validateCoordinate($container);
         // $this->_validateLotNumber($container);
         // $this->_validateExpirationDate($container);
@@ -48,28 +48,17 @@ class ContainerValidator extends Validator
 
     private function validateBarcode(Container $container) : void
     {
-        $id            = $container->getId();
-        $barcode       = $container->getBarcode();
-        $containerList = $this->service->selectInstances(
-            [
-                ['column'=>'bc.Barcode', 'value'=>$barcode],
-            ],
-        );
+        $id            = $container->id;
+        $barcode       = $container->barcode;
+        $prevContainer = $this->service->getByLabel($barcode);
 
-        if (!empty($containerList)) {
-            foreach ($containerList as $c) {
-                $b = $c->getBarcode();
-                $i = $c->getId();
-                // If the barcodes are identical but the ids are not
-                if ($b === $barcode && $i !== $id) {
-                    $this->addError('barcode', 'Barcode must be unique.');
-                }
+        if (!is_null($prevContainer)) {
+            // If the barcodes are identical but the ids are not
+            if ($prevContainer->barcode === $barcode && $preContainer->id !== $id) {
+                $this->addError('barcode', 'Barcode must be unique.');
             }
-        }
 
-        if ($id) {
-            $prevContainer = $this->service->getInstanceFromId($id);
-            if ($prevContainer && ($container->getBarcode() !== $prevContainer->getBarcode())) {
+            if ($id && ($barcode !== $prevContainer->barcode)) {
                 $this->addError('barcode', 'Barcode can not be changed.');
             }
         }
@@ -86,103 +75,92 @@ class ContainerValidator extends Validator
         //}
     }
 
-    private function validateTypeId(Container $container) : void
+    private function validateType(Container $container) : void
     {
-        if (is_null($container->getTypeId())) {
-            $result->addError('typeId', 'Type value must be set.');
-        }
     }
 
     private function validateTemperature(Container $container) : void
     {
-        $temperature = $container->getTemperature();
-        if (is_null($temperature)) {
-            $result->addError('temperature', 'Temperature value must be set.');
-        }
+        $temperature = $container->temperature;
         if (!(is_numeric($temperature) && is_float(floatval($temperature)))) {
-            $result->addError('temperature', 'Temperature must be a number.');
+            $this->addError('temperature', 'Temperature must be a number.');
         }
     }
 
-    private function validateStatusId(Container $container) : void
+    // private function validateStatus(Container $container) : void
+    // {
+    //     if (is_null($container->getStatus())) {
+    //         $this->addError('statusId', 'Status value must be set.');
+    //     }
+    //     if ($container->getId()) {
+    //         $prevContainer = $this->service->getInstanceFromId($container->getId());
+    //         if ($prevContainer) {
+    //             $stati         = $this->service->getStati();
+    //             $statusLabel   = $stati[$prevContainer->getStatusId() ?? '']['label'];
+    //             if ($statusLabel == 'Dispensed') {
+    //                 // TODO: figure out what else should not be changed if the container
+    //                 // is dispensed. This should eventually be blocked in the front-end
+    //                 // as well. These validations can wait until more testing has
+    //                 // been done on the module.
+
+    //                 if ($prevContainer->getTemperature()!= $container->getTemperature()
+    //                 ) {
+    //                     $this->addError('temperature',
+    //                         "Temperature cannot be changed if Container
+    //                                            is Dispensed."
+    //                     );
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     if (is_null($container->getStatusId())) {
+    //         $this->addError('status', "Status value must be set.");
+    //     }
+    // }
+
+    // private function validateShipmentBarcodes(Container $container) : void
+    // {
+    //     if (empty($container->shipments) {
+    //         return;
+    //     }
+
+    //     $shipmentDAO = new ShipmentDAO($this->db);
+    //     foreach ($container->shipments as $barcode) {
+    //         error_log($barcode);
+    //         $shipment = $shipmentDAO->getInstanceFromBarcode($barcode);
+    //         if ($shipment->getActive()) {
+    //             $this->addError('shipments',
+    //                 "Container ".$container->getBarcode()." cannot
+    //       be manipulated while it is associated with an active shipment."
+    //             );
+    //         }
+    //     }
+
+    //     // Additional shipment barcodes validation logic...
+    // }
+
+    private function validateCenter(Container $container) : void
     {
-        if (is_null($container->getStatusId())) {
-            $result->addError('statusId', 'Status value must be set.');
-        }
-        if ($container->getId()) {
-            $prevContainer = $this->service->getInstanceFromId($container->getId());
-            if ($prevContainer) {
-                $stati         = $this->service->getStati();
-                $statusLabel   = $stati[$prevContainer->getStatusId() ?? '']['label'];
-                if ($statusLabel == 'Dispensed') {
-                    // TODO: figure out what else should not be changed if the container
-                    // is dispensed. This should eventually be blocked in the front-end
-                    // as well. These validations can wait until more testing has
-                    // been done on the module.
-
-                    if ($prevContainer->getTemperature()!= $container->getTemperature()
-                    ) {
-                        $this->addError('temperature',
-                            "Temperature cannot be changed if Container
-                                               is Dispensed."
-                        );
-                    }
-                }
-            }
-        }
-
-        if (is_null($container->getStatusId())) {
-            $this->addError('status', "Status value must be set.");
-        }
-    }
-
-    private function validateShipmentBarcodes(Container $container) : void
-    {
-        if (empty($container->getShipmentBarcodes())) {
-            return;
-        }
-
-        $shipmentDAO = new ShipmentDAO($this->db);
-        foreach ($container->getShipmentBarcodes() as $barcode) {
-            error_log($barcode);
-            $shipment = $shipmentDAO->getInstanceFromBarcode($barcode);
-            if ($shipment->getActive()) {
-                $this->addError('shipments',
-                    "Container ".$container->getBarcode()." cannot
-          be manipulated while it is associated with an active shipment."
-                );
-            }
-        }
-
-        // Additional shipment barcodes validation logic...
-    }
-
-    private function validateCenterId(Container $container) : void
-    {
-        if (is_null($container->getCenterID())) {
-            $result->addError('centerId', 'Center value must be set.');
-        }
-
-        $parentContainerId = $container->getParentContainerId();
         if (false) {
-            $parentContainer = $this->service->getInstanceFromId($parentContainerId);
-            if ($container->getCenterID() !== $parentContainer->getCenterID()) {
+            $parent = $this->service->getByLabel($container->parent);
+            if ($container->center !== $parent->center) {
                 $this->addError('centers',
-                    $container->getBarcode()." must be at the same location
-                        as ".$parentContainer->getBarcode()." to execute this
+                    $container->barcode." must be at the same location
+                        as ".$parentContainer->barcode." to execute this
                         action"
                 );
             }
         }
     }
 
-    private function validateParentContainerId(Container $container) : void
+    private function validateParent(Container $container) : void
     {
-        $parentContainerId = $container->getParentContainerId();
-        if (isset($parentContainerId)) {
+        $parent = $container->parent;
+        if (isset($parent)) {
             $childContainerIds = $this->service->getAllChildContainerIds($container);
-            if ($container->getId() == $parentContainerId
-                || in_array($container->getId(), $childContainerIds)
+            if ($container->id == $parentContainerId
+                || in_array($container->id, $childContainerIds)
             ) {
                 $this->addError('parentContainers',
                     'A container can not be placed within itself or
@@ -194,7 +172,7 @@ class ContainerValidator extends Validator
 
     private function validateCoordinate(Container $container) : void
     {
-        $coordinate = $container->getCoordinate();
+        $coordinate = $container->coordinate;
         if (!is_null($coordinate)) {
             if (!((is_int($coordinate) || ctype_digit($coordinate))
                 && (int)$coordinate > 0)
@@ -202,7 +180,7 @@ class ContainerValidator extends Validator
                 $this->addError('coordinate', 'Coordinate must be a positive integer.');
             }
 
-            $parentContainerId = $container->getParentContainerId();
+            $parentContainerId = $container->parent->id;
             if (!isset($parentContainerId)) {
                 $this->addError('coordinate',
                     'Coordinate can not be set without a Parent
@@ -210,7 +188,7 @@ class ContainerValidator extends Validator
                 );
             }
 
-            $parentContainer = $this->service->getInstanceFromId(
+            $parentContainer = $this->service->getById(
                 $parentContainerId
             );
 
@@ -218,7 +196,7 @@ class ContainerValidator extends Validator
                 ->getDimensionId() ?? ''];
 
             $capacity = $dimensions['x'] * $dimensions['y'] * $dimensions['z'];
-            if ($container->getCoordinate() > $capacity) {
+            if ($container->coordinate > $capacity) {
                 $this->addError('coordinate',
                     'Coordinate value exceeds the capacity of the Parent Container'
                 );

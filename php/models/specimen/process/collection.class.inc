@@ -41,16 +41,16 @@ use LORIS\biobank\models\specimen\Process;
 final class Collection extends Process
 {
     public function __construct(
-        public float $quantity,
-        public Unit $unit,
-        ?int $id = null,
-        ?Center $center = null,
-        ?Examiner $examiner = null,
-        ?Date $date = null,
-        ?Time $time = null,
-        ?string $comments = null,
-        ?array $data = null,
-        ?Protocol $protocol = null
+        public readonly ?float $quantity,
+        public readonly ?Unit $unit,
+        public ?int $id,
+        public ?Center $center,
+        public ?Examiner $examiner,
+        public ?Date $date,
+        public ?Time $time,
+        public ?string $comments,
+        public ?array $data,
+        public ?Protocol $protocol
     ) {
         parent::__construct($id, $center, $examiner, $date, $time, $comments, $data, $protocol);
     }

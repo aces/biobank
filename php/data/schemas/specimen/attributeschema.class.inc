@@ -10,47 +10,47 @@ use \LORIS\biobank\data\schema\LoadingStrategy;
 
 final class AttributeSchema extends Schema
 {
-    protected function getModel(): string                                          
+    protected function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\specimen\Attribute::class;                            
     }   
 
-    protected function getTable(): Table
+    protected function table(): Table
     {
         return new Table(name: 'biobank_specimen_attribute');
     }
 
-    protected function getId(): string
+    protected function id(): string
     {
         return 'SpecimenAttributeID';
     }
 
-    protected function getLabel(): string
+    protected function label(): string
     {
         return 'label';
     }
 
-    protected function getColumns(): array
+    protected function columns(): array
     {
         return [
             'label' => new Column(
                 name: 'Label',
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getJoins(): array
+    protected function joins(): array
     {
         return [];
     }
 
-    protected function getRelations(): array
+    protected function relations(): array
     {
         return [
             'datatype' => new schema\Relation(
                 from: new schema\TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'DatatypeID'
                 ),
                 to: attribute\DatatypeSchema::class,

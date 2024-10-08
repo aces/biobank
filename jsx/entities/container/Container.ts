@@ -3,42 +3,46 @@ import { ContainerAPI } from '../../APIs';
 import { Entity } from '../';
                                                                                 
 export class Container extends Entity<IContainer> {                                         
-  constructor(initialData: Partial<IContainer>) {                                              
+  constructor(initialData: Partial<IContainer>) {
     super(initialData);                                                         
   }                                                                             
                                                                                 
   validate() {
-    let errors = {};
- 
+    let errors: { [key: string]: string } = {};
+
     const required = [
       'barcode',
-      'typeId',
+      'type',
       'temperature',
-      'statusId',
-      'centerId',
+      // 'status',
+      'center',
     ];
- 
-    const float = [
-      'temperature',
-    ];
- 
-    // required.forEach((field) => {
-    //     if (!container[field]?.trim()) {
-    //         errors[field] = 'This field is required!';
-    //     }
-    // });
- 
-    // float.forEach((field) => {
-    //     const value = parseFloat(container[field]);
-    //     if (isNaN(value) || value === Math.trunc(value)) {
-    //         errors[field] = 'This field must be a floating-point number!';
-    //     }
-    // });
+
+    const float = ['temperature'];
+    console.log(this);
+
+    // Check required fields
+    required.forEach((field) => {
+      const value = this.data[field];
+      if (value === undefined || (typeof value === 'string' && !value.trim())) {
+        errors[field] = 'This field is required!';
+      }
+    });
+
+    // Validate floating-point fields
+    float.forEach((field) => {
+      const value = parseFloat(this.data[field]);
+      if (isNaN(value) || value === Math.trunc(value)) {
+        errors[field] = 'This field must be a floating-point number!';
+      }
+    });    
  
     // const barcodeSet = new Set(this.state.data.containers.map(c => c.id !== container.id && c.barcode));
     // if (barcodeSet.has(container.barcode)) {
     //     errors.barcode = 'Barcode must be unique.';
     // }
+
+    console.log(errors);
  
     return errors;
   }

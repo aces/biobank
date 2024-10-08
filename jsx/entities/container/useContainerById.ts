@@ -6,7 +6,7 @@ import { useContainer } from '../hooks'; // Your existing useContainer hook
 export function useContainerById(barcode) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [containerData, setContainerData] = useState(null);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
     async function fetchAndInitializeContainer() {
@@ -15,7 +15,7 @@ export function useContainerById(barcode) {
         const fetchedData = await new ContainerAPI().getById(barcode);
         // Assuming fetchedData is directly usable as container state or
         // perform any transformation if needed
-        setContainerData(fetchedData);
+        setData(fetchedData);
       } catch (err) {
         setError(err);
       } finally {
@@ -31,7 +31,7 @@ export function useContainerById(barcode) {
   // Use the fetched data to initialize the container state with your useContainer hook
   // This step assumes useContainer can handle `null` or uninitialized data gracefully
   // until the actual container data is fetched
-  const [container, containerHandler] = useContainer(containerData);
+  const [container, containerHandler] = useContainer(new Container(data));
 
   return { container, containerHandler, loading, error };
 }

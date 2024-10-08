@@ -2,13 +2,10 @@
 
 namespace LORIS\biobank\services\shipment;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\shipment\StatusProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\shipment\StatusSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\shipment\Status;
 use LORIS\biobank\validators\shipment\StatusValidator;
 
@@ -23,7 +20,8 @@ class StatusService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            new ModelProvisioner(new StatusSchema('status')),
+            new StatusProvisioner(),
+            new Factory(Status::class),
             new StatusValidator($this),                                         
         );                                                                         
     }          

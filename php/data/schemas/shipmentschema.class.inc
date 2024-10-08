@@ -44,68 +44,74 @@ use \LORIS\biobank\data\Schema;
 
 class ShipmentSchema extends Schema
 {
-    protected function getModel(): string                                          
+    public static function model(): string                                          
     {                                                                              
         return \LORIS\biobank\models\Shipment::class;                              
     }  
 
-    protected function getTable(): Table {
+    public static function table(): Table {
         return new Table(name: 'shipment');
     }
 
-    protected function getId(): string {
+    public static function id(): string {
         return 'ShipmentID';
     }
 
-    protected function getLabel(): string {
+    public static function label(): string {
         return 'barcode';
     }
 
-    protected function getColumns(): array {
+    public static function columns(): array {
         return [
             'barcode' => new Column(
                 name: 'Barcode',
-                table: $this->table,
+                table: self::table()
             ),
         ];
     }
 
-    protected function getJoins(): array {
+    public static function joins(): array {
         return [
             'shipment_containers' => new Join(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id()
+                ),
                 to: new TableKey(
                     table: new Table(name: 'biobank_container_shipment_rel'),
-                    key: $this->id
+                    key: self::id()
                 )
             ),
         ];
     }
 
-    protected function getRelations(): array {
+    public static function relations(): array {
         return [
             'type' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'ShipmentTypeID'
                 ),
                 to: shipment\TypeSchema::class,
             ),
             'destinationCenter' => new Relation(
                 from: new TableKey(
-                    table: $this->table,
+                    table: self::table(),
                     key: 'DestinationCenterID'
                 ),
                 to: CenterSchema::class,
             ),
             'logs' => new Relation(
-                from: $this->idKey,
+                from: new TableKey(
+                    table: self::table(),
+                    key: self::id()
+                ),
                 to: shipment\LogSchema::class,
                 many: true,
             ),
             'containers' => new Relation(
                 from: new TableKey(
-                    table: $this->joins['shipment_containers']->to->table,
+                    table: self::joins()['shipment_containers']->to->table,
                     key: 'ContainerID'
                 ),
                 to: ContainerSchema::class,

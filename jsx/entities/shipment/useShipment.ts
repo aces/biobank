@@ -10,10 +10,10 @@ export interface ShipmentHook extends EntityHook<Shipment, IShipment> {
 }  
 
 export function useShipment(
-  initialShipment: Partial<IShipment> = {}
+  initialShipment: Shipment
 ): ShipmentHook {
 
-  const shipment = useEntity<Shipment, IShipment>(() => new Shipment(initialShipment));
+  const shipment = useEntity<Shipment, IShipment>(initialShipment);
   const shipmentEntity = shipment.getEntity() as Shipment;
 
   const addLog = useCallback((log: Partial<ILog>) => {
@@ -40,8 +40,8 @@ export interface LogHook extends EntityHook<Log, ILog> {
 }  
 
 export function useLog(
-  initialLog: Partial<ILog> = {}
+  initialLog: Log
 ): LogHook {
 
-  return useEntity<Log, ILog>(() => new Log(initialLog));
+  return useEntity<Log, ILog>(initialLog);
 }

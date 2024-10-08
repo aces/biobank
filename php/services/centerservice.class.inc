@@ -2,14 +2,9 @@
 
 namespace LORIS\biobank\services;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
-use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\CenterSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
-use LORIS\biobank\models\Center;
+use LORIS\biobank\provisioners\CenterProvisioner;
 
 /**
  * Service class for handling Center operations.
@@ -22,7 +17,8 @@ class CenterService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            new ModelProvisioner(new CenterSchema('center')),                                                      
+            new CenterProvisioner(),                                                      
+            new \LORIS\biobank\Factory(LORIS\biobank\models\Center::class)
         );                                                                         
     }          
 

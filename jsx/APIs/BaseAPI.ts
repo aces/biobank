@@ -43,7 +43,6 @@ export default class BaseAPI<T> {
     return BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`);
   }
 
-
   async create(data: T): Promise<T> {
     return BaseAPI.fetchJSON<T>(this.baseUrl, {
       method: "POST",
@@ -54,16 +53,6 @@ export default class BaseAPI<T> {
     });
   }
 
-  async batchCreate(entities: T[]): Promise<T[]> {
-    return BaseAPI.fetchJSON<T[]>(`${this.baseUrl}/batch-create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(entities),
-    });
-  }
-  
   async update(id: string, data: T): Promise<T> {
     return BaseAPI.fetchJSON<T>(`${this.baseUrl}/${id}`, {
       method: "PUT",
@@ -73,27 +62,34 @@ export default class BaseAPI<T> {
       body: JSON.stringify(data),
     });
   }
-  
-  async batchUpdate(entities: T[]): Promise<T[]> {
-    return BaseAPI.fetchJSON<T[]>(`${this.baseUrl}/batch-update`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(entities),
-    });
-  }
 
   static async fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
     try {
       const response = await fetch(url, { ...options });
-      ErrorHandler.handleResponse(response, { url, options });
-      const data = await response.json();
+      let data: T;
+  
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // Handle JSON parsing errors
+        ErrorHandler.handleError(parseError, { url, options });
+        throw parseError; // Re-throw to be caught by the caller
+      }
+  
+      // Use ErrorHandler to log non-OK responses
+      if (!response.ok) {
+        ErrorHandler.handleResponse(response, data, { url, options });
+      }
+  
+      // Return data regardless of response.ok
       return data;
     } catch (error) {
-      ErrorHandler.handleError(error, { url, options} );
+      // Handle network errors
+      ErrorHandler.handleError(error, { url, options });
+      throw error; // Re-throw to be handled by the caller
     }
-  }
+  }  
+  
 
   async fetchStream(
     addEntity: (entity: T) => void,
@@ -176,39 +172,34 @@ export default class BaseAPI<T> {
 }
 
 class ErrorHandler {
-  static logDetailedError(error: Error, context: { url: string; options?: RequestInit }) {
-    console.error(`Error requesting ${context.url} with options
-                  ${JSON.stringify(context.options)}: `, error);
-  }
-
   static handleResponse(
     response: Response,
-    context: {
-      url: string;
-      options?: RequestInit 
-    }
-  ) {
+    data: any,
+    context: { url: string; options?: RequestInit }
+  ): void {
     if (!response.ok) {
-      this.handleError(new Error(`HTTP error! Status: ${response.status}`), context);
+      if (response.status === 400 && data.status === 'error' && data.errors) {
+        // Validation error occurred
+        console.warn('Validation Error:', data.errors);
+      } else {
+        // Other HTTP errors
+        console.error(`HTTP Error! Status: ${response.status}`, {
+          url: context.url,
+          options: context.options,
+          responseData: data,
+        });
+      }
     }
-    return response;
+    // No need to throw an error here since we're returning data
   }
 
-  static handleError(
-    error: any,
-    context: { url: string, options?: RequestInit },
-  ) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      // Log for informational purposes, but treat it as a non-critical error
-      console.info("Request was aborted by the client:", error);
-      return; // Exit early, do not throw further, as this is an expected scenario in abort cases
-    }
-
-    if (error instanceof Response && !error.ok) {
-      console.error(`HTTP error! Status: ${error.status}`);
-    } else {
-      this.logDetailedError(error, context); // Log detailed information about the error
-      throw new Error(`API Error: ${error.message || "An unknown error occurred"}`);
-    }
+  static handleError(error: any, context: { url: string; options?: RequestInit }) {
+    console.error('An error occurred:', {
+      url: context.url,
+      options: context.options,
+      error,
+    });
+    // Re-throw the error to propagate it to the caller
+    throw error;
   }
 }

@@ -12,13 +12,13 @@ export function mapFormOptions<T>(
   attribute: string                                                             
 ): Record<string, string> {                                                     
   return entities.reduce((result, entity) => {                           
-    result[entity[attribute]] = entity[attribute];                                         
+    result[entity[attribute]] = entity[attribute];
     return result;                                                              
   }, {});                                                                       
 }   
 
 export function mapLabel<T>(
   entities: T[],        
-): { [key: string]: string } {
+): Record<string, string> {
   return mapFormOptions(entities, 'label');        
 }

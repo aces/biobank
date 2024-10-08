@@ -2,13 +2,10 @@
 
 namespace LORIS\biobank\services;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\DiagnosisProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\DiagnosisSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\Diagnosis;
 
 /**
@@ -22,7 +19,8 @@ class DiagnosisService extends Service
     function __construct()
     {
         parent::__construct(
-            new ModelProvisioner(new DiagnosisSchema('diagnosis')),
+            new DiagnosisProvisioner(),
+            new Factory(Diagnosis::class)
         );
     }
 

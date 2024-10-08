@@ -8,8 +8,8 @@ use LORIS\biobank\models\specimen\attribute\Datatype;
 final class Attribute extends Model
 {
     public function __construct(
-        public string $label,
-        public DataType $datatype,
+        public ?string $label,
+        public ?DataType $datatype,
         private ?int $id = null,
     ) {}
 }

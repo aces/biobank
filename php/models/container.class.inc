@@ -37,7 +37,7 @@ use LORIS\biobank\types\Date;
 class Container extends Model implements \LORIS\StudyEntities\SiteHaver
 {
     public function __construct(
-        private ?int $id,
+        public ?int $id,
         public ?string $barcode,
         public ?float $temperature,
         public ?Type $type,

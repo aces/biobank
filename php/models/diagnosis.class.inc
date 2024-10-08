@@ -9,6 +9,6 @@ final class Diagnosis extends Model
     public function __construct(                                                   
         public readonly ?string $abbreviation,                                                      
         public readonly ?string $label,                                                      
-        private readonly ?int $id,                                                           
+        public readonly ?int $id,                                                           
     ) {}                                                                           
 }   

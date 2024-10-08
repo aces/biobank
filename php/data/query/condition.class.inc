@@ -8,10 +8,9 @@ class Condition
 {
     public function __construct(
         public string $field,
-        public $value,
+        public ?string $value,
         public ?Operator $operator = Operator::EQUALS,
         public ?LogicalOperator $logicalOperator = LogicalOperator::AND,
         public ?Schema $relation = null
-    )
-    {}
+    ) {}
 }

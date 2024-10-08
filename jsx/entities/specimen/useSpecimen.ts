@@ -22,15 +22,15 @@ export interface SpecimenHook extends EntityHook<Specimen, ISpecimen> {
 }
 
 export function useSpecimen(
-  initialSpecimen: Partial<ISpecimen> = {}
+  initialSpecimen: Specimen
 ): SpecimenHook {
 
-  const specimen = useEntity<Specimen, ISpecimen>(() => new Specimen(initialSpecimen));
+  const specimen = useEntity<Specimen, ISpecimen>(initialSpecimen);
 
-  const container = useContainer(specimen.container);
-  const collection = useProcess(specimen.collection);
-  const preparation = useProcess(specimen.preparation);
-  const analysis = useProcess(specimen.analysis);
+  const container = useContainer(new Container(specimen.container));
+  const collection = useProcess(new Process(specimen.collection));
+  const preparation = useProcess(new Process(specimen.preparation));
+  const analysis = useProcess(new Process(specimen.analysis));
 
   return {
     ...specimen,
@@ -46,11 +46,11 @@ export interface ProcessHook extends EntityHook<Process, IProcess> {
 }
 
 export function useProcess(
-  initialProcess: Partial<IProcess> = {}
+  initialProcess: Process
 ): ProcessHook {
 
-  const process = useEntity<Process, IProcess>(() => new Process(initialProcess));
-  const data = useData(() => new Data(process.data));
+  const process = useEntity<Process, IProcess>(initialProcess);
+  const data = useData(new Data(process.data));
 
   // if the protocol changes, the data should be reset
   useEffect(() => {
@@ -68,8 +68,7 @@ export interface DataHook extends EntityHook<Data, IData> {
 }
 
 export function useData(
-  initialData: Partial<IData> = {}
+  initialData: Data
 ): DataHook {
-
-  return useEntity<Data, IData>(() => new Data(initialData));
+  return useEntity<Data, IData>(initialData);
 }

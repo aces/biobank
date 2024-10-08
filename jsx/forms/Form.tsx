@@ -16,7 +16,7 @@ interface FieldProps {
   error?: string;
 }
 
-interface ValueProps<T extends boolean | string | number> {
+interface ValueProps<T> {
   value: T | null;
   onChange: (name: string, value: T | null) => void;
 }
@@ -31,17 +31,16 @@ interface InlineFieldProps extends LabelProps {
   children: ReactNode
 }
 
-interface OptionsProps<T> {
-  options: T[];
-  format: (option: T) => string;
+interface OptionsProps {
+  options: Record<string, string>;
   emptyOption?: boolean;
 }
 
 // Properties specific to input elements, including handlers and common HTML attributes
 
-interface ListProps<T> extends LabelProps, FieldProps, OptionsProps<T> {
-  list: Map<string, T>;
-  onAdd: (key: string, value: T) => void;
+interface ListProps extends LabelProps, FieldProps, OptionsProps {
+  list: Record<string, string>;
+  onAdd: (key: string, value: string) => void;
   onRemove: (key: string) => void;
 }
 
@@ -54,8 +53,8 @@ interface NumberProps
 interface BooleanProps
   extends ValueProps<boolean>, LabelProps, FieldProps {}
 
-interface SelectProps<T>
-  extends TextProps, OptionsProps<T> {}
+interface SelectProps
+  extends TextProps, OptionsProps {}
 
 interface StaticProps
   extends LabelProps, Omit<ValueProps<any>, 'onChange'> {};
@@ -254,27 +253,25 @@ export const TextareaField: React.FC<TextProps> = ({
   );
 };
 
-export const SelectField = <T,>({
+export const SelectField = ({
   required,
   label,
   options,
   onChange,
-  format,
   ...props
-}: SelectProps<T>) => {
+}: SelectProps) => {
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange(event.target.name, options[event.target.value]);
+    const value = event.target.value === "" ? null : event.target.value;
+    onChange(event.target.name, value);
   };
-
-  const renderedOptions = Utils.normalizeOptions(options, format)
 
   return (
     <Field required={required} label={label}>
       <select className='form-control' onChange={handleChange} {...props}>
-        <option value="">Select an option</option>
-        {renderedOptions.map((value, key) => (
+        <option value=''>Select an option</option>
+        {Object.keys(options).map((key) => (
           <option key={key} value={key}>
-            {value}
+            {options[key]}
           </option>
         ))}
       </select>
@@ -283,18 +280,15 @@ export const SelectField = <T,>({
   );
 };
 
-export const SearchField = <T,>({
+export const SearchField = ({
   required,
   label,
   options,
   onChange,
-  format,
   ...props
-}: SelectProps<T>) => {
+}: SelectProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredOptions, setFilteredOptions] = useState<string[]>([]);
-
-  const renderedOptions = Utils.normalizeOptions(options, format);
 
   useEffect(() => {
     const filtered = Object.keys(options).filter(key =>
@@ -330,7 +324,7 @@ export const SearchField = <T,>({
       <ul>
         {filteredOptions.map(key => (
           <li key={key} onClick={() => handleOptionClick(key)}>
-            {renderedOptions[key]}
+            {options[key]}
           </li>
         ))}
       </ul>
@@ -340,13 +334,13 @@ export const SearchField = <T,>({
 
 
 // Usage of InlineField and other components
-export const ListField = <T extends {}>({
+export const ListField = ({
   label,
   onAdd,
   onRemove,
   list,
   ...props
-}: ListProps<T>) => {
+}: ListProps) => {
 
   const [input, setInput] = useState<string | null>(null);
 
@@ -373,7 +367,7 @@ export const ListField = <T extends {}>({
       <Button label='Add' onClick={handleAdd}/>
       <h4>{label + ' List'}</h4>
       <Styles.Form.HorizontalRule />
-      {Array.from(list.keys()).map((key) => (
+      {Object.keys(list).map((key) => (
         <Styles.Form.ListItem>
           <div>{list[key]}</div>
           <Styles.Form.Icon

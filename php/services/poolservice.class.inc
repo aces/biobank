@@ -14,15 +14,10 @@
  */
 namespace LORIS\biobank\services;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\PoolProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\query\QueryParams;
-use LORIS\biobank\data\query\With;
-use LORIS\biobank\data\schemas\PoolSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\validators\PoolValidator;
 use LORIS\biobank\models\Pool;
 use LORIS\Data\Filters; 
@@ -45,30 +40,13 @@ class PoolService extends Service
     function __construct()                                                         
     {                                                                              
         parent::__construct(                                                       
-            (new ModelProvisioner(new PoolSchema('pool')))
+            (new PoolProvisioner())
                 ->filter(new Filters\UserSiteMatch())                                  
-                ->filter(new Filters\UserProjectMatch()),                                                      
+                ->filter(new Filters\UserProjectMatch()),
+            new Factory(Pool::class),
             new PoolValidator($this),                                         
         );                                                                         
     }          
-
-    public function applyDefaultParams(QueryParams $params): QueryParams
-    {
-        return $params->include(
-                new With(name: 'specimens',
-                    // subIncludes: [
-                    //     new With(
-                    //         name: 'container',
-                    //         subIncludes: [
-                    //             new With(name: 'center')
-                    //         ]
-                    //     ),
-                    //     new With(name: 'projects')
-                    // ]
-                ),
-                new With(name: 'unit')
-            );        
-    }
 
     /**
      * Handles actions to be performed after saving a Container.

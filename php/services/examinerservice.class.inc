@@ -2,13 +2,10 @@
 
 namespace LORIS\biobank\services;
 
-use LORIS\Data\Provisioners\ModelProvisioner;
+use LORIS\biobank\provisioners\ExaminerProvisioner;
 use LORIS\biobank\Service;
 use LORIS\biobank\Model;
 use LORIS\biobank\Factory;
-use LORIS\biobank\data\DAO;
-use LORIS\biobank\data\schemas\ExaminerSchema;
-use LORIS\biobank\data\schema\LoadingStrategy;
 use LORIS\biobank\models\Examiner;
 
 /**
@@ -22,7 +19,8 @@ class ExaminerService extends Service
     function __construct()
     {
         parent::__construct(
-            new ModelProvisioner(new ExaminerSchema('examiner')),
+            new ExaminerProvisioner(),
+            new LORIS\biobank\Factory(LORIS\biobank\models\Examiner::class)
         );
     }
 
