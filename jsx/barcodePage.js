@@ -309,13 +309,18 @@ class BarcodePage extends Component {
 
     const updateContainer = (container, close = true) => {
       this.setErrors('container', {});
-      return new Promise((resolve) => this.setState({loading: true}, () =>
-        this.props.updateContainer(container)
+      return new Promise((resolve) => this.setState({loading: true}, () => {
+        if (options.container.stati[container.statusId].label === 'Shipped') {
+          container.parentContainerId = null;
+          container.coordinate = null;
+        }
+        return this.props.updateContainer(container)
         .then(() => close && this.clearEditable(),
           (errors) => errors.container && this.setErrors('container', errors.container))
         .then(() => this.setState({loading: false}, resolve()))
-      ));
+      }));
     };
+
     const updateSpecimen = (specimen) => {
       this.setErrors('specimen', {});
       return this.setState({loading: true}, () =>

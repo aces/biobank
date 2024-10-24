@@ -176,6 +176,7 @@ function Globals(props) {
   const stati = mapFormOptions(options.container.stati, 'label');
   const renderCommentsField = () => {
     if (stati[props.current.container.statusId] !== 'Discarded' &&
+        stati[props.current.container.statusId] !== 'Reserved' &&
         stati[props.current.container.statusId] !== 'Dispensed' &&
         stati[props.current.container.statusId] !== 'Shipped') {
       return [];
