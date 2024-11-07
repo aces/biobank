@@ -151,25 +151,35 @@ class SpecimenForm extends React.Component {
     return increment;
   };
 
+  async fetchBarcodes(count) {
+    try {
+      const response = await fetch(`${loris.BaseURL}/biobank/barcodes?count=${count}`);
+      const data = await response.json();
+      return data.barcodes;
+    } catch (error) {
+      console.error('Error fetching barcodes:', error);
+      return [];
+    }
+  }
+
   /**
    * Generate barcodes and store in the component state.
    */
-  generateBarcodes() {
-    const {options} = this.props;
-    let {list, current} = this.state;
-    const pscid = options.candidates[current.candidateId].pscid;
-    [list] = Object.keys(list)
-      .reduce(([result, increment], key, i) => {
-        const specimen = this.state.list[key];
-        if (!specimen.container.barcode) {
-          const barcode = padBarcode(pscid, increment);
-          specimen.container.barcode = barcode;
-          increment = this.incrementBarcode(pscid, increment);
-        }
+  async generateBarcodes() {
+    const { options } = this.props;
+    let { list, current } = this.state;
+    const count = Object.keys(list).length;
+
+    const barcodes = await this.fetchBarcodes(count);
+
+    list = Object.keys(list).reduce((result, key, index) => {
+        const specimen = list[key];
+        specimen.container.barcode = barcodes[index];
         result[key] = specimen;
-        return [result, increment];
-    }, [{}, this.incrementBarcode(pscid)]);
-    this.setState({list});
+        return result;
+    }, {});
+
+    this.setState({ list });
   };
 
   /**
@@ -377,7 +387,6 @@ class SpecimenForm extends React.Component {
             label='Generate Barcodes'
             type='button'
             onUserInput={this.generateBarcodes}
-            disabled={current.candidateId ? false : true}
           />
           <CheckboxElement
             name='printBarcodes'
