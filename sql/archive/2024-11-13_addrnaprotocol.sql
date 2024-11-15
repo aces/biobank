@@ -1,5 +1,3 @@
-START TRANSACTION;
-
 -- 1. Insert Specimen Type "RNA"
 INSERT INTO biobank_specimen_type (Label, FreezeThaw)
 VALUES ('RNA', 1);
@@ -424,5 +422,3 @@ VALUES (
     (SELECT SpecimenTypeID FROM biobank_specimen_type WHERE Label = 'RNA'),
     (SELECT ContainerTypeID FROM biobank_container_type WHERE Label = 'Cryotube Vial')
 );
-
-COMMIT;
