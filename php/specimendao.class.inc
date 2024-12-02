@@ -611,7 +611,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
             'Quantity'       => $specimen->getQuantity(),
             'UnitID'         => $specimen->getUnitId(),
             'SessionID'      => $specimen->getSessionId(),
-            'SampleNumber'   => $sampleNumber,
+            'SampleNumber'   => $specimen->getSampleNumber(),
         ];
 
         // I'd prefer a better way of doing this, but for now this is the simplest   
