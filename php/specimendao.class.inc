@@ -388,33 +388,46 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
      */
     public function getProtocolAttributes() : array
     {
-        $query  = "SELECT bsp.SpecimenProtocolID as protocolId,
-                         bsa.SpecimenAttributeID as attributeId,
-                         bsa.Label as label,
-                         bsa.DatatypeID as datatypeId,
-                         bspa.Required as required,
-                         bspa.ShowInDataTable as showInDataTable
-                  FROM biobank_specimen_protocol_attribute_rel bspa
-                  LEFT JOIN biobank_specimen_protocol bsp
-                    USING (SpecimenProtocolID)
-                  LEFT JOIN biobank_specimen_attribute bsa
-                    USING (SpecimenAttributeID)";
-        $result = $this->db->pselect($query, []);
-        $pA     = []; //protocolAttributes
-        foreach ($result as $row) {
-            if (!isset($pA[$row['protocolId']][$row['attributeId']])) {
-                $pA[$row['protocolId']][$row['attributeId']] = [];
-            }
-            $attrib =& $pA[$row['protocolId']][$row['attributeId']];
+        $query = "
+            SELECT 
+                bsp.SpecimenProtocolID as protocolId,
+                bsa.SpecimenAttributeID as attributeId,
+                bsa.Label as label,
+                bsa.DatatypeID as datatypeId,
+                bspa.Required as required,
+                bspa.ShowInDataTable as showInDataTable,
+                bspa.OrderIndex as orderIndex
+            FROM biobank_specimen_protocol_attribute_rel bspa
+            LEFT JOIN biobank_specimen_protocol bsp
+                USING (SpecimenProtocolID)
+            LEFT JOIN biobank_specimen_attribute bsa
+                USING (SpecimenAttributeID)
+            ORDER BY bsp.SpecimenProtocolID, bspa.OrderIndex
+        ";
 
-            $attrib['label']           = $row['label'];
-            $attrib['datatypeId']      = $row['datatypeId'];
-            $attrib['required']        = (int) $row['required'];
-            $attrib['showInDataTable'] = (int) $row['showInDataTable'];
+        $result = $this->db->pselect($query, []);
+        $protocolAttributes = [];
+
+        foreach ($result as $row) {
+            $protocolId = $row['protocolId'];
+            // Ensure the protocol exists in the array
+            if (!isset($protocolAttributes[$protocolId])) {
+                $protocolAttributes[$protocolId] = [];
+            }
+
+            // Add the attribute data, keeping the order intact
+            $protocolAttributes[$protocolId][] = [
+                'id'               => $row['attributeId'],
+                'label'            => $row['label'],
+                'datatypeId'       => $row['datatypeId'],
+                'required'         => (int) $row['required'],
+                'showInDataTable'  => (int) $row['showInDataTable'],
+                'orderIndex'       => (int) $row['orderIndex'],
+            ];
         }
 
-        return $pA;
-    }
+        return $protocolAttributes;
+    }       
 
     /**
      * Queries all rows from the biobank_specimen_protocol_attribute_rel table
