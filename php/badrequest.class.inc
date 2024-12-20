@@ -1,9 +1,7 @@
-<?php
+<?php declare(strict_types=1);
 
 /**
  * This file contains the BadRequest exception type.
- *
- * PHP Version 7
  *
  * @category Errors
  * @package  Loris
@@ -14,8 +12,10 @@
 namespace LORIS\biobank;
 
 /**
- * The NotFound exception is thrown when a resource can not
- * be found. It maps to a 400 error.
+ * The BadRequest exception is thrown when a resource has invalid data.
+ *
+ * TODO: this should eventually be replaced with a error message accumulator and
+ * return a BadRequest response without throwing an exception.
  *
  * @category Errors
  * @package  Loris
@@ -27,4 +27,3 @@ namespace LORIS\biobank;
 class BadRequest extends \LorisException
 {
 }
-

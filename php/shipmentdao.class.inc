@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * Shipment Data Access Object (DAO) Class
  * This class contains all database handling that is needed to
@@ -125,11 +126,11 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
         $shipmentRows = $this->db->pselectWithIndexKey($query, [], 'barcode');
         $logs         = $this->getLogs();
         foreach ($shipmentRows as $barcode => $shipmentRow) {
-            $shipmentRow['containerIds'] = $shipmentRow['containerIds'] ?
+            $shipmentRow['containerIds']      = $shipmentRow['containerIds'] ?
               explode(',', $shipmentRow['containerIds']) : [];
             $shipmentRow['containerBarcodes'] = $shipmentRow['containerBarcodes'] ?
               explode(',', $shipmentRow['containerBarcodes']) : [];
-            $shipmentRow['logs']         = $logs[$barcode];
+            $shipmentRow['logs'] = $logs[$barcode];
             $shipment            = new Shipment($shipmentRow);
             $shipments[$barcode] = $shipment;
         }
@@ -262,7 +263,9 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
             if ($shipment->getId()) {
                 // places all containers at destination center
                 $container = $containerDAO->getInstanceFromId((int) $containerId);
-                $container->setCenterId(new \CenterID(strval($shipment->destinationCenterId)));
+                $container->setCenterId(
+                    new \CenterID(strval($shipment->destinationCenterId))
+                );
                 $updatedContainers = array_merge(
                     $updatedContainers,
                     $containerDAO->updateInstance($container)
@@ -364,8 +367,8 @@ class ShipmentDAO extends \LORIS\Data\ProvisionerInstance
             'StatusID'    => $statusId,
             'UserID'      => $userId,
             'Temperature' => $log->temperature,
-            'Date'        => (new \DateTime($log->date))->format('Y-m-d H:i'),
-            'Time'        => (new \DateTime($log->time))->format('Y-m-d H:i'),
+            'Date'        => $log->date?->format('Y-m-d H:i'),
+            'Time'        => $log->time?->format('Y-m-d H:i'),
             'Comments'    => $log->comments,
         ];
     }

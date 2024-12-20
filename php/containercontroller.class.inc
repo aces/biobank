@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * This class features the code that enables access to the containers of the
  * LORIS Biobank Module.
@@ -75,8 +76,8 @@ class ContainerController
     {
         $this->_validatePermission('view');
         $containers  = [];
-        $this->dao = $this->dao
-                          ->filter(new \LORIS\Data\Filters\UserSiteMatch());
+        $this->dao   = $this->dao
+            ->filter(new \LORIS\Data\Filters\UserSiteMatch());
         $containerIt = $this->dao->execute($this->user);
         foreach ($containerIt as $id => $container) {
             $containers[$id] = $container;
@@ -181,7 +182,7 @@ class ContainerController
             }
             break;
         case 'update':
-            if (!$this->user->hasPermission('biobank_container_update')) {
+            if (!$this->user->hasPermission('biobank_container_edit')) {
                 throw new Forbidden('Container: Update Permission Denied');
             }
             break;
@@ -269,7 +270,9 @@ class ContainerController
 
         if ($id) {
             $prevContainer = $this->dao->getInstanceFromId($id);
-            if ($prevContainer && ($container->getBarcode() !== $prevContainer->getBarcode())) {
+            if ($prevContainer
+                && ($container->getBarcode() !== $prevContainer->getBarcode())
+            ) {
                 throw new BadRequest('Barcode can not be changed.');
             }
         }
@@ -348,22 +351,11 @@ class ContainerController
         if ($container->getId()) {
             $prevContainer = $this->dao->getInstanceFromId($container->getId());
             if ($prevContainer) {
-                $stati         = $this->dao->getStati();
-                $statusLabel   = $stati[$prevContainer->getStatusId() ?? '']['label'];
-                if ($statusLabel == 'Dispensed') {
-                    // TODO: figure out what else should not be changed if the container
-                    // is dispensed. This should eventually be blocked in the front-end
-                    // as well. These validations can wait until more testing has
-                    // been done on the module.
-
-                    if ($prevContainer->getTemperature()!= $container->getTemperature()
-                    ) {
-                        throw new BadRequest(
-                            "Temperature cannot be changed if Container
-                                               is Dispensed."
-                        );
-                    }
-                }
+                // $stati       = $this->dao->getStati();
+                // $statusId    = $prevContainer->getStatusId();
+                // $statusLabel = $stati[$statusId ?? '']['label'];
+                // TODO: figure out what should not be changed if the
+                // container is dispensed.
             }
         }
 

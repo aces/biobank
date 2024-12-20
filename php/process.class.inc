@@ -1,48 +1,48 @@
 <?php declare(strict_types=1);
+
 /**
- * Process Object Class
- * This class contains an instance of a database handling that is needed to
- * permanently store and retrieve Process Object instances.
+ * Defines the abstract Process class for specimen processes in the Biobank
+ * module.
  *
- * PHP Version 7.2
+ * This file contains the `Process` class, which implements the
+ * `JsonSerializable` interface and provides methods for managing process data,
+ * including serialization for storage and retrieval.
  *
  * @category   Entity
- * @package    Loris
+ * @package    LORIS
  * @subpackage Biobank
- * @author     Henri Rabalais <henri.rabalais@mcin.ca>
+ * @author     Henri Rabalais <henri.j.rabalais@gmail.com>
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
 namespace LORIS\biobank;
 
 /**
- * Process Object Class
- * This class contains an instance of a database handling that is needed to
- * permanently store and retrieve Process Object instances.
+ * Abstract Process class for specimen processing in the Biobank module.
  *
- * PHP Version 7.2
+ * This class represents a generic process and provides methods to manage and
+ * serialize process data. It implements the `JsonSerializable` interface to
+ * allow for JSON serialization of process instances.
  *
  * @category   Entity
- * @package    Loris
+ * @package    LORIS
  * @subpackage Biobank
- * @author     Henri Rabalais <henri.rabalais@mcin.ca>
+ * @author     Henri Rabalais <henri.j.rabalais@gmail.com>
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
 abstract class Process implements \JsonSerializable
 {
     /**
-     * Persistent Instance variables.
+     * Persistent instance variables describing a process.
      *
-     * These variables describe a process instance.
-     *
-     * @var int       $protocolId
-     * @var int       $centerId
-     * @var int       $examinerId
-     * @var \DateTime $date
-     * @var \DateTime $time
-     * @var string    $comments
-     * @var array     $data
+     * @var int       $protocolId  The ID of the processing protocol.
+     * @var int       $centerId    The ID of the processing center.
+     * @var int       $examinerId  The ID of the processing examiner.
+     * @var \DateTime $date        The date of processing.
+     * @var \DateTime $time        The time of processing.
+     * @var string    $comments    Comments related to processing.
+     * @var array     $data        Custom attributes and values.
      */
     private $protocolId;
     private $centerId;
@@ -76,7 +76,7 @@ abstract class Process implements \JsonSerializable
     /**
      * Gets the ID of the specimen's processing protocol.
      *
-     * @return int
+     * @return int The protocol ID.
      */
     public function getProtocolId() : int
     {
@@ -84,9 +84,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Sets the ID of the specimen's center at time of processing.
+     * Sets the ID of the specimen's processing center.
      *
-     * @param int $centerId the ID of the processing center
+     * @param int $centerId the ID of the processing center.
      *
      * @return void
      */
@@ -100,7 +100,7 @@ abstract class Process implements \JsonSerializable
     /**
      * Gets the ID of the specimen's processing center
      *
-     * @return int
+     * @return int The center ID.
      */
     public function getCenterId() : int
     {
@@ -108,9 +108,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Sets the ID of the specimen's examiner at time of processing.
+     * Sets the ID of the specimen's processing examiner.
      *
-     * @param int $examinerId the ID of the processing center
+     * @param int $examinerId The ID of the processing examiner.
      *
      * @return void
      */
@@ -122,9 +122,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Gets the ID of the specimen's processing examiner
+     * Gets the ID of the specimen's processing examiner.
      *
-     * @return ?int
+     * @return ?int The examiner ID, or null if not set.
      */
     public function getExaminerId() : ?int
     {
@@ -132,9 +132,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Sets the date of collection
+     * Sets the date of processing.
      *
-     * @param \DateTime $date the date of processing
+     * @param \DateTime $date The date of processing.
      *
      * @return void
      */
@@ -144,9 +144,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Gets the date of processing
+     * Gets the date of processing.
      *
-     * @return \DateTime
+     * @return \DateTime The date of processing.
      */
     public function getDate() : \DateTime
     {
@@ -154,9 +154,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Sets the time of processing
+     * Sets the time of processing.
      *
-     * @param \DateTime $time the time of processing
+     * @param \DateTime $time The time of processing.
      *
      * @return void
      */
@@ -166,9 +166,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Gets the time of processing
+     * Gets the time of processing.
      *
-     * @return \DateTime
+     * @return \DateTime The time of processing.
      */
     public function getTime() : \DateTime
     {
@@ -176,9 +176,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Sets processing comments
+     * Sets comments related to processing.
      *
-     * @param string $comments comments relating to processing
+     * @param string $comments Comments relating to processing.
      *
      * @return void
      */
@@ -188,9 +188,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Gets the processing comments
+     * Gets the processing comments.
      *
-     * @return ?string
+     * @return ?string The comments, or null if not set.
      */
     public function getComments() : ?string
     {
@@ -198,9 +198,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Sets the Data array that contains custom attributes and values.
+     * Sets the data array containing custom attributes and values.
      *
-     * @param array $data of custom attributes and values.
+     * @param array $data An array of custom attributes and values.
      *
      * @return void
      */
@@ -210,9 +210,9 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Gets the Data array that contains custom attributes and values.
+     * Gets the data array containing custom attributes and values.
      *
-     * @return ?array
+     * @return ?array The data array, or null if not set.
      */
     public function getData() : ?array
     {
@@ -220,11 +220,13 @@ abstract class Process implements \JsonSerializable
     }
 
     /**
-     * Instatiates a Process Object using the values sent from the client-side.
+     * Instantiates a Process object from an array of data.
      *
-     * @param array $data Data to be used to instantiate the Process Object.
+     * Populates the Process instance with the provided data.
      *
-     * @return Process
+     * @param array $data Data to instantiate the Process object.
+     *
+     * @return Process The current instance for method chaining.
      */
     public function fromArray(array $data) : Process
     {
@@ -254,16 +256,26 @@ abstract class Process implements \JsonSerializable
         return $this;
     }
 
+    /**
+     * Converts the process instance to an array.
+     *
+     * This method provides an array representation of the process by
+     * utilizing the `jsonSerialize` method.
+     *
+     * @return array The process data as an associative array.
+     */
+    public function toArray()
+    {
+        return $this->jsonSerialize();
+    }
 
     /**
-     * Returns an array representing the state of the Process.
+     * {@inheritDoc}
      *
-     * @return array
+     * @return array The process data as an associative array.
      */
     public function jsonSerialize() : array
     {
-        // TODO: Date and Time formats should be gotten from some sort of config
-        // setting.
         return [
             'protocolId' => $this->protocolId,
             'centerId'   => $this->centerId,

@@ -1,8 +1,9 @@
 import React, {Component} from 'react';
 import {Link} from 'react-router-dom';
+import PropTypes from 'prop-types';
 
 import {clone, mapFormOptions} from './helpers.js';
-import FilterableDataTable from 'FilterableDataTable';
+import FilterableDataTable from './FilterableDataTable'; // Temporary CBIGR Override for 26.0 
 import SpecimenForm from './specimenForm';
 import PoolSpecimenForm from './poolSpecimenForm';
 import BatchProcessForm from './batchProcessForm';
@@ -30,7 +31,6 @@ class SpecimenTab extends Component {
    * Make the form editable
    *
    * @param {object} stateKey - the key holding the state
-   *
    * @return {Promise}
    */
   edit(stateKey) {
@@ -51,31 +51,30 @@ class SpecimenTab extends Component {
    *
    * @param {string} column - the column name being mapped
    * @param {string} value - the value being mapped
-   *
    * @return {string}
    */
   mapSpecimenColumns(column, value) {
-    const {options, data} = this.props;
+    const {options} = this.props;
     switch (column) {
-      case 'Type':
-        return options.specimen.types[value].label;
-      case 'Container Type':
-        return options.container.typesPrimary[value].label;
-      case 'Diagnosis':
-        if (value) {
-          return value.map((id) => options.diagnoses[id].label);
-        }
-        break;
-      case 'Status':
-        return options.container.stati[value].label;
-      case 'Current Site':
-        return options.centers[value];
-      case 'Draw Site':
-        return options.centers[value];
-      case 'Projects':
-        return value.map((id) => options.projects[id]);
-      default:
-        return value;
+    case 'Type':
+      return options.specimen.types[value].label;
+    case 'Container Type':
+      return options.container.typesPrimary[value].label;
+    case 'Diagnosis':
+      if (value) {
+        return value.map((id) => options.diagnoses[id].label);
+      }
+      break;
+    case 'Status':
+      return options.container.stati[value].label;
+    case 'Current Site':
+      return options.centers[value];
+    case 'Draw Site':
+      return options.centers[value];
+    case 'Projects':
+      return value.map((id) => options.projects[id]);
+    default:
+      return value;
     }
   }
 
@@ -85,8 +84,7 @@ class SpecimenTab extends Component {
    * @param {string} column - the column name being mapped
    * @param {string} value - the value being mapped
    * @param {array} row - an array of the row values
-   *
-   * @return {ReactDOM}
+   * @return {JSX}
    */
   formatSpecimenColumns(column, value, row) {
     const {data, options} = this.props;
@@ -95,63 +93,69 @@ class SpecimenTab extends Component {
       .find((cand) => cand?.pscid == row['PSCID']);
     const candidatePermission = candidate !== undefined;
     switch (column) {
-      case 'Barcode':
+    case 'Barcode':
+      return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
+    case 'Parent Specimens':
+      // TODO: if the user doesn't have access then these shouldn't be hyperlinked
+      const barcodes = value && value.map((id, key) => {
+        return <Link key={key} to={`/barcode=${value}`}>{value}</Link>;
+      }).reduce((prev, curr) => [prev, ', ', curr]);
+      return <td>{barcodes}</td>;
+    case 'PSCID':
+      if (candidatePermission) {
+        return (
+          <td>
+            <a href={loris.BaseURL + '/' + candidate.id}>{value}</a>
+          </td>
+        );
+      }
+      return <td>{value}</td>;
+    case 'Visit Label':
+      if (candidatePermission) {
+        const ses = Object.values(options.candidateSessions[candidate.id])
+          .find((sess) => sess.label == value).id;
+        const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+
+          candidate.id+'&sessionID='+ses;
+        return <td><a href={visitLabelURL}>{value}</a></td>;
+      }
+      return <td>{value}</td>;
+    case 'Status':
+      const style = {};
+      switch (value) {
+      case 'Available':
+        style.color = 'green';
+        break;
+      case 'Reserved':
+        style.color = 'orange';
+        break;
+      case 'Dispensed':
+        style.color = 'red';
+        break;
+      case 'Discarded':
+        style.color = 'red';
+        break;
+      }
+      return <td style={style}>{value}</td>;
+    case 'Projects':
+      return <td>{value.join(', ')}</td>;
+    case 'Container Barcode':
+      // check if container has be queried
+      if (
+        Object.values(data.containers)
+          .find((container) => container.barcode == value)
+      ) {
         return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
-      case 'Parent Specimens':
-        // TODO: if the user doesn't have access then these shouldn't be hyperlinked
-        const barcodes = value && value.map((id, key) => {
-          return <Link key={key} to={`/barcode=${value}`}>{value}</Link>;
-        }).reduce((prev, curr) => [prev, ', ', curr]);
-        return <td>{barcodes}</td>;
-      case 'PSCID':
-        if (candidatePermission) {
-          return <td><a href={loris.BaseURL + '/' + candidate.id}>{value}</a></td>;
-        }
-        return <td>{value}</td>;
-      case 'Visit Label':
-        if (candidatePermission) {
-          const ses = Object.values(options.candidateSessions[candidate.id]).find(
-            (sess) => sess.label == value
-          ).id;
-          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candidate.id+
-            '&sessionID='+ses;
-          return <td><a href={visitLabelURL}>{value}</a></td>;
-        }
-        return <td>{value}</td>;
-      case 'Status':
-        const style = {};
-        switch (value) {
-          case 'Available':
-            style.color = 'green';
-            break;
-          case 'Reserved':
-            style.color = 'orange';
-            break;
-          case 'Dispensed':
-            style.color = 'red';
-            break;
-          case 'Discarded':
-            style.color = 'red';
-            break;
-        }
-        return <td style={style}>{value}</td>;
-      case 'Projects':
-        return <td>{value.join(', ')}</td>;
-      case 'Container Barcode':
-        // check if container has be queried
-        if (Object.values(data.containers).find(container => container.barcode == value)) {
-          return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
-        }
-        return <td>{value}</td>;
-      default:
-        return <td>{value}</td>;
-     }
+      }
+      return <td>{value}</td>;
+    default:
+      return <td>{value}</td>;
+    }
   }
 
   /**
    * Render the React component
    *
-   * @return {ReactDOM}
+   * @return {JSX}
    */
   render() {
     const {editable} = this.state;
@@ -165,7 +169,7 @@ class SpecimenTab extends Component {
       }, {});
     const specimenTypes = mapFormOptions(options.specimen.types, 'label');
     const containerTypesPrimary = mapFormOptions(
-        options.container.typesPrimary, 'label'
+      options.container.typesPrimary, 'label'
     );
     const stati = mapFormOptions(options.container.stati, 'label');
     const diagnoses = mapFormOptions(options.diagnoses, 'label');
@@ -364,48 +368,171 @@ class SpecimenTab extends Component {
           history={this.props.history}
         />
         {loris.userHasPermission('biobank_specimen_create') ?
-        <SpecimenForm
-          title='Add New Specimen'
-          options={options}
-          data={data}
-          increaseCoordinate={this.props.increaseCoordinate}
-          show={editable.specimenForm}
-          onClose={this.clearEditable}
-          onSubmit={this.props.createSpecimens}
-        /> : null}
+          <SpecimenForm
+            title='Add New Specimen'
+            options={options}
+            data={data}
+            increaseCoordinate={this.props.increaseCoordinate}
+            show={editable.specimenForm}
+            onClose={this.clearEditable}
+            onSubmit={this.props.createSpecimens}
+          /> : null}
         {loris.userHasPermission('biobank_pool_create') ?
-        <PoolSpecimenForm
-          options={this.props.options}
-          data={this.props.data}
-          show={editable.poolSpecimenForm}
-          onClose={this.clearEditable}
-          onSubmit={this.props.createPool}
-        /> : null}
-        {loris.userHasPermission('biobank_specimen_update') ?
-        <BatchProcessForm
-          show={editable.batchProcessForm}
-          onClose={this.clearEditable}
-          onSubmit={this.props.updateSpecimens}
-          options={this.props.options}
-          data={this.props.data}
-        /> : null}
-        {loris.userHasPermission('biobank_specimen_update') ?
-        <BatchEditForm
-          show={editable.batchEditForm}
-          onClose={this.clearEditable}
-          onSubmit={this.props.editSpecimens}
-          options={this.props.options}
-          data={this.props.data}
-        /> : null}
+          <PoolSpecimenForm
+            options={this.props.options}
+            data={this.props.data}
+            show={editable.poolSpecimenForm}
+            onClose={this.clearEditable}
+            onSubmit={this.props.createPool}
+          /> : null}
+        {loris.userHasPermission('biobank_specimen_edit') ?
+          <BatchProcessForm
+            show={editable.batchProcessForm}
+            onClose={this.clearEditable}
+            onSubmit={this.props.updateSpecimens}
+            options={this.props.options}
+            data={this.props.data}
+          /> : null}
+        {loris.userHasPermission('biobank_specimen_edit') ?
+          <BatchEditForm
+            show={editable.batchEditForm}
+            onClose={this.clearEditable}
+            onSubmit={this.props.editSpecimens}
+            options={this.props.options}
+            data={this.props.data}
+          /> : null}
       </div>
     );
   }
 }
 
 SpecimenTab.propTypes = {
-};
+  options: PropTypes.shape({
+    specimen: PropTypes.shape({
+      attributes: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+      units: PropTypes.string, // Added based on errors
+      types: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      processes: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+      processAttributes: PropTypes.arrayOf(
+        PropTypes.arrayOf(
+          PropTypes.shape({
+            protocolIds: PropTypes.arrayOf(PropTypes.number),
+          })
+        )
+      ),
+      typeContainerTypes: PropTypes.arrayOf(PropTypes.string).isRequired, // Added based on previous propTypes
+    }).isRequired,
+    container: PropTypes.shape({
+      types: PropTypes.obj,
+      typesPrimary: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      stati: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+    }).isRequired,
+    diagnoses: PropTypes.arrayOf(
+      PropTypes.shape({
+        label: PropTypes.string.isRequired,
+      })
+    ),
+    centers: PropTypes.arrayOf(PropTypes.string).isRequired,
+    projects: PropTypes.arrayOf(PropTypes.string).isRequired,
+    candidates: PropTypes.arrayOf(PropTypes.string).isRequired,
+    sessions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    sessionCenters: PropTypes.arrayOf(
+      PropTypes.shape({
+        centerId: PropTypes.number.isRequired,
+      })
+    ),
+    candidateSessions: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
 
-SpecimenTab.defaultProps = {
+  // Data prop: Contains containers, specimens, and pools data
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+        statusId: PropTypes.number, // Added based on error
+        temperature: PropTypes.number, // Added based on error
+        comments: PropTypes.string, // Added based on error
+        // Add other container-specific properties if necessary
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+        // Add other specimen-specific properties if necessary
+      })
+    ).isRequired,
+    pools: PropTypes.array.isRequired,
+  }).isRequired,
+
+  // Functional props
+  onSubmit: PropTypes.func.isRequired,
+  increaseCoordinate: PropTypes.func.isRequired,
+  createSpecimens: PropTypes.func.isRequired,
+  createPool: PropTypes.func.isRequired,
+  updateSpecimens: PropTypes.func.isRequired,
+  editSpecimens: PropTypes.func.isRequired,
+
+  // UI Control props
+  title: PropTypes.string.isRequired,
+  show: PropTypes.bool.isRequired,
+
+  // History prop: For navigation
+  history: PropTypes.shape({
+    push: PropTypes.func.isRequired,
+  }).isRequired,
+
+  // Current state props
+  current: PropTypes.shape({
+    specimen: PropTypes.shape({
+      quantity: PropTypes.number,
+      unitId: PropTypes.number,
+      // Add other specimen-specific properties if necessary
+    }).isRequired,
+    container: PropTypes.shape({
+      statusId: PropTypes.number.isRequired,
+      temperature: PropTypes.number,
+      comments: PropTypes.string,
+      // Add other container-specific properties if necessary
+    }).isRequired,
+  }).isRequired,
+
+  // Errors prop: Handles validation errors
+  errors: PropTypes.shape({
+    container: PropTypes.shape({
+      typeId: PropTypes.string,
+      temperature: PropTypes.string,
+      statusId: PropTypes.string,
+      comments: PropTypes.string,
+    }),
+    specimen: PropTypes.shape({
+      quantity: PropTypes.string,
+      unitId: PropTypes.string,
+      // Add other specimen-specific error properties if necessary
+    }),
+  }).isRequired,
+
+  // Additional props based on errors
+  loading: PropTypes.bool.isRequired,
 };
 
 export default SpecimenTab;

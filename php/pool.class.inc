@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * Pool Class
  * This class contains an instance of a database handling that is needed to
@@ -239,7 +240,7 @@ class Pool implements
     /**
      * Sets the Candidate PSCID of the pool
      *
-     * @param int $candidateId Candidate ID of the pool
+     * @param string $candidatePSCID Candidate ID of the pool
      *
      * @return void
      */

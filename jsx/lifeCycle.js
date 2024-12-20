@@ -1,77 +1,9 @@
-/**
- * LifeCycle
- *
- * @author Henri Rabalais
- * @version 1.0.0
- *
- **/
+import PropTypes from 'prop-types';
 
 /**
  * LifeCycle component.
- *
- * TODO: revise this component once Shipments are enabled.
  */
 class LifeCycle extends React.Component {
-  /**
-   * Handle a mouse hovering over a collection form.
-   *
-   * @param {event} e - the mouse event
-   */
-  mouseOver(e) {
-    // this isn't a very 'react' way of doing things, so consider revision
-    /*
-      $('.collection').css({
-        'border': '2px solid #093782',
-        'box-shadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), ' +
-                      '0 6px 20px 0 rgba(0, 0, 0, 0.19)',
-      });
-    */
-  }
-
-  /**
-   * Handle a mouse leaving a collection form.
-   *
-   * @param {event} e - the mouse event
-   */
-  mouseLeave(e) {
-    // this isn't a very 'react' way of doing things, so consider revision
-    /*
-      $('.collection').css({
-        'border': '2px solid #A6D3F5', 'box-shadow': 'none',
-      });
-      */
-  }
-
-  /**
-   * Handle a mouse hovering over a preparation form.
-   *
-   * @param {event} e - the mouse event
-   */
-  mouseOverPreparation(e) {
-    // this isn't a very 'react' way of doing things, so consider revision
-    /*
-      $('.preparation').css({
-        'border': '2px solid #093782',
-        'box-shadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), ' +
-                      '0 6px 20px 0 rgba(0, 0, 0, 0.19)',
-      });
-      */
-  }
-
-  /**
-   * Handle a mouse leaving a preparation form.
-   *
-   * @param {event} e - the mouse event
-   */
-  mouseLeavePreparation(e) {
-    // this isn't a very 'react' way of doing things, so consider revision
-    /*
-      $('.preparation').css(
-        {'border': '2px solid #A6D3F5', 'box-shadow': 'none'}
-      );
-      */
-  }
-
   /**
    * Render the React component
    *
@@ -83,8 +15,6 @@ class LifeCycle extends React.Component {
     if ((this.props.specimen||{}).collection || this.props.container) {
       collectionNode = (
         <div
-          onMouseEnter={(e) => this.mouseOver(e)}
-          onMouseLeave={(e) => this.mouseLeave(e)}
           className='lifecycle-node collection'
         >
           <div className='letter'>
@@ -98,14 +28,8 @@ class LifeCycle extends React.Component {
     let preparationNode;
     if ((this.props.specimen||{}).preparation) {
       preparationNode = (
-        <div
-          onMouseEnter={this.mouseOverPreparation}
-          onMouseLeave={this.mouseLeavePreparation}
-          className='lifecycle-node preparation'
-        >
-          <div className='letter'>
-            P
-          </div>
+        <div className='lifecycle-node preparation'>
+          <div className='letter'>P</div>
         </div>
       );
     }
@@ -115,9 +39,9 @@ class LifeCycle extends React.Component {
     if ((this.props.specimen||{}).analysis) {
       analysisNode = (
         <div className='lifecycle-node-container'>
-           <div className='lifecycle-node'>
-             <div className='letter'>A</div>
-           </div>
+          <div className='lifecycle-node'>
+            <div className='letter'>A</div>
+          </div>
         </div>
       );
     }
@@ -149,6 +73,26 @@ class LifeCycle extends React.Component {
 }
 
 LifeCycle.propTypes = {
+  specimen: PropTypes.shape({
+    typeId: PropTypes.number.isRequired,
+    quantity: PropTypes.number,
+    poolId: PropTypes.number,
+    fTCycle: PropTypes.string,
+    projectIds: PropTypes.arrayOf(PropTypes.number),
+    sessionId: PropTypes.number,
+    candidateId: PropTypes.number,
+    unitId: PropTypes.number,
+    parentSpecimenIds: PropTypes.arrayOf(PropTypes.number),
+    parentSpecimenBarcodes: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  container: PropTypes.shape({
+    statusId: PropTypes.number.isRequired,
+    barcode: PropTypes.string.isRequired,
+    lotNumber: PropTypes.string,
+    expirationDate: PropTypes.string,
+    parentContainerId: PropTypes.number,
+    coordinate: PropTypes.string,
+  }).isRequired,
 };
 
 export default LifeCycle;

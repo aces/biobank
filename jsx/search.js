@@ -1,5 +1,7 @@
 import React, {PureComponent} from 'react';
-import Modal from 'Modal';
+import PropTypes from 'prop-types';
+import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
+import {FormElement, TextboxElement} from './Form'; // Temporary CBIGR Override for 26.0 
 
 /**
  * Provides a modal window that can be used to search barcodes
@@ -16,13 +18,13 @@ class Search extends PureComponent {
   /**
    * Render React component
    *
-   * @return {ReactDOM}
+   * @return {JSX}
    */
   render() {
     const onInput = (name, value) => {
       this.setState({barcode: value});
-      if (Object.values(this.props.barcodes).find(
-          (barcode) => barcode == value)
+      if (Object.values(this.props.barcodes)
+        .find((barcode) => barcode == value)
       ) {
         this.props.history.push(`/barcode=${value}`);
         this.props.onClose();
@@ -51,12 +53,15 @@ class Search extends PureComponent {
   }
 }
 
+// Search.propTypes
 Search.propTypes = {
-
-};
-
-Search.defaultProps = {
-
+  barcodes: PropTypes.arrayOf(PropTypes.string).isRequired,
+  history: PropTypes.shape({
+    push: PropTypes.func.isRequired,
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  show: PropTypes.bool.isRequired,
 };
 
 export default Search;

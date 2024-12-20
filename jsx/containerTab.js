@@ -1,7 +1,8 @@
 import React, {Component} from 'react';
 import {Link} from 'react-router-dom';
+import PropTypes from 'prop-types';
 
-import FilterableDataTable from 'FilterableDataTable';
+import FilterableDataTable from './FilterableDataTable'; // Temporary CBIGR Override for 26.0 
 import Search from './search';
 import ContainerForm from './containerForm';
 import {mapFormOptions, clone} from './helpers.js';
@@ -27,7 +28,6 @@ class ContainerTab extends Component {
    * Mark a key as editable
    *
    * @param {string} stateKey - the key
-   *
    * @return {Promise}
    */
   edit(stateKey) {
@@ -48,19 +48,18 @@ class ContainerTab extends Component {
    *
    * @param {string} column - the column name
    * @param {string} value - the column value
-   *
    * @return {string}
    */
   mapContainerColumns(column, value) {
     switch (column) {
-      case 'Type':
-        return this.props.options.container.types[value].label;
-      case 'Status':
-        return this.props.options.container.stati[value].label;
-      case 'Site':
-        return this.props.options.centers[value];
-      default:
-        return value;
+    case 'Type':
+      return this.props.options.container.types[value].label;
+    case 'Status':
+      return this.props.options.container.stati[value].label;
+    case 'Site':
+      return this.props.options.centers[value];
+    default:
+      return value;
     }
   }
 
@@ -70,35 +69,34 @@ class ContainerTab extends Component {
    * @param {string} column - the column name to format
    * @param {string} value - the value of the column
    * @param {object} row - the rest of the row
-   *
    * @return {JSX} a table cell
    */
   formatContainerColumns(column, value, row) {
     value = this.mapContainerColumns(column, value);
     switch (column) {
-      case 'Barcode':
-        return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
-      case 'Status':
-        const style = {};
-        switch (value) {
-          case 'Available':
-            style.color = 'green';
-            break;
-          case 'Reserved':
-            style.color = 'orange';
-            break;
-          case 'Dispensed':
-            style.color = 'red';
-            break;
-          case 'Discarded':
-            style.color = 'red';
-            break;
-        }
-        return <td style={style}>{value}</td>;
-      case 'Parent Barcode':
-        return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
-      default:
-        return <td>{value}</td>;
+    case 'Barcode':
+      return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
+    case 'Status':
+      const style = {};
+      switch (value) {
+      case 'Available':
+        style.color = 'green';
+        break;
+      case 'Reserved':
+        style.color = 'orange';
+        break;
+      case 'Dispensed':
+        style.color = 'red';
+        break;
+      case 'Discarded':
+        style.color = 'red';
+        break;
+      }
+      return <td style={style}>{value}</td>;
+    case 'Parent Barcode':
+      return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
+    default:
+      return <td>{value}</td>;
     }
   }
 
@@ -117,17 +115,19 @@ class ContainerTab extends Component {
       this.props.options.container.typesNonPrimary, 'label'
     );
     const containersNonPrimary = Object.values(this.props.data.containers)
-      .reduce((result, container) => {
-        // TODO: this check is necessary or else the page will go blank when the
-        // first specimen is added.
-        if (container) {
-          const tprops = this.props.options.container.types;
-          if (tprops[container.typeId].primary == 0) {
-            result[container.id] = container;
+      .reduce(
+        (result, container) => {
+          // TODO: this check is necessary or else the page will go blank when the
+          // first specimen is added.
+          if (container) {
+            const tprops = this.props.options.container.types;
+            if (tprops[container.typeId].primary == 0) {
+              result[container.id] = container;
+            }
+            return result;
           }
-          return result;
-        }
-      }, {});
+        }, {}
+      );
     const barcodesNonPrimary = mapFormOptions(
       containersNonPrimary, 'barcode'
     );
@@ -205,15 +205,41 @@ class ContainerTab extends Component {
           history={this.props.history}
         />
         {loris.userHasPermission('biobank_container_create') ?
-        <ContainerForm
-          options={this.props.options}
-          show={editable.containerForm}
-          onClose={this.clearEditable}
-          onSubmit={this.props.createContainers}
-        /> : null}
+          <ContainerForm
+            options={this.props.options}
+            show={editable.containerForm}
+            onClose={this.clearEditable}
+            onSubmit={this.props.createContainers}
+          /> : null}
       </div>
     );
   }
 }
+
+// ContainerTab.propTypes
+ContainerTab.propTypes = {
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      types: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      stati: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+      typesNonPrimary: PropTypes.arrayOf(PropTypes.string).isRequired,
+    }).isRequired,
+    centers: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  data: PropTypes.shape({
+    containers: PropTypes.array.isRequired,
+  }).isRequired,
+  loading: PropTypes.bool.isRequired,
+  history: PropTypes.object.isRequired,
+  createContainers: PropTypes.func.isRequired,
+};
 
 export default ContainerTab;

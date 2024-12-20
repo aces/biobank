@@ -2,13 +2,17 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import SpecimenProcessForm from './processForm';
 
+import {
+  FormElement,
+} from './Form'; // Temporary CBIGR Override for 26.0 
+
 import {clone} from './helpers.js';
 
 /**
  * Biobank Specimen
  *
- * @param {object} props the props!
- * @return {*}
+ * @param  {object} props the props!
+ * @return {JSX}
  */
 function BiobankSpecimen(props) {
   const {current, editable, errors, options, specimen, container} = props;
@@ -22,7 +26,7 @@ function BiobankSpecimen(props) {
 
   const alterProcess = (process) => {
     props.editSpecimen(specimen)
-    .then(() => props.edit(process));
+      .then(() => props.edit(process));
   };
 
   return (
@@ -48,29 +52,59 @@ function BiobankSpecimen(props) {
   );
 }
 
+
+// Specimen.propTypes
 BiobankSpecimen.propTypes = {
-  specimenPageDataURL: PropTypes.string.isRequired,
+  current: PropTypes.shape({
+    container: PropTypes.shape({
+      centerId: PropTypes.number,
+    }).isRequired,
+    specimen: PropTypes.shape({
+      // Define specimen-specific properties as needed
+    }).isRequired,
+  }).isRequired,
+  editable: PropTypes.shape({
+    // Define editable-specific properties as needed
+  }).isRequired,
+  errors: PropTypes.shape({
+    // Define errors-specific properties as needed
+  }).isRequired,
+  options: PropTypes.shape({
+    // Define options-specific properties as needed
+  }).isRequired,
+  specimen: PropTypes.shape({
+    // Define specimen-specific properties as needed
+  }).isRequired,
+  container: PropTypes.shape({
+    centerId: PropTypes.number,
+  }).isRequired,
+  editSpecimen: PropTypes.func.isRequired,
+  edit: PropTypes.func.isRequired,
+  clearAll: PropTypes.func.isRequired,
+  setCurrent: PropTypes.func.isRequired,
+  setSpecimen: PropTypes.func.isRequired,
+  updateSpecimen: PropTypes.func.isRequired,
 };
 
 /**
  * React component to display processes
  *
  * @param {object} props - React props
- *
- * @return {ReactDOM[]}
+ * @return {JSX}
  */
 function Processes(props) {
-  return React.Children.map(props.children, (child) => {
-    return React.cloneElement(child, {...props});
-  });
+  return React.Children.map(
+    props.children, (child) => {
+      return React.cloneElement(child, {...props});
+    }
+  );
 }
 
 /**
  * React component to display a panel of processes
  *
  * @param {object} props - React props
- *
- * @return {ReactDOM}
+ * @return {JSX}
  */
 function ProcessPanel(props) {
   const {editable, process, current, specimen, options} = props;
@@ -94,7 +128,7 @@ function ProcessPanel(props) {
           style={{cursor: 'pointer'}}
           onClick={props.clearAll}
         >
-          Cancel
+            Cancel
         </a>
       );
     }
@@ -103,16 +137,17 @@ function ProcessPanel(props) {
   const protocolExists = Object.values(options.specimen.protocols).find(
     (protocol) => {
       return protocol.typeId == specimen.typeId &&
-      options.specimen.processes[protocol.processId].label ==
-      process.replace(/^\w/, (c) => c.toUpperCase());
+            options.specimen.processes[protocol.processId].label ==
+            process.replace(/^\w/, (c) => c.toUpperCase());
     }
   );
 
   let panel = null;
-  if (protocolExists &&
-      !specimen[process] &&
-      !editable[process] &&
-      loris.userHasPermission('biobank_specimen_update')) {
+  if (protocolExists
+        && !specimen[process]
+        && !editable[process]
+        && loris.userHasPermission('biobank_specimen_edit')
+  ) {
     const addProcess = () => props.addProcess(process);
     panel = (
       <div className='panel specimen-panel inactive'>
@@ -134,8 +169,8 @@ function ProcessPanel(props) {
         options={options}
         process={
           editable[process] ?
-          current.specimen[process] :
-          specimen[process]
+            current.specimen[process] :
+            specimen[process]
         }
         processStage={process}
         setCurrent={props.setCurrent}

@@ -1,8 +1,7 @@
 <?php declare(strict_types=1);
+
 /**
  * This implements the Container endpoint class for the Biobank Module.
- *
- * PHP Version 7.2
  *
  * @category   API
  * @package    Loris
@@ -19,8 +18,6 @@ use \Psr\Http\Message\ResponseInterface;
 
 /**
  * A class for handling the /biobank/containers/ endpoint.
- *
- * PHP Version 7.2
  *
  * @category   API
  * @package    Loris
@@ -51,24 +48,26 @@ class LabelEndpoint implements RequestHandlerInterface
     protected function allowedMethods() : array
     {
         return [
+            'GET',
+            'PUT',
             'POST',
             'OPTIONS',
         ];
     }
 
-    /**                                                                         
-     * This function can be overridden in a module's page to load the necessary 
-     * resources to check the permissions of a user.                            
-     *                                                                          
-     * @param User                   $user    The user to load the resources for
-     * @param ServerRequestInterface $request The PSR15 Request being handled   
-     *                                                                          
-     * @return void                                                             
-     */                                                                         
-    public function loadResources(                                              
-        \User $user, ServerRequestInterface $request                            
-    ) : void {                                                                  
-    } 
+    /**
+     * This function can be overridden in a module's page to load the necessary
+     * resources to check the permissions of a user.
+     *
+     * @param \User                  $user    The user to load the resources for
+     * @param ServerRequestInterface $request The PSR15 Request being handled
+     *
+     * @return void
+     */
+    public function loadResources(
+        \User $user, ServerRequestInterface $request
+    ) : void {
+    }
 
     /**
      * This function passes the request to the handler. This is necessary since
@@ -100,7 +99,7 @@ class LabelEndpoint implements RequestHandlerInterface
         try {
             switch ($request->getMethod()) {
             case 'POST':
-                return $this->_handlePOST($request); 
+                return $this->_handlePOST($request);
             }
         } catch (\Exception $e) {
             // Log the error
@@ -113,6 +112,7 @@ class LabelEndpoint implements RequestHandlerInterface
      * Handle the logic of an incoming HTTP GET request
      *
      * @param ServerRequestInterface $request The incoming PSR7 request
+     *
      * @return ResponseInterface
      */
     private function _handlePOST(
@@ -126,23 +126,23 @@ class LabelEndpoint implements RequestHandlerInterface
             $sampleNum = $param['sampleNumber'];
 
             // Construct ZPL string
-            $zpl = "^XA"                                
-                 . "^FO330,80"                          
-                 . "^BY1"                               
-                 . "^BCN,100,Y,Y,N"                    
-                 . "^CFA,20"                          
-                 . "^A0N,30,29"                      
-                 . "^BCN,100,Y,Y,N^FD$barcode^FS"       
-                 . "^FO323,190"                         
-                 . "^CFA,20"                        
-                 . "^A0N,30,29^FD$type^FS"              
-                 . "^FO323,250"                    
-                 . "^CFA,20"                      
-                 . "^A0N,30,29^FD$pscid $sampleNum^FS"  
-                 . "^XZ";                               
+            $zpl = "^XA"
+                 . "^FO330,80"
+                 . "^BY1"
+                 . "^BCN,100,Y,Y,N"
+                 . "^CFA,20"
+                 . "^A0N,30,29"
+                 . "^BCN,100,Y,Y,N^FD$barcode^FS"
+                 . "^FO323,190"
+                 . "^CFA,20"
+                 . "^A0N,30,29^FD$type^FS"
+                 . "^FO323,250"
+                 . "^CFA,20"
+                 . "^A0N,30,29^FD$pscid $sampleNum^FS"
+                 . "^XZ";
 
-            $config  = \NDB_Config::singleton();
-            $path    = $config->getSetting('labelPrintingPath') . 'barcode.zpl';
+            $config = \NDB_Config::singleton();
+            $path   = $config->getSetting('labelPrintingPath') . 'barcode.zpl';
 
             // Ensure directory exists
             $directory = dirname($path);

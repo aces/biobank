@@ -1,4 +1,5 @@
 import {clone, isEmpty} from './helpers.js';
+import PropTypes from 'prop-types';
 
 /**
  * A form containing a list
@@ -122,7 +123,7 @@ class ListForm extends React.Component {
 
     return Object.entries(list).map(([key, item], i, list) => {
       const handleRemoveItem = list.length > 1 ?
-          () => this.removeListItem(key) : null;
+        () => this.removeListItem(key) : null;
       const handleCopyItem = () => this.copyListItem(key);
       const handleCollapse = () => this.toggleCollapse(key);
 
@@ -164,8 +165,8 @@ class ListForm extends React.Component {
                     <div>
                       <span className='action'>
                         <div
-                         className='action-button add'
-                         onClick={handleCopyItem}
+                          className='action-button add'
+                          onClick={handleCopyItem}
                         >
                           <span className='glyphicon glyphicon-duplicate'/>
                         </div>
@@ -203,6 +204,22 @@ class ListForm extends React.Component {
   }
 }
 
+// ListForm.propTypes
+ListForm.propTypes = {
+  list: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      // Add other list item-specific properties if necessary
+    })
+  ).isRequired,
+  errors: PropTypes.object.isRequired,
+  setList: PropTypes.func.isRequired,
+  listItem: PropTypes.shape({
+    // Define listItem-specific properties if necessary
+  }).isRequired,
+  children: PropTypes.node.isRequired,
+};
+
 /**
  * Display a list item
  */
@@ -211,7 +228,6 @@ class ListItem extends React.Component {
    * Render the component
    *
    * @return {JSX}
-   *
    */
   render() {
     const children = React.Children.toArray(this.props.children);
@@ -242,15 +258,15 @@ class ListItem extends React.Component {
         <div className='col-xs-1' style={{paddingLeft: 0, marginTop: 10}}>
           <span
             className= {
-                this.props.collapsed
-                    ? 'glyphicon glyphicon-chevron-down'
-                    : 'glyphicon glyphicon-chevron-up'
-                }
+              this.props.collapsed
+                ? 'glyphicon glyphicon-chevron-down'
+                : 'glyphicon glyphicon-chevron-up'
+            }
             style={{
-                   cursor: 'pointer',
-                   fontSize: 15,
-                   position: 'relative',
-                   right: 40,
+              cursor: 'pointer',
+              fontSize: 15,
+              position: 'relative',
+              right: 40,
             }}
             onClick={this.props.handleCollapse}
           />
@@ -268,5 +284,15 @@ class ListItem extends React.Component {
     );
   }
 }
+
+// ListItem.propTypes
+ListItem.propTypes = {
+  children: PropTypes.node.isRequired,
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  removeItem: PropTypes.func.isRequired,
+  collapsed: PropTypes.bool.isRequired,
+  handleCollapse: PropTypes.func.isRequired,
+  itemKey: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+};
 
 export {ListForm, ListItem};

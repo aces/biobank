@@ -1,38 +1,42 @@
 <?php declare(strict_types=1);
+
 /**
- * This class features the code that enables access to the LORIS Biobank Module.
+ * Provides access to the LORIS Biobank Module.
  *
- * PHP Version 7.2
+ * This file contains the `Biobank` class, which extends `NDB_Menu_Filter` to
+ * enable access to the Biobank module within LORIS.
  *
  * @category   Page
- * @package    Loris
+ * @package    LORIS
  * @subpackage Biobank
- * @author     Henri Rabalais <henri.rabalais@mcin.ca>
- * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
- * @link       http://www.github.com/aces/Loris/
+ * @author     Henri Rabalais <henri.j.rabalais@gmail.com>
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
+ * @link       https://www.github.com/aces/Loris/
  */
 namespace LORIS\biobank;
 
 /**
- * This class features the code that enables access to the LORIS Biobank Module.
+ * Class Biobank
  *
- * PHP Version 7.2
+ * Extends `NDB_Menu_Filter` to enable access to the LORIS Biobank Module.
+ * It includes methods to check user access permissions, set up variables,
+ * and include additional CSS and JavaScript dependencies.
  *
  * @category   Page
- * @package    Loris
+ * @package    LORIS
  * @subpackage Biobank
- * @author     Henri Rabalais <henri.rabalais@mcin.ca>
- * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
- * @link       http://www.github.com/aces/Loris/
+ * @author     Henri Rabalais <henri.j.rabalais@gmail.com>
+ * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
+ * @link       https://www.github.com/aces/Loris/
  */
 class Biobank extends \NDB_Menu_Filter
 {
     /**
-     * Determine whether the user has permission to view this page.
+     * Determines whether the user has permission to view this page.
      *
-     * @param \User $user to be checked.
+     * @param \User $user The user to be checked.
      *
-     * @return bool whether the user has access.
+     * @return bool True if the user has access, false otherwise.
      */
     function _hasAccess(\User $user) : bool
     {
@@ -42,7 +46,7 @@ class Biobank extends \NDB_Menu_Filter
     }
 
     /**
-     * Set up the variables required by for construction of page
+     * Sets up the variables required for the construction of the page.
      *
      * @return void
      */
@@ -53,9 +57,9 @@ class Biobank extends \NDB_Menu_Filter
     }
 
     /**
-     * Include additional CSS files:
+     * Includes additional CSS files required by the Biobank module.
      *
-     * @return array of javascript to be inserted
+     * @return array An array of CSS files to be included.
      */
     function getCSSDependencies(): array
     {
@@ -69,9 +73,9 @@ class Biobank extends \NDB_Menu_Filter
     }
 
     /**
-     * Include additional JS files
+     * Includes additional JavaScript files required by the Biobank module.
      *
-     * @return array of javascript to be inserted
+     * @return array An array of JavaScript files to be included.
      */
     function getJSDependencies()
     {
@@ -94,4 +98,3 @@ class Biobank extends \NDB_Menu_Filter
         return new \LORIS\BreadcrumbTrail();
     }
 }
-

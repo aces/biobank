@@ -1,44 +1,38 @@
 <?php declare(strict_types=1);
-/**
- * Container Object Class
- * This class contains an instance of a database handling that is needed to
- * permanently store and retrieve Container Object instances.
- *
- * PHP Version 7.2
- *
- * @category   Entity
- * @package    Loris
- * @subpackage Biobank
- * @author     Henri Rabalais <henri.rabalais@mcin.ca>
- * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
- * @link       https://www.github.com/aces/Loris/
- */
-
-namespace LORIS\biobank;
 
 /**
- * Container Object Class
- * This class contains an instance of a database handling that is needed to
- * permanently store and retrieve Container Object instances.
+ * Defines the Container class for specimen containers in the Biobank module.
  *
- * PHP Version 7.2
+ * This class represents a container entity and provides methods to manage
+ * and serialize container data. It implements `JsonSerializable`, `DataInstance`,
+ * and `SiteHaver` interfaces.
  *
- * @category Loris
- * @package  Biobank
- * @author   Henri Rabalais <hrabalais.mcin@gmail.com>
+ * @category Entity
+ * @package  LORIS
+ * @author   Henri Rabalais <henri.rabalais@mcin.ca>
  * @license  http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link     https://www.github.com/aces/Loris/
  */
 
+namespace LORIS\biobank;
+
+use LORIS\Data\DataInstance;
+use LORIS\StudyEntities\SiteHaver;
+
+/**
+ * Container class for specimen containers in the Biobank module.
+ *
+ * @category   Entity
+ * @package    LORIS
+ * @subpackage Biobank
+ * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
+ */
 class Container implements
-    \JsonSerializable,
-    \LORIS\Data\DataInstance,
-    \LORIS\StudyEntities\SiteHaver
+    DataInstance,
+    SiteHaver
 {
     /**
-     * Persistent Instance variables.
-     *
-     * These properties describe a container entity.
+     * Persistent Instance variables describing a container entity.
      *
      * @var int          $id
      * @var string       $barcode
@@ -271,25 +265,27 @@ class Container implements
         return $this->statusId;
     }
 
-    /**                                                                         
-     * Sets Project IDs of affiliated container specimen.                      
-     *                                                                          
-     * @param \ProjectID[]                                                     
-     */                                                                         
-    public function setProjectIds(array $projectIds)                            
-    {                                                                           
-        $this->projectIds = $projectIds;                                        
-    }                                                                           
-                                                                                
-    /**                                                                         
-     * Return Project ID of affiliated specimen container.                      
-     *                                                                          
-     * @return \ProjectID[]                                                     
-     */                                                                         
+    /**
+     * Sets Project IDs of affiliated container specimen.
+     *
+     * @param \ProjectID[] $projectIds List of porject IDs
+     *
+     * @return void
+     */
+    public function setProjectIds(array $projectIds) : void
+    {
+        $this->projectIds = $projectIds;
+    }
+
+    /**
+     * Return Project ID of affiliated specimen container.
+     *
+     * @return \ProjectID[]
+     */
     public function getProjectIds() : array
-    {                                                                           
-        return $this->projectIds;                                               
-    }   
+    {
+        return $this->projectIds;
+    }
 
     /**
      * Sets the ID of the container's current centerId
@@ -304,7 +300,7 @@ class Container implements
     }
 
     /**
-     * Gets the ID of the container's current centerId
+     * {inheritDoc}
      *
      * @return \CenterID
      */
@@ -338,12 +334,13 @@ class Container implements
     /**
      * Sets the parent container's barcode
      *
-     * @param ?int $parentContainerBarcode the parent container's barcode
+     * @param ?string $parentContainerBarcode the parent container's barcode
      *
      * @return void
      */
-    public function setParentContainerBarcode(?string $parentContainerBarcode) : void
-    {
+    public function setParentContainerBarcode(
+        ?string $parentContainerBarcode
+    ) : void {
         $this->parentContainerBarcode = $parentContainerBarcode;
     }
 
@@ -470,13 +467,13 @@ class Container implements
     }
 
     /**
-     * Instatiates a Container Object using the information from the client-side
+     * Populates the Container instance with the provided data.
      *
-     * @param array $data Data to be used to instantiate the Container Object
+     * @param array $data Data to instantiate the Container object.
      *
-     * @return Container $container Instantiated Container Object
+     * @return self The current instance for method chaining.
      */
-    public function fromArray(array $data) : Container
+    public function fromArray(array $data) : self
     {
         if (isset($data['id'])) {
             $this->setId((int) $data['id']);
@@ -512,7 +509,9 @@ class Container implements
             $this->setParentContainerId((int) $data['parentContainerId']);
         }
         if (isset($data['parentContainerBarcode'])) {
-            $this->setParentContainerBarcode((string) $data['parentContainerBarcode']);
+            $this->setParentContainerBarcode(
+                (string) $data['parentContainerBarcode']
+            );
         }
         if (isset($data['childContainerIds'])) {
             $this->setChildContainerIds($data['childContainerIds']);
@@ -534,10 +533,9 @@ class Container implements
     }
 
     /**
-     * A wrapper function for the jsonSerialize method of the Container Instance
-     * Class. This converts the Container Instance into an array.
+     * Converts the container instance to an array.
      *
-     * @return array
+     * @return array The container data as an associative array.
      */
     public function toArray() : array
     {
@@ -545,9 +543,11 @@ class Container implements
     }
 
     /**
-     * Gets an array representing the state of the Container
+     * {@inheritDoc}
      *
-     * @return array
+     * Serializes the container data to a JSON-compatible array.
+     *
+     * @return array The container data as an associative array.
      */
     public function jsonSerialize() : array
     {
@@ -578,13 +578,12 @@ class Container implements
     }
 
     /**
-     * Returns a JSON encoded string of the state of the Container
+     * Returns a JSON-encoded string of the container data.
      *
-     * @return string JSON encoded string of Container data
+     * @return string JSON-encoded string of container data.
      */
     public function toJSON() : string
     {
         return json_encode($this);
     }
 }
-

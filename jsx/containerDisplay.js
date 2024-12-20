@@ -1,38 +1,42 @@
-import {useEffect} from 'react';
+import PropTypes from 'prop-types';
 import Swal from 'sweetalert2';
+
+import {
+  TextboxElement,
+  StaticElement,
+  CheckboxElement,
+  FormElement,
+  ButtonElement,
+  SearchableDropdown,
+} from './Form'; // Temporary CBIGR Override for 26.0 
 import {mapFormOptions} from './helpers.js';
 
 /**
  * React component to display a container
  *
  * @param {object} props - React props
- *
  * @return {JSX}
- **/
+ */
 function ContainerDisplay(props) {
   const {
-      barcodes,
-      coordinates,
-      current,
-      data,
-      dimensions,
-      editable,
-      options,
+    barcodes,
+    coordinates,
+    current = {},
+    data,
+    dimensions,
+    editable,
+    options,
   } = props;
   const {history, select, container, selectedCoordinate} = props;
   const {
-      clearAll,
-      editContainer,
-      setContainer,
-      updateContainer,
-      setCurrent,
-      setCheckoutList,
-      edit,
+    clearAll,
+    editContainer,
+    setContainer,
+    updateContainer,
+    setCurrent,
+    setCheckoutList,
+    edit,
   } = props;
-
-  useEffect(() => {
-    $('[data-toggle="tooltip"]').tooltip();
-  });
 
   const redirectURL = (e) => {
     let coordinate = e.target.id;
@@ -45,7 +49,6 @@ function ContainerDisplay(props) {
   const allowDrop = (e) => e.preventDefault();
 
   const drag = (e) => {
-    $('[data-toggle="tooltip"]').tooltip('hide');
     let container = JSON.stringify(
       data.containers[coordinates[e.target.id]]
     );
@@ -78,7 +81,7 @@ function ContainerDisplay(props) {
   const loadContainer = () => {
     const barcode = current.barcode;
     const containerId = Object.keys(barcodes)
-    .find((id) => barcodes[id] === barcode);
+      .find((id) => barcodes[id] === barcode);
 
     if (!containerId) {
       return;
@@ -89,15 +92,15 @@ function ContainerDisplay(props) {
     newContainer.coordinate = current.coordinate;
 
     updateContainer(newContainer, false)
-    .then(() => {
-      if (current.sequential) {
-        let coordinate = current.coordinate;
-        increaseCoordinate(coordinate);
-        setCurrent('barcode', null);
-      } else {
-        clearAll();
-      }
-    });
+      .then(() => {
+        if (current.sequential) {
+          let coordinate = current.coordinate;
+          increaseCoordinate(coordinate);
+          setCurrent('barcode', null);
+        } else {
+          clearAll();
+        }
+      });
 
     setCurrent('prevCoordinate', newContainer.coordinate);
   };
@@ -111,8 +114,10 @@ function ContainerDisplay(props) {
     });
 
     Promise.all(checkoutPromises)
-    .then(() => clearAll())
-    .then(() => Swal.fire('Containers Successfully Checked Out!', '', 'success'));
+      .then(() => clearAll())
+      .then(() => Swal.fire(
+        'Containers Successfully Checked Out!', '', 'success')
+      );
   };
 
   let barcodeField;
@@ -208,7 +213,6 @@ function ContainerDisplay(props) {
 
   );
 
-  // TODO: This will eventually need to be reworked and cleaned up
   let display;
   let column = [];
   let row = [];
@@ -255,10 +259,10 @@ function ContainerDisplay(props) {
                 '<h5>'+optcon.stati[children[coord].statusId].label+'</h5>';
             }
             draggable = !loris.userHasPermission(
-               'biobank_container_update') ||
+              'biobank_container_edit') ||
                         editable.loadContainer ||
                         editable.containerCheckout
-                        ? 'false' : 'true';
+              ? 'false' : 'true';
             onDragStart = drag;
 
             if (editable.containerCheckout) {
@@ -272,7 +276,7 @@ function ContainerDisplay(props) {
             }
             onDragOver = null;
             onDrop = null;
-          } else if (loris.userHasPermission('biobank_container_update') &&
+          } else if (loris.userHasPermission('biobank_container_edit') &&
                      !editable.containerCheckout) {
             nodeClass = coordinate == current.coordinate ?
               'node selected' : 'node load';
@@ -280,8 +284,8 @@ function ContainerDisplay(props) {
             onClick = (e) => {
               let containerId = e.target.id;
               edit('loadContainer')
-              .then(() => editContainer(container))
-              .then(() => setCurrent('coordinate', containerId));
+                .then(() => editContainer(container))
+                .then(() => setCurrent('coordinate', containerId));
             };
           }
         }
@@ -378,8 +382,74 @@ function ContainerDisplay(props) {
   );
 }
 
-ContainerDisplay.defaultProps = {
-  current: {},
+// containerDisplay.propTypes
+ContainerDisplay.propTypes = {
+  barcodes: PropTypes.arrayOf(PropTypes.string).isRequired,
+  coordinates: PropTypes.arrayOf(PropTypes.string).isRequired,
+  current: PropTypes.shape({
+    barcode: PropTypes.string.isRequired,
+    containerId: PropTypes.number.isRequired,
+    coordinate: PropTypes.string.isRequired,
+    sequential: PropTypes.number,
+    list: PropTypes.array.isRequired,
+    prevCoordinate: PropTypes.string,
+  }).isRequired,
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+        parentContainerId: PropTypes.number,
+        coordinate: PropTypes.string.isRequired,
+        childContainerIds: PropTypes.arrayOf(PropTypes.number),
+      })
+    ).isRequired,
+    specimens: PropTypes.array.isRequired,
+    pools: PropTypes.array.isRequired,
+  }).isRequired,
+  dimensions: PropTypes.shape({
+    x: PropTypes.number.isRequired,
+    y: PropTypes.number.isRequired,
+    z: PropTypes.number,
+    xNum: PropTypes.number,
+    yNum: PropTypes.number,
+  }).isRequired,
+  editable: PropTypes.shape({
+    loadContainer: PropTypes.func.isRequired,
+    containerCheckout: PropTypes.bool.isRequired,
+  }).isRequired,
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      types: PropTypes.arrayOf(PropTypes.string).isRequired,
+      stati: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      dimensions: PropTypes.object.isRequired,
+    }).isRequired,
+    specimen: PropTypes.shape({
+      units: PropTypes.string,
+      protocols: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+  }).isRequired,
+  history: PropTypes.object.isRequired,
+  select: PropTypes.func.isRequired,
+  container: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    parentContainerId: PropTypes.number,
+    childContainerIds: PropTypes.array,
+    coordinate: PropTypes.string.isRequired,
+  }).isRequired,
+  selectedCoordinate: PropTypes.string.isRequired,
+  clearAll: PropTypes.func.isRequired,
+  editContainer: PropTypes.func.isRequired,
+  setContainer: PropTypes.func.isRequired,
+  updateContainer: PropTypes.func.isRequired,
+  setCurrent: PropTypes.func.isRequired,
+  setCheckoutList: PropTypes.func.isRequired,
+  edit: PropTypes.func.isRequired,
+  getParentContainerBarcodes: PropTypes.func.isRequired,
+  getBarcodePathDisplay: PropTypes.func.isRequired,
 };
 
 export default ContainerDisplay;

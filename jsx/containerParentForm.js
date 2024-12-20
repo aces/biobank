@@ -1,6 +1,11 @@
 import React from 'react';
-import ContainerDisplay from './containerDisplay';
 import PropTypes from 'prop-types';
+
+import {
+  SearchableDropdown,
+} from './Form'; // Temporary CBIGR Override for 26.0 
+
+import ContainerDisplay from './containerDisplay';
 
 import {clone} from './helpers';
 
@@ -10,12 +15,11 @@ import {clone} from './helpers';
  * Fetches data from Loris backend and displays a form allowing
  * to specimen a biobank file attached to a specific instrument
  *
- * @param {object} props
- * @return {*}
- **/
+ * @param {object} props The component's props
+ */
 function ContainerParentForm(props) {
   const {data, current, options} = props;
-  // TODO: there might be a better way to do this.
+
   const setInheritedProperties = (name, containerId) => {
     if (!containerId) {
       return;
@@ -43,18 +47,18 @@ function ContainerParentForm(props) {
   };
 
   let containerBarcodesNonPrimary = Object.values(data.containers)
-  .reduce((result, container) => {
-    if (options.container.types[container.typeId].primary == 0) {
-      const dimensions = options.container.dimensions[data.containers[
-        container.id
-      ].dimensionId];
-      const capacity = dimensions.x * dimensions.y * dimensions.z;
-      const available = capacity - container.childContainerIds.length;
-      result[container.id] = container.barcode +
+    .reduce((result, container) => {
+      if (options.container.types[container.typeId].primary == 0) {
+        const dimensions = options.container.dimensions[data.containers[
+          container.id
+        ].dimensionId];
+        const capacity = dimensions.x * dimensions.y * dimensions.z;
+        const available = capacity - container.childContainerIds.length;
+        result[container.id] = container.barcode +
            ' (' +available + ' Available Spots)';
-    }
-    return result;
-  }, {});
+      }
+      return result;
+    }, {});
 
   // Delete child containers from options if a container is being placed in a
   // another container.
@@ -73,13 +77,13 @@ function ContainerParentForm(props) {
     const coordinates = data.containers[
       current.container.parentContainerId
     ].childContainerIds
-    .reduce((result, id) => {
-      const container = data.containers[id];
-      if (container.coordinate) {
+      .reduce((result, id) => {
+        const container = data.containers[id];
+        if (container.coordinate) {
           result[container.coordinate] = id;
-      }
-      return result;
-    }, {});
+        }
+        return result;
+      }, {});
 
     return (
       <ContainerDisplay
@@ -119,6 +123,15 @@ ContainerParentForm.propTypes = {
   data: PropTypes.object,
   container: PropTypes.object.isRequired,
   options: PropTypes.object.isRequired,
+  current: PropTypes.shape({
+    container: PropTypes.shape({
+      parentContainerId: PropTypes.number,
+      coordinate: PropTypes.string,
+      id: PropTypes.number.isRequired,
+    }).isRequired,
+  }).isRequired,
+  setCurrent: PropTypes.func.isRequired,
+  display: PropTypes.string.isRequired,
 };
 
 export default ContainerParentForm;

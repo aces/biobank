@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * This implements the Pool endpoint class for the Biobank Module.
  *
@@ -60,7 +61,7 @@ class PoolEndpoint extends \NDB_Page implements RequestHandlerInterface
      * This function can be overridden in a module's page to load the necessary
      * resources to check the permissions of a user.
      *
-     * @param User                   $user    The user to load the resources for
+     * @param \User                  $user    The user to load the resources for
      * @param ServerRequestInterface $request The PSR15 Request being handled
      *
      * @return void
@@ -131,12 +132,12 @@ class PoolEndpoint extends \NDB_Page implements RequestHandlerInterface
             return new \LORIS\Http\Response\JSON\InternalServerError(
                 $e->getMessage()
             );
-        } catch (\Exception $e) {                                               
-            $db->rollBack();                                                    
-            // PUT SOMETHING HERE LATER                                         
-            return new \LORIS\Http\Response\JSON\InternalServerError(           
-                $e->getMessage()                                                
-            ); 
+        } catch (\Exception $e) {
+            $db->rollBack();
+            // PUT SOMETHING HERE LATER
+            return new \LORIS\Http\Response\JSON\InternalServerError(
+                $e->getMessage()
+            );
         } finally {
             if ($db->inTransaction()) {
                 $db->commit();

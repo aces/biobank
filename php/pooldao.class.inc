@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * Pool Data Access Object (DAO) Class
  * This class contains all database handling that is needed to
@@ -64,7 +65,9 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
      */
     public function getInstanceFromId(int $id) : Pool
     {
-        return $this->selectInstances([['column' => 'bp.PoolID', 'value'=>$id]])[$id];
+        return $this->selectInstances(
+            [['column' => 'bp.PoolID', 'value'=>$id]]
+        )[$id];
     }
 
     // XXX: Currently this function is never used with any conditions passed as
@@ -114,27 +117,27 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
 
         $pools       = [];
         $specimenDAO = new SpecimenDAO($this->loris);
-        
+
         foreach ($poolRows as $id => $poolRow) {
-            $specimenIds = explode(',', $poolRow['SpecimenIDs']);
+            $specimenIds      = explode(',', $poolRow['SpecimenIDs']);
             $specimenBarcodes = explode(',', $poolRow['SpecimenBarcodes']);
 
             // set global pool properties based on first specimen of pool
-            $specimenId  = (int) $specimenIds[0];
-            $specimen    = $specimenDAO->getInstanceFromId($specimenId);
+            $specimenId = (int) $specimenIds[0];
+            $specimen   = $specimenDAO->getInstanceFromId($specimenId);
             $poolRow['CandidateID']    = $specimen->getCandidateId();
             $poolRow['CandidatePSCID'] = $specimen->getCandidatePSCID();
             $poolRow['SessionID']      = $specimen->getSessionId();
             $poolRow['CenterID']       = $specimen->getCenterId();
-            $projectIds                = $specimen->getProjectIds();
-            $poolRow['TypeID']         = $specimen->getTypeId();
+            $projectIds        = $specimen->getProjectIds();
+            $poolRow['TypeID'] = $specimen->getTypeId();
 
             // instantiate pool entity
             $pools[$id] = $this->_getInstanceFromSQL(
-              $poolRow,
-              $specimenIds,
-              $specimenBarcodes,
-              $projectIds
+                $poolRow,
+                $specimenIds,
+                $specimenBarcodes,
+                $projectIds
             );
         }
 
@@ -239,11 +242,10 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
      * This function takes an array that resulted from an SQL query and
      * instantiates it as a Pool Object
      *
-     * @param array $data        Values to be reassigned.
-     * @param array $specimenIds List of specimen IDs associated with the given
-     *                           Pool.
-     * @param array $projectIds  List of project IDs associated with the given
-     *                           Pool via the constituent specimens.
+     * @param array $data             Values to be reassigned.
+     * @param array $specimenIds      List of specimen IDs.
+     * @param array $specimenBarcodes List of specimen Barcodes.
+     * @param array $projectIds       List of project IDs.
      *
      * @return Pool
      */
@@ -252,8 +254,7 @@ class PoolDAO extends \LORIS\Data\ProvisionerInstance
         array $specimenIds,
         array $specimenBarcodes,
         array $projectIds
-    ) : Pool
-    {
+    ) : Pool {
         $pool = new Pool();
         if (isset($data['PoolID'])) {
             $pool->setId((int) $data['PoolID']);

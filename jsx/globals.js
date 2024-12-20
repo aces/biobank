@@ -3,16 +3,22 @@ import PropTypes from 'prop-types';
 import {Link} from 'react-router-dom';
 import {mapFormOptions} from './helpers.js';
 
-import Modal from 'Modal';
-import Loader from 'Loader';
+import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
+import Loader from './Loader'; // Temporary CBIGR Override for 26.0 
+import {
+  SelectElement,
+  TextboxElement,
+  NumericElement,
+  TextareaElement,
+  CTA,
+} from './Form'; // Temporary CBIGR Override for 26.0 
 import ContainerParentForm from './containerParentForm';
 
 /**
  * Biobank Globals Component
  *
- * @param {object} props
- * @return {*}
- **/
+ * @param {object} props - The component's props
+ */
 function Globals(props) {
   const {current, data, editable, options, specimen, container} = props;
   const updateContainer = () => props.updateContainer(current.container);
@@ -25,7 +31,7 @@ function Globals(props) {
     />
   );
 
-  const edit = loris.userHasPermission('biobank_specimen_alter')
+  const edit = loris.userHasPermission('biobank_specimen_edit')
     && specimen && (
     () => {
       props.edit('containerType');
@@ -76,7 +82,7 @@ function Globals(props) {
       edit={() => props.edit('quantity')}
       editValue={() => props.editSpecimen(specimen)}
       value={Math.round(specimen.quantity * 100) / 100+
-      ' '+options.specimen.units[specimen.unitId].label}
+            ' '+options.specimen.units[specimen.unitId].label}
       editable={editable.quantity}
     >
       <TextboxElement
@@ -97,7 +103,8 @@ function Globals(props) {
 
   const fTCycleField = () => {
     if (specimen
-        && options.specimen.types[specimen.typeId].freezeThaw == 1) {
+            && options.specimen.types[specimen.typeId].freezeThaw == 1
+    ) {
       // const changeCycle = (value) => {
       //   props.editSpecimen(specimen)
       //   .then(() => {
@@ -109,7 +116,7 @@ function Globals(props) {
       // };
       // const increaseCycle = () => changeCycle(1);
       // const decreaseCycle = () => changeCycle(-1);
-      // const updateFTCycle = loris.userHasPermission('biobank_specimen_update') ? (
+      // const updateFTCycle = loris.userHasPermission('biobank_specimen_edit') ? (
       //   <div>
       //     {specimen.fTCycle > 0 ? (
       //       <div className='action' title='Remove Cycle'>
@@ -175,10 +182,11 @@ function Globals(props) {
 
   const stati = mapFormOptions(options.container.stati, 'label');
   const renderCommentsField = () => {
-    if (stati[props.current.container.statusId] !== 'Discarded' &&
-        stati[props.current.container.statusId] !== 'Reserved' &&
-        stati[props.current.container.statusId] !== 'Dispensed' &&
-        stati[props.current.container.statusId] !== 'Shipped') {
+    if (stati[props.current.container.statusId] !== 'Discarded'
+            && stati[props.current.container.statusId] !== 'Reserved'
+            && stati[props.current.container.statusId] !== 'Dispensed'
+            && stati[props.current.container.statusId] !== 'Shipped'
+    ) {
       return [];
     }
     return (
@@ -222,9 +230,9 @@ function Globals(props) {
       edit={() => props.edit('project')}
       editValue={() => props.editSpecimen(specimen)}
       value={specimen.projectIds.length !== 0 ?
-       specimen.projectIds
-         .map((id) => options.projects[id])
-         .join(', ') : 'None'}
+        specimen.projectIds
+          .map((id) => options.projects[id])
+          .join(', ') : 'None'}
       editable={editable.project}
     >
       <SelectElement
@@ -243,7 +251,7 @@ function Globals(props) {
     <InlineField
       label='Draw Site'
       value={options.centers[
-        options.sessionCenters[specimen.sessionId].centerId
+        options.sessionCenters[specimen.sessionId]?.centerId
       ]}
     />
   );
@@ -270,13 +278,13 @@ function Globals(props) {
     if (!specimen) {
       return null;
     }
-  
-    const { parentSpecimenIds, parentSpecimenBarcodes } = specimen;
+
+    const {parentSpecimenIds, parentSpecimenBarcodes} = specimen;
     const value = parentSpecimenIds.length === 0
       ? 'None'
       : parentSpecimenBarcodes
-          .map(barcode => <Link to={`/barcode=${barcode}`}>{barcode}</Link>)
-          .reduce((prev, curr, index) => [prev, index == 0 ? '' : ', ', curr]);
+        .map((barcode) => <Link to={`/barcode=${barcode}`}>{barcode}</Link>)
+        .reduce((prev, curr, index) => [prev, index == 0 ? '' : ', ', curr]);
 
     return (
       <InlineField
@@ -286,7 +294,6 @@ function Globals(props) {
     );
   };
 
-  // TODO: Find a way to make this conform to the GLOBAL ITEM structure.
   const parentContainerField = () => {
     if (loris.userHasPermission('biobank_container_view')) {
       // Set Parent Container Barcode Value if it exists
@@ -301,7 +308,7 @@ function Globals(props) {
       };
 
       const updateParentContainer = () => {
-        if (loris.userHasPermission('biobank_container_update')) {
+        if (loris.userHasPermission('biobank_container_edit')) {
           return (
             <div>
               <div className='action' title='Move Container'>
@@ -351,7 +358,7 @@ function Globals(props) {
               {parentContainerBarcodeValue() || 'None'}
             </div>
             {(parentContainerBarcodeValue && container.coordinate) ?
-            'Coordinate '+ coordinate : null}
+              'Coordinate '+ coordinate : null}
           </div>
           {updateParentContainer()}
         </div>
@@ -370,7 +377,7 @@ function Globals(props) {
         label='Visit Label'
         value={options.sessions[specimen.sessionId].label}
         link={
-            loris.BaseURL+'/instrument_list/?candID='+
+          loris.BaseURL+'/instrument_list/?candID='+
             specimen.candidateId+'&sessionID='+
             specimen.sessionId
         }
@@ -400,33 +407,202 @@ function Globals(props) {
   );
 }
 
+// Globals.propTypes
 Globals.propTypes = {
+  current: PropTypes.shape({
+    container: PropTypes.shape({
+      parentContainerId: PropTypes.number,
+      typeId: PropTypes.number.isRequired,
+      coordinate: PropTypes.string,
+      statusId: PropTypes.number,
+      temperature: PropTypes.number,
+      lotNumber: PropTypes.string,
+      expirationDate: PropTypes.string,
+      comments: PropTypes.string,
+    }).isRequired,
+    specimen: PropTypes.shape({
+      poolId: PropTypes.number,
+      typeId: PropTypes.number.isRequired,
+      fTCycle: PropTypes.string,
+      projectIds: PropTypes.arrayOf(PropTypes.number),
+      sessionId: PropTypes.number,
+      candidateId: PropTypes.number,
+      quantity: PropTypes.number,
+      unitId: PropTypes.number,
+      parentSpecimenIds: PropTypes.arrayOf(PropTypes.number),
+      parentSpecimenBarcodes: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+  }).isRequired,
+
+  data: PropTypes.shape({
+    pools: PropTypes.array.isRequired,
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        parentContainerId: PropTypes.number,
+        coordinate: PropTypes.string,
+        typeId: PropTypes.number.isRequired,
+        shipmentBarcodes: PropTypes.arrayOf(PropTypes.string),
+        centerId: PropTypes.number,
+        parentContainerBarcode: PropTypes.string,
+        statusId: PropTypes.number, // Added
+        temperature: PropTypes.number, // Added
+        comments: PropTypes.string, // Added
+      })
+    ).isRequired,
+  }).isRequired,
+
+  editable: PropTypes.shape({
+    containerType: PropTypes.func.isRequired,
+    fTCycle: PropTypes.func.isRequired,
+    project: PropTypes.func.isRequired,
+    quantity: PropTypes.func.isRequired,
+    containerParentForm: PropTypes.func.isRequired,
+    temperature: PropTypes.func.isRequired, // Added
+    status: PropTypes.func.isRequired, // Added
+  }).isRequired,
+
+  options: PropTypes.shape({
+    specimen: PropTypes.shape({
+      typeUnits: PropTypes.string,
+      units: PropTypes.string, // Added
+      types: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+      attributes: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+      protocols: PropTypes.arrayOf(PropTypes.string),
+      protocolAttributes: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+    }).isRequired,
+    container: PropTypes.shape({
+      typesPrimary: PropTypes.arrayOf(PropTypes.string).isRequired,
+      types: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      typesNonPrimary: PropTypes.arrayOf(PropTypes.string).isRequired,
+      stati: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      candidates: PropTypes.arrayOf(PropTypes.string),
+      sessions: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+    projects: PropTypes.arrayOf(PropTypes.string).isRequired,
+    centers: PropTypes.arrayOf(PropTypes.string).isRequired,
+    sessionCenters: PropTypes.arrayOf(PropTypes.string),
+    candidates: PropTypes.arrayOf(PropTypes.string),
+    sessions: PropTypes.arrayOf(PropTypes.string),
+    candidateSessions: PropTypes.arrayOf(PropTypes.string), // Added
+    attributes: PropTypes.arrayOf(
+      PropTypes.shape({
+        label: PropTypes.string.isRequired,
+      })
+    ), // Assuming based on errors
+  }).isRequired,
+
+  specimen: PropTypes.shape({
+    typeId: PropTypes.number.isRequired,
+    poolId: PropTypes.number,
+    fTCycle: PropTypes.string,
+    projectIds: PropTypes.arrayOf(PropTypes.number),
+    sessionId: PropTypes.number,
+    candidateId: PropTypes.number,
+    quantity: PropTypes.number,
+    unitId: PropTypes.number,
+    parentSpecimenIds: PropTypes.arrayOf(PropTypes.number),
+    parentSpecimenBarcodes: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+
+  container: PropTypes.shape({
+    centerId: PropTypes.number,
+    shipmentBarcodes: PropTypes.arrayOf(PropTypes.string),
+    parentContainerId: PropTypes.number,
+    coordinate: PropTypes.string,
+    typeId: PropTypes.number.isRequired,
+    parentContainerBarcode: PropTypes.string,
+    statusId: PropTypes.number, // Added
+    temperature: PropTypes.number, // Added
+    comments: PropTypes.string, // Added
+  }).isRequired,
+
+  updateContainer: PropTypes.func.isRequired,
+  editContainer: PropTypes.func.isRequired,
+  setContainer: PropTypes.func.isRequired,
+  setCurrent: PropTypes.func.isRequired,
+  edit: PropTypes.func.isRequired,
+  editSpecimen: PropTypes.func.isRequired,
+  updateSpecimen: PropTypes.func.isRequired,
+  getCoordinateLabel: PropTypes.func.isRequired,
+  loading: PropTypes.bool.isRequired,
+  clearAll: PropTypes.func.isRequired,
+  setCheckoutList: PropTypes.func.isRequired,
+  setListItem: PropTypes.func.isRequired,
+  createSpecimens: PropTypes.func.isRequired,
+  increaseCoordinate: PropTypes.func.isRequired,
+  getParentContainerBarcodes: PropTypes.func.isRequired,
+  getBarcodePathDisplay: PropTypes.func.isRequired,
+  setSpecimen: PropTypes.func.isRequired,
+  uC: PropTypes.any.isRequired, // Added based on error
+
+  errors: PropTypes.shape({
+    container: PropTypes.shape({
+      typeId: PropTypes.string,
+      temperature: PropTypes.string, // Added
+      statusId: PropTypes.string, // Added
+      comments: PropTypes.string, // Added
+    }),
+    specimen: PropTypes.shape({
+      quantity: PropTypes.string,
+      unitId: PropTypes.string,
+      fTCycle: PropTypes.string,
+      projectIds: PropTypes.string,
+      candidateId: PropTypes.string,
+      sessionId: PropTypes.string,
+    }),
+  }).isRequired,
+};
+
+/**
+ * Item of the Inline Field
+ *
+ * @param  {object} props
+ * @return {JSX}
+ */
+function Item(props) {
+  return <div className="item">{props.children}</div>;
+}
+
+Item.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 /**
  * Inline Field
  *
- * @param {object} props
- * @return {*}
- **/
-function Item(props) {
-  return <div className="item">{props.children}</div>;
-}
-
-/**
- * Inline Field
- *
- * @param {object} props
- * @return {*}
- **/
+ * @param  {object} props
+ * @return {JSX}
+ */
 function InlineField(props) {
-  const fields = React.Children.map(props.children, (child) => {
-    return (
-      <div style={{flex: '1 0 25%', minWidth: '90px'}}>
-        {React.cloneElement(child, {inputClass: 'col-lg-11'})}
-      </div>
-    );
-  });
+  const fields = React.Children.map(
+    props.children, (child) => {
+      return (
+        <div style={{flex: '1 0 25%', minWidth: '90px'}}>
+          {React.cloneElement(child, {inputClass: 'col-lg-11'})}
+        </div>
+      );
+    }
+  );
 
   // loris.userHasPermission('biobank_container_update') should determine if 'edit'
   // can be passed in the first place.
@@ -434,9 +610,9 @@ function InlineField(props) {
     <div className='action' title={'Update '+props.label}>
       <span
         className={
-            props.pencil
-              ? 'glyphicon glyphicon-pencil'
-              : 'action-button update'
+          props.pencil
+            ? 'glyphicon glyphicon-pencil'
+            : 'action-button update'
         }
         onClick={() => {
           props.edit();
@@ -462,9 +638,9 @@ function InlineField(props) {
   const submitButton = !props.loading && (
     <React.Fragment>
       <div style={{flex: '0 1 15%', margin: '0 1%'}}>
-        <Button
+        <CTA
           label="Update"
-          onClick={props.updateValue}
+          onUserInput={props.updateValue}
         />
       </div>
       <div style={{flex: '0 1 15%', margin: '0 1%'}}>
@@ -507,12 +683,20 @@ function InlineField(props) {
   );
 }
 
+// InlineField.propTypes
 InlineField.propTypes = {
   clearAll: PropTypes.func,
-  specimen: PropTypes.object,
   updateValue: PropTypes.func,
   subValue: PropTypes.string,
-  className: PropTypes.string,
+  children: PropTypes.node.isRequired,
+  edit: PropTypes.func.isRequired,
+  editable: PropTypes.bool.isRequired,
+  label: PropTypes.string.isRequired,
+  pencil: PropTypes.node.isRequired,
+  editValue: PropTypes.func.isRequired,
+  loading: PropTypes.bool.isRequired,
+  link: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
 };
 
 export default Globals;

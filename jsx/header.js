@@ -1,6 +1,11 @@
 import React, {Component} from 'react';
-
-import Modal from 'Modal';
+import PropTypes from 'prop-types';
+import {
+  FormElement,
+  TextboxElement,
+  DateElement,
+} from './Form'; // Temporary CBIGR Override for 26.0 
+import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
 import LifeCycle from './lifeCycle.js';
 import SpecimenForm from './specimenForm.js';
 
@@ -18,19 +23,20 @@ class Header extends Component {
   render() {
     const {options, container, specimen, editable, current} = this.props;
     const updateContainer = () =>
-        Promise.resolve(
-          this.props.updateContainer(current.container)
-    );
+      Promise.resolve(
+        this.props.updateContainer(current.container)
+      );
 
     const status = options.container.stati[container.statusId].label;
     const renderActionButton = () => {
-      if (status == 'Available' &&
-          specimen.quantity > 0 &&
-          !specimen.poolId) {
+      if (status == 'Available'
+                && specimen.quantity > 0
+                && !specimen.poolId
+      ) {
         const openAliquotForm = () => this.props.edit('aliquotForm');
         return (
           <div className='action-button add' onClick={openAliquotForm}>
-            +
+                +
           </div>
         );
       } else {
@@ -62,7 +68,7 @@ class Header extends Component {
     };
 
     const alterLotNumber = () => {
-      if (loris.userHasPermission('biobank_specimen_alter')) {
+      if (loris.userHasPermission('biobank_specimen_edit')) {
         return (
           <div className='action' title='Alter Lot Number'>
             <span
@@ -79,7 +85,7 @@ class Header extends Component {
     };
 
     const alterExpirationDate = () => {
-      if (loris.userHasPermission('biobank_specimen_alter')) {
+      if (loris.userHasPermission('biobank_specimen_edit')) {
         return (
           <div className='action' title='Alter Expiration Date'>
             <span
@@ -110,7 +116,7 @@ class Header extends Component {
             value={current.container.lotNumber}
           />
         </FormElement>
-     </Modal>
+      </Modal>
     );
 
     const expirationForm = (
@@ -128,7 +134,7 @@ class Header extends Component {
             value={current.container.expirationDate}
           />
         </FormElement>
-     </Modal>
+      </Modal>
     );
 
     const parentBarcodes = this.props.getParentContainerBarcodes(container);
@@ -183,32 +189,110 @@ class Header extends Component {
   }
 }
 
+// Header.propTypes
+Header.propTypes = {
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      stati: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      types: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      typesNonPrimary: PropTypes.arrayOf(PropTypes.string).isRequired,
+    }).isRequired,
+    centers: PropTypes.arrayOf(PropTypes.string).isRequired,
+    specimen: PropTypes.shape({
+      typeUnits: PropTypes.string,
+      types: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+  }).isRequired,
+  container: PropTypes.shape({
+    statusId: PropTypes.number.isRequired,
+    barcode: PropTypes.string.isRequired,
+    lotNumber: PropTypes.string,
+    expirationDate: PropTypes.string,
+    parentContainerId: PropTypes.number,
+    coordinate: PropTypes.string,
+  }).isRequired,
+  specimen: PropTypes.shape({
+    barcode: PropTypes.string,
+    candidatePSCID: PropTypes.string,
+    sampleNumber: PropTypes.string,
+    quantity: PropTypes.number,
+    poolId: PropTypes.number,
+    typeId: PropTypes.number.isRequired,
+  }).isRequired,
+  editable: PropTypes.shape({
+    aliquotForm: PropTypes.func.isRequired,
+    lotForm: PropTypes.func.isRequired,
+    expirationForm: PropTypes.func.isRequired,
+  }).isRequired,
+  current: PropTypes.shape({
+    container: PropTypes.shape({
+      parentContainerId: PropTypes.number,
+      coordinate: PropTypes.string,
+      lotNumber: PropTypes.string,
+      expirationDate: PropTypes.string,
+    }).isRequired,
+    specimen: PropTypes.shape({
+      typeId: PropTypes.number.isRequired,
+    }).isRequired,
+  }).isRequired,
+  data: PropTypes.obj,
+  setContainer: PropTypes.func.isRequired,
+  updateContainer: PropTypes.func.isRequired,
+  edit: PropTypes.func.isRequired,
+  increaseCoordinate: PropTypes.func.isRequired,
+  clearAll: PropTypes.func.isRequired,
+  setSpecimen: PropTypes.func.isRequired,
+  createSpecimens: PropTypes.func.isRequired,
+  editContainer: PropTypes.func.isRequired,
+  printLabel: PropTypes.func.isRequired,
+  getParentContainerBarcodes: PropTypes.func.isRequired,
+  getBarcodePathDisplay: PropTypes.func.isRequired,
+};
+
 /**
  * Biobank Container Checkout
  *
- * @param {object} props
- * @return {*}
- **/
+ * @param  {object} props
+ * @return {JSX}
+ */
 function ContainerCheckout(props) {
   const checkoutContainer = () => {
     props.editContainer(props.container)
-    .then(() => props.setContainer('parentContainerId', null))
-    .then(() => props.setContainer('coordinate', null))
-    .then(() => props.updateContainer());
+      .then(() => props.setContainer('parentContainerId', null))
+      .then(() => props.setContainer('coordinate', null))
+      .then(() => props.updateContainer());
   };
 
-  return (loris.userHasPermission('biobank_container_update') &&
+  return (loris.userHasPermission('biobank_container_edit') &&
       props.container.parentContainerId) ? (
       <div className='action'>
-      <div
-        className='action-button update'
-        title='Checkout Container'
-        onClick={checkoutContainer}
-      >
-        <span className='glyphicon glyphicon-share'/>
+        <div
+          className='action-button update'
+          title='Checkout Container'
+          onClick={checkoutContainer}
+        >
+          <span className='glyphicon glyphicon-share'/>
+        </div>
       </div>
-      </div>
-  ) : null;
+    ) : null;
 }
+
+// ContainerCheckout.propTypes
+ContainerCheckout.propTypes = {
+  editContainer: PropTypes.func.isRequired,
+  container: PropTypes.shape({
+    parentContainerId: PropTypes.number,
+  }).isRequired,
+  setContainer: PropTypes.func.isRequired,
+  updateContainer: PropTypes.func.isRequired,
+};
 
 export default Header;

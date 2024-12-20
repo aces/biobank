@@ -1,20 +1,19 @@
+import PropTypes from 'prop-types';
 import SpecimenProcessForm from './processForm';
 import {VerticalTabs, TabPane} from 'Tabs';
-import Modal from 'Modal';
-import Loader from 'Loader';
+import Modal from './Modal'; // Temporary CBIGR Override for 26.0
+import Loader from './Loader'; // Temporary CBIGR Override for 26.0  
 import {mapFormOptions, clone, isEmpty} from './helpers.js';
+import {
+  TextboxElement,
+  SelectElement,
+  StaticElement,
+  SearchableDropdown,
+  CheckboxElement,
+} from './Form'; // Temporary CBIGR Override for 26.0  
 
 import Swal from 'sweetalert2';
 
-/**
- * Biobank Batch Edit Specimen Form
- *
- * TODO: DESCRIPTION
- *
- * @author Henri Rabalais
- * @version 1.0.0
- *
- **/
 const initialState = {
   specimen: {},
   container: {},
@@ -30,7 +29,7 @@ const initialState = {
 };
 
 /**
- * Biobank batch edit specimen form
+ * Biobank Batch Edit Specimen Form
  */
 class BatchEditForm extends React.PureComponent {
   /**
@@ -47,14 +46,12 @@ class BatchEditForm extends React.PureComponent {
     this.validateListItem = this.validateListItem.bind(this);
     this.addListItem = this.addListItem.bind(this);
     this.setPool = this.setPool.bind(this);
-  };
+  }
 
   /**
    * Add a new list item to a container
    *
-   * FIXME: SHOULD LIKELY GO INTO A HIGHER LEVEL COMPONENT
-   *
-   * @param {int} containerId - the container to add an item to
+   * @param {number} containerId - the container to add an item to
    */
   addListItem(containerId) {
     let {
@@ -82,11 +79,11 @@ class BatchEditForm extends React.PureComponent {
     // This determines if every specimen in the list has the same collection
     // protocol.
     show.collection = Object.keys(list).length > 1 && Object.values(list)
-    .every((item, i, listArray) => {
-      return item.specimen.collection &&
+      .every((item, i, listArray) => {
+        return item.specimen.collection &&
         item.specimen.collection.protocolId ===
         listArray[0].specimen.collection.protocolId;
-    });
+      });
 
     // If so, set the collection protocolId.
     if (show.collection) {
@@ -98,11 +95,11 @@ class BatchEditForm extends React.PureComponent {
     // This determines if every specimen in the list has the same preparation
     // protocol.
     show.preparation = Object.keys(list).length > 1 && Object.values(list)
-    .every((item, i, listArray) => {
-      return item.specimen.preparation &&
+      .every((item, i, listArray) => {
+        return item.specimen.preparation &&
         item.specimen.preparation.protocolId ===
         listArray[0].specimen.preparation.protocolId;
-    });
+      });
 
     // If so, set the preparation protocolId.
     if (show.preparation) {
@@ -119,8 +116,6 @@ class BatchEditForm extends React.PureComponent {
   /**
    * Remove a list item from a container
    *
-   * FIXME: SHOULD LIKELY GO INTO A HIGHER LEVEL COMPONENT
-   *
    * @param {string} key - the key to remove
    */
   removeListItem(key) {
@@ -131,7 +126,7 @@ class BatchEditForm extends React.PureComponent {
   }
 
   /**
-   * Set the current specimen being edited?
+   * Set the current specimen being edited
    *
    * @param {string} name - process name
    * @param {object} value - value to set
@@ -144,7 +139,7 @@ class BatchEditForm extends React.PureComponent {
   }
 
   /**
-   * Set the current container being edited?
+   * Set the current container being edited
    *
    * @param {string} name - process name
    * @param {object} value - value to set
@@ -156,11 +151,11 @@ class BatchEditForm extends React.PureComponent {
   }
 
   /**
-   * Set the current specimen being edited?
+   * Update the current state object, which acts as a generic state holder for this
+   * component.
    *
    * @param {string} name - process name
    * @param {object} value - value to set
-   *
    * @return {Promise}
    */
   setCurrent(name, value) {
@@ -180,10 +175,10 @@ class BatchEditForm extends React.PureComponent {
   }
 
   /**
-   * Set a pool?
+   * From the selected pool, add all related speciments into the list.
    *
    * @param {string} name - the pool name
-   * @param {int} poolId - the pool id
+   * @param {number} poolId - the pool id
    */
   setPool(name, poolId) {
     const pool = clone(this.props.data.pools[poolId]);
@@ -192,20 +187,19 @@ class BatchEditForm extends React.PureComponent {
     // label disappear once the barcodes have been added to the list.
     this.setState({loading: true});
     this.setCurrent('poolId', poolId)
-    .then(() => Promise.all(pool.specimenIds
-      .map((specimenId) => Object.values(this.state.list)
-        .find((item) => item.specimen.id === specimenId)
+      .then(() => Promise.all(pool.specimenIds
+        .map((specimenId) => Object.values(this.state.list)
+          .find((item) => item.specimen.id === specimenId)
         || this.addListItem(this.props.data.specimens[specimenId].containerId))
-      .map((p) => p instanceof Promise ? p : Promise.resolve(p))))
-    .then(() => this.setCurrent('poolId', null))
-    .then(() => this.setState({loading: false}));
+        .map((p) => p instanceof Promise ? p : Promise.resolve(p))))
+      .then(() => this.setCurrent('poolId', null))
+      .then(() => this.setState({loading: false}));
   }
 
   /**
    * Validate the list items for a container
    *
-   * @param {int} containerId - the container to validate
-   *
+   * @param {number} containerId - the container to validate
    * @return {Promise}
    */
   validateListItem(containerId) {
@@ -336,7 +330,7 @@ class BatchEditForm extends React.PureComponent {
             setCurrent={this.setCurrent}
             typeId={current.typeId}
             hideProtocol={true}
-            />
+          />
         </EditForm>
       </div>
     ) : null;
@@ -358,7 +352,7 @@ class BatchEditForm extends React.PureComponent {
             setCurrent={this.setCurrent}
             typeId={current.typeId}
             hideProtocol={true}
-            />
+          />
         </EditForm>
       </div>
     ) : null;
@@ -409,13 +403,11 @@ class BatchEditForm extends React.PureComponent {
       });
     }
     const tabContent = tabList
-    .map((tab, i) => <TabPane key={i} TabId={tab.id}>{tab.content}</TabPane>);
+      .map((tab, i) => <TabPane key={i} TabId={tab.id}>{tab.content}</TabPane>);
 
     const handlePoolInput = (name, value) => value && this.setPool(name, value);
     const handleClose = () => this.setState(initialState, this.props.onClose);
 
-    // TODO: This should likely be cleaned up because there must be a more
-    // efficient way of structuring it.
     const handleSubmit = () => {
       this.setState({errors: {container: {}, specimen: {}}});
       const prepList = Object.values(list).map((item) => {
@@ -473,7 +465,7 @@ class BatchEditForm extends React.PureComponent {
 
       return new Promise((resolve, reject) => {
         this.props.onSubmit(prepList)
-        .then(() => resolve(), (errors) => this.setState({errors}, reject()));
+          .then(() => resolve(), (errors) => this.setState({errors}, reject()));
       });
     };
 
@@ -504,55 +496,86 @@ class BatchEditForm extends React.PureComponent {
         onSubmit={Object.keys(list).length > 1 && handleSubmit}
         throwWarning={true}
       >
-        <FormElement>
-          <div className='row'>
-            <div className='col-sm-10 col-sm-offset-1'>
-              <StaticElement
-                label='Editing Note'
-                text="Select or Scan the specimens to be edited. Specimens
-                      must share the same Type."
-              />
-              <StaticElement
-                label='Specimen Type'
-                text={(options.specimen.types[current.typeId]||{}).label || '—'}
-              />
-              <div className='row'>
-                <div className='col-xs-6'>
-                  <h4>Barcode Input</h4>
-                  <div className='form-top'/>
-                  <BarcodeInput
-                    data={data}
-                    options={options}
-                    list={list}
-                    validateListItem={this.validateListItem}
-                    addListItem={this.addListItem}
-                  />
-                  <SearchableDropdown
-                    name={'poolId'}
-                    label={'Pool'}
-                    onUserInput={handlePoolInput}
-                    options={pools}
-                    value={poolId}
-                  />
-                </div>
-                <div className='col-xs-6'>
-                  <h4>Barcode List</h4>
-                  <div className='form-top'/>
-                  <div className='preparation-list'>
-                    {barcodeList}
-                  </div>
+        <div className='row'>
+          <div className='col-sm-10 col-sm-offset-1'>
+            <StaticElement
+              label='Editing Note'
+              text="Select or Scan the specimens to be edited. Specimens
+                    must share the same Type."
+            />
+            <StaticElement
+              label='Specimen Type'
+              text={(options.specimen.types[current.typeId]||{}).label || '—'}
+            />
+            <div className='row'>
+              <div className='col-xs-6'>
+                <h4>Barcode Input</h4>
+                <div className='form-top'/>
+                <BarcodeInput
+                  data={data}
+                  options={options}
+                  list={list}
+                  validateListItem={this.validateListItem}
+                  addListItem={this.addListItem}
+                />
+                <SearchableDropdown
+                  name={'poolId'}
+                  label={'Pool'}
+                  onUserInput={handlePoolInput}
+                  options={pools}
+                  value={poolId}
+                />
+              </div>
+              <div className='col-xs-6'>
+                <h4>Barcode List</h4>
+                <div className='form-top'/>
+                <div className='preparation-list'>
+                  {barcodeList}
                 </div>
               </div>
-              {editForms}
             </div>
+            {editForms}
           </div>
-        </FormElement>
+        </div>
       </Modal>
     );
   }
 }
 
 BatchEditForm.propTypes = {
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        containerId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    pools: PropTypes.array.isRequired,
+  }).isRequired,
+  options: PropTypes.shape({
+    specimen: PropTypes.shape({
+      typeUnits: PropTypes.string,
+      types: PropTypes.arrayOf(PropTypes.string),
+      protocols: PropTypes.arrayOf(PropTypes.string),
+      typeContainerTypes: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+    container: PropTypes.shape({
+      stati: PropTypes.object,
+      typesPrimary: PropTypes.arrayOf(PropTypes.string),
+      types: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+    projects: PropTypes.array.isRequired,
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  show: PropTypes.bool.isRequired,
+  list: PropTypes.array.isRequired,
+  addListItem: PropTypes.func.isRequired,
+  validateListItem: PropTypes.func.isRequired,
 };
 
 /**
@@ -568,17 +591,17 @@ class BarcodeInput extends React.PureComponent {
     super(props);
 
     const barcodesPrimary = Object.values(props.data.containers)
-    .reduce((result, container) => {
-      if (props.options.container.types[container.typeId].primary == 1) {
-        const inList = Object.values(props.list)
-        .find((i) => i.container.id == container.id);
+      .reduce((result, container) => {
+        if (props.options.container.types[container.typeId].primary == 1) {
+          const inList = Object.values(props.list)
+            .find((i) => i.container.id == container.id);
 
-        if (!inList) {
-          result[container.id] = container.barcode;
+          if (!inList) {
+            result[container.id] = container.barcode;
+          }
         }
-      }
-      return result;
-    }, {});
+        return result;
+      }, {});
 
     this.state = {
       barcodesPrimary: barcodesPrimary,
@@ -597,10 +620,10 @@ class BarcodeInput extends React.PureComponent {
     const handleInput = (name, value) => {
       this.setState({barcode: value});
       const containerId = Object.keys(this.state.barcodesPrimary)
-      .find((id) => this.state.barcodesPrimary[id] == value);
+        .find((id) => this.state.barcodesPrimary[id] == value);
       containerId && this.props.validateListItem(containerId)
-      .then(() => addListItem(containerId))
-      .then(() => this.setState({barcode: null}));
+        .then(() => addListItem(containerId))
+        .then(() => this.setState({barcode: null}));
     };
     return (
       <TextboxElement
@@ -620,9 +643,35 @@ class BarcodeInput extends React.PureComponent {
   }
 }
 
+BarcodeInput.propTypes = {
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        containerId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    pools: PropTypes.array.isRequired,
+  }).isRequired,
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      types: PropTypes.arrayOf(PropTypes.string).isRequired,
+    }).isRequired,
+  }).isRequired,
+  list: PropTypes.array.isRequired,
+  addListItem: PropTypes.func.isRequired,
+  validateListItem: PropTypes.func.isRequired,
+};
+
 /**
+ * Adds a checkbox to all the children components.
+ *
  * @param {object} props
- * @return {*}
+ * @return {JSX}
  */
 function EditForm(props) {
   return React.Children.map(props.children, (child) => {

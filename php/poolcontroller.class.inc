@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * This class features the code that enables access to the Pools of the
  * LORIS Biobank Module.
@@ -78,9 +79,9 @@ class PoolController
      *
      * @param array $poolArray pool array to be created.
      *
-     * @return string a json encoded string of all permissable Pool Objects.
+     * @return Pool $pool The created Pool.
      */
-    public function createInstance(array $poolArray)
+    public function createInstance(array $poolArray) : Pool
     {
         $this->_validatePermission('create');
         $pool = (new Pool())->fromArray($poolArray);
@@ -98,8 +99,8 @@ class PoolController
     {
         $dao = new PoolDAO($this->loris);
         $dao = $dao
-          ->filter(new \LORIS\Data\Filters\UserSiteMatch())
-          ->filter(new \LORIS\Data\Filters\UserProjectMatch());
+            ->filter(new \LORIS\Data\Filters\UserSiteMatch())
+            ->filter(new \LORIS\Data\Filters\UserProjectMatch());
         return $dao;
     }
 

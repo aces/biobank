@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * This class features the code that enables access to the Specimens of the LORIS
  * Biobank Module.
@@ -65,9 +66,9 @@ class SpecimenController
     {
         $this->_validatePermission('view');
         $specimens  = [];
-        $this->dao = $this->dao
-                          ->filter(new \LORIS\Data\Filters\UserSiteMatch())
-                          ->filter(new \LORIS\Data\Filters\UserProjectMatch());
+        $this->dao  = $this->dao
+            ->filter(new \LORIS\Data\Filters\UserSiteMatch())
+            ->filter(new \LORIS\Data\Filters\UserProjectMatch());
         $specimenIt = $this->dao->execute($this->user);
         foreach ($specimenIt as $id => $specimen) {
             $specimens[$id] = $specimen;
@@ -122,9 +123,9 @@ class SpecimenController
      *
      * @param array $specimenArray specimen array to be created
      *
-     * @return Specimen updated Specimen
+     * @return ?Specimen updated Specimen
      */
-    public function updateInstance(array $specimenArray) : Specimen
+    public function updateInstance(array $specimenArray) : ?Specimen
     {
         $this->_validatePermission('update');
         $specimen = $this->_prepare($specimenArray);
@@ -196,7 +197,7 @@ class SpecimenController
             }
             break;
         case 'update':
-            if (!$this->user->hasPermission('biobank_specimen_update')) {
+            if (!$this->user->hasPermission('biobank_specimen_edit')) {
                 throw new Forbidden('Specimen: Update Permission Denied');
             }
             break;

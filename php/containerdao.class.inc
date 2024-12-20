@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * Container Data Access Object (DAO) Class
  * This class contains all database handling that is needed to
@@ -109,7 +110,8 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                      bc.CenterID,
                      bcp.ParentContainerID,
                      bc2.Barcode as ParentContainerBarcode,
-                     GROUP_CONCAT(DISTINCT bcp2.ContainerID ORDER BY bcp2.ContainerID) as ChildContainerIDs,
+                     GROUP_CONCAT(DISTINCT bcp2.ContainerID
+                         ORDER BY bcp2.ContainerID) as ChildContainerIDs,
                      bcp.Coordinate as Coordinate,
                      bc.LotNumber,
                      bc.ExpirationDate,
@@ -327,10 +329,10 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
      * @param Container $container The Container Object to be saved into the
      *                             database.
      *
-     * @return Container $container The Container Object that was saved to the
+     * @return ?Container $container The Container Object that was saved to the
                                      database.
      */
-    public function createInstance(Container $container) : Container
+    public function createInstance(Container $container) : ?Container
     {
         // TODO: THIS IS DUPLICATED IN BOTH FUNCTIONS AND COULD PROBABLY BE
         // DEALT WITH EITHER FRONT END OR SOMEWHERE ELSE.
@@ -556,8 +558,8 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
          ];
 
          return [
-             'biobank_container'             => $containerData,
-             'biobank_container_parent'      => $parentData,
+             'biobank_container'        => $containerData,
+             'biobank_container_parent' => $parentData,
          ];
     }
 
@@ -565,9 +567,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
      * This function takes an array that resulted from an SQL query and
      * instantiates it as a Container Object
      *
-     * @param array  $data              Values to be instantiated.
-     * @param ?array $childContainerIds List of child container ids.
-     * @param ?array $shipmentBarcodes  List of barcodes.
+     * @param array $data Values to be instantiated.
      *
      * @return Container
      */
@@ -603,12 +603,14 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         } else {
             $container->setShipmentBarcodes([]);
         }
-        if (isset($data['ProjectIDs'])) {                                       
-            $projectIds = array_map(fn($id) => new \ProjectID($id),             
-                explode(',', $data['ProjectIDs']));                             
-            $container->setProjectIds($projectIds);                              
+        if (isset($data['ProjectIDs'])) {
+            $projectIds = array_map(
+                fn($id) => new \ProjectID($id),
+                explode(',', $data['ProjectIDs'])
+            );
+            $container->setProjectIds($projectIds);
         } else {
-            $container->setProjectIds([]);                              
+            $container->setProjectIds([]);
         }
         if (isset($data['CenterID'])) {
             $container->setCenterId(new \CenterID(strval($data['CenterID'])));
@@ -617,7 +619,9 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
             $container->setParentContainerId((int) $data['ParentContainerID']);
         }
         if (isset($data['ParentContainerBarcode'])) {
-            $container->setParentContainerBarcode((string) $data['ParentContainerBarcode']);
+            $container->setParentContainerBarcode(
+                (string) $data['ParentContainerBarcode']
+            );
         }
         if (isset($data['ChildContainerIDs'])) {
             $childContainerIds = explode(',', $data['ChildContainerIDs']);

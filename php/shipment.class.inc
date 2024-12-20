@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * Shipment Class
  * This class contains an instance of a database handling that is needed to
@@ -65,7 +66,9 @@ class Shipment implements
         $this->id      = $data['id'] ?? null;
         $this->barcode = $data['barcode'] ?? null;
         $this->type    = $data['type'] ?? null;
-        $this->destinationCenterId = new \CenterID($data['destinationCenterId'] ?? null);
+        $this->destinationCenterId = new \CenterID(
+            $data['destinationCenterId'] ?? null
+        );
         $this->containerIds        = $data['containerIds'] ?? null;
         $this->containerBarcodes   = $data['containerBarcodes'] ?? null;
         $this->_setLogs($data['logs']) ?? null;
@@ -209,18 +212,18 @@ class Shipment implements
      */
     public function getCenterIds() : array
     {
-       switch ($this->getStatus()) {
-       // TODO: Instead of checking for strings, this ideally would check for
-       // boolean values from functions such as getActive(). This way, the
-       // strings will be relegated to singular functions that then serve
-       // functional purposes.
-       case 'received':
-           return [$this->getDestinationCenterId()];
-       case 'shipped':
-           return [$this->getOriginCenterId(), $this->getDestinationCenterId];
-       default:
-           return [$this->getOriginCenterId()];
-       }
+        switch ($this->getStatus()) {
+        // TODO: Instead of checking for strings, this ideally would check for
+        // boolean values from functions such as getActive(). This way, the
+        // strings will be relegated to singular functions that then serve
+        // functional purposes.
+        case 'received':
+            return [$this->getDestinationCenterId()];
+        case 'shipped':
+            return [$this->getOriginCenterId(), $this->getDestinationCenterId()];
+        default:
+            return [$this->getOriginCenterId()];
+        }
     }
 
     /**

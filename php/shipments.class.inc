@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * This implements the Shipment endpoint class for the Biobank Module.
  *
@@ -66,7 +67,7 @@ class Shipments implements RequestHandlerInterface
      * This function can be overridden in a module's page to load the necessary
      * resources to check the permissions of a user.
      *
-     * @param User                   $user    The user to load the resources for
+     * @param \User                  $user    The user to load the resources for
      * @param ServerRequestInterface $request The PSR15 Request being handled
      *
      * @return void
@@ -103,8 +104,8 @@ class Shipments implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request) : ResponseInterface
     {
-        $this->db    = \NDB_Factory::singleton()->database();
-        $this->user  = $request->getAttribute('user');
+        $this->db   = \NDB_Factory::singleton()->database();
+        $this->user = $request->getAttribute('user');
 
         try {
             $this->db->beginTransaction();
@@ -119,12 +120,12 @@ class Shipments implements RequestHandlerInterface
                 return (new \LORIS\Http\Response())
                     ->withHeader('Allow', $this->allowedMethods());
             }
-        } catch (\Exception $e) {                                               
-            $this->db->rollBack();                                                    
-            // PUT SOMETHING HERE LATER                                         
-            return new \LORIS\Http\Response\JSON\InternalServerError(           
-                $e->getMessage()                                                
-            ); 
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            // PUT SOMETHING HERE LATER
+            return new \LORIS\Http\Response\JSON\InternalServerError(
+                $e->getMessage()
+            );
         } finally {
             if ($this->db->inTransaction()) {
                 $this->db->commit();
@@ -144,7 +145,7 @@ class Shipments implements RequestHandlerInterface
         // }
         $shipments = [];
         $dao       = (new ShipmentDAO($this->db))
-          ->filter(new \LORIS\Data\Filters\UserSiteMatch());    
+          ->filter(new \LORIS\Data\Filters\UserSiteMatch());
         $shipmentIterator = $dao->execute($this->user);
         foreach ($shipmentIterator as $barcode=>$shipment) {
             $shipments[$barcode] = $shipment;

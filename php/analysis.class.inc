@@ -1,15 +1,13 @@
 <?php declare(strict_types=1);
+
 /**
- * Specimen Analysis Class
- * This class contains an instance of a database handling that is needed to
- * permanently store and retrieve Specimen Analysis instances.
+ * Defines the Analysis class for specimen analyses in the Biobank module.
  *
- * PHP Version 7.2
+ * This class represents a specimen analysis process and extends the `Process` class.
  *
- * @category   Entity
- * @package    Loris
+ * @package    LORIS
  * @subpackage Biobank
- * @author     Henri Rabalais <henri.rabalais@mcin.ca>
+ * @author     Henri Rabalais <henri.j.rabalais@gmail.com>
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
@@ -17,45 +15,16 @@
 namespace LORIS\biobank;
 
 /**
- * Specimen Analysis Class
- * This class contains an instance of a database handling that is needed to
- * permanently store and retrieve Specimen Analysis instances.
- *
- * PHP Version 7.2
+ * Analysis class for specimen processing in the Biobank module.
  *
  * @category   Entity
- * @package    Loris
+ * @package    LORIS
  * @subpackage Biobank
- * @author     Henri Rabalais <henri.rabalais@mcin.ca>
+ * @author     Henri Rabalais <henri.j.rabalais@gmail.com>
  * @license    http://www.gnu.org/licenses/gpl-3.0.txt GPLv3
  * @link       https://www.github.com/aces/Loris/
  */
-
 class Analysis extends Process
 {
-    /**
-     * A wrapper function for the jsonSerialize method of the Analysis Instance
-     * Class. This converts this Specimen Analysis into an array
-     *
-     * @return array Specimen Array
-     */
-    public function toArray()
-    {
-        return $this->jsonSerialize();
-    }
-
-    /**
-     * Returns an array representing the state of the Specimen.
-     *
-     * @return array
-     */
-    public function jsonSerialize() : array
-    {
-        $parent = parent::jsonSerialize();
-        return array_merge(
-            $parent,
-            []
-        );
-    }
+    // No additional properties or methods are needed at this time.
 }
-

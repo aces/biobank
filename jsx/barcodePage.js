@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 import {Link} from 'react-router-dom';
 
 import {clone, isEmpty} from './helpers.js';
@@ -7,7 +8,7 @@ import Globals from './globals';
 import Header from './header';
 import BiobankSpecimen from './specimen';
 import BiobankContainer from './container';
-import LoadingBar from 'jsx/LoadingBar';
+import ProgressBar from 'jsx/ProgressBar';
 
 const initialState = {
   loading: false,
@@ -42,11 +43,11 @@ const initialState = {
 };
 
 /**
- * A page with barcodes?
+ * The Barcode Page is the entry-point for both Specimen and Container Page data.
  */
 class BarcodePage extends Component {
   /**
-   * Constructor
+   * constructor
    */
   constructor() {
     super();
@@ -73,7 +74,6 @@ class BarcodePage extends Component {
    *
    * @param {object} container - the container with siblings
    * @param {array} barcodes - the initial list of barcodes
-   *
    * @return {array}
    */
   getParentContainerBarcodes(container, barcodes=[]) {
@@ -91,7 +91,6 @@ class BarcodePage extends Component {
    * Get the label for a coordinate in a container
    *
    * @param {object} container
-   *
    * @return {string}
    */
   getCoordinateLabel(container) {
@@ -127,17 +126,16 @@ class BarcodePage extends Component {
    * Set a key as editable
    *
    * @param {string} stateKey - the key to edit
-   *
    * @return {Promise}
    */
   edit(stateKey) {
     return new Promise((resolve) => {
       this.clearEditable()
-      .then(() => {
-        const editable = clone(this.state.editable);
-        editable[stateKey] = true;
-        this.setState({editable}, resolve());
-      });
+        .then(() => {
+          const editable = clone(this.state.editable);
+          editable[stateKey] = true;
+          this.setState({editable}, resolve());
+        });
     });
   }
 
@@ -162,7 +160,7 @@ class BarcodePage extends Component {
   }
 
   /**
-   * Set a list of containers to checkout?
+   * Set a list of containers to checkout
    *
    * @param {object} container - a container to checkout?
    */
@@ -179,7 +177,6 @@ class BarcodePage extends Component {
    * Edit a specimen
    *
    * @param {object} specimen - specimen
-   *
    * @return {Promise}
    */
   editSpecimen(specimen) {
@@ -191,7 +188,6 @@ class BarcodePage extends Component {
    * Edit a container
    *
    * @param {object} container - container
-   *
    * @return {Promise}
    */
   editContainer(container) {
@@ -200,11 +196,10 @@ class BarcodePage extends Component {
   }
 
   /**
-   * Set current thing being edited?
+   * Update the 'current' object which holds generic state of this component.
    *
    * @param {string} name - the name to display
    * @param {object} value - the error message
-   *
    * @return {Promise}
    */
   setCurrent(name, value) {
@@ -229,7 +224,6 @@ class BarcodePage extends Component {
    * Get the path to display for a barcode
    *
    * @param {array} parentBarcodes - parent barcodes
-   *
    * @return {JSX}
    */
   getBarcodePathDisplay(parentBarcodes) {
@@ -262,7 +256,6 @@ class BarcodePage extends Component {
    *
    * @param {string} name - the specimen name
    * @param {string} value - the specimen value
-   *
    * @return {Promise}
    */
   setSpecimen(name, value) {
@@ -270,7 +263,7 @@ class BarcodePage extends Component {
       const specimen = clone(this.state.current.specimen);
       specimen[name] = value;
       this.setCurrent('specimen', specimen)
-      .then(() => resolve());
+        .then(() => resolve());
     });
   }
 
@@ -279,7 +272,6 @@ class BarcodePage extends Component {
    *
    * @param {string} name - the container name
    * @param {string} value - the container value
-   *
    * @return {Promise}
    */
   setContainer(name, value) {
@@ -287,7 +279,7 @@ class BarcodePage extends Component {
       const container = clone(this.state.current.container);
       value ? container[name] = value : delete container[name];
       this.setCurrent('container', container)
-      .then(() => resolve());
+        .then(() => resolve());
     });
   }
 
@@ -304,7 +296,7 @@ class BarcodePage extends Component {
     if (isEmpty(data.containers) ||
         isEmpty(data.specimens) || isEmpty(data.pools)
     ) {
-      return <LoadingBar progress={this.props.loading}/>;
+      return <ProgressBar value={this.props.loading}/>;
     }
 
     const updateContainer = (container, close = true) => {
@@ -315,9 +307,11 @@ class BarcodePage extends Component {
           container.coordinate = null;
         }
         return this.props.updateContainer(container)
-        .then(() => close && this.clearEditable(),
-          (errors) => errors.container && this.setErrors('container', errors.container))
-        .then(() => this.setState({loading: false}, resolve()))
+          .then(() => close && this.clearEditable(),
+            (errors) => errors.container && this.setErrors(
+              'container', errors.container
+            ))
+          .then(() => this.setState({loading: false}, resolve()));
       }));
     };
 
@@ -325,9 +319,11 @@ class BarcodePage extends Component {
       this.setErrors('specimen', {});
       return this.setState({loading: true}, () =>
         this.props.updateSpecimen(specimen)
-        .then(() => this.clearEditable(),
-          (errors) => errors.specimen && this.setErrors('specimen', errors.specimen))
-        .then(() => this.setState({loading: false}))
+          .then(() => this.clearEditable(),
+            (errors) => errors.specimen && this.setErrors(
+              'specimen', errors.specimen)
+          )
+          .then(() => this.setState({loading: false}))
       );
     };
 
@@ -425,5 +421,32 @@ class BarcodePage extends Component {
     );
   }
 }
+
+BarcodePage.propTypes = {
+  data: PropTypes.shape({
+    containers: PropTypes.array,
+    specimens: PropTypes.array,
+    pools: PropTypes.array,
+  }),
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      dimensions: PropTypes.object,
+      stati: PropTypes.object,
+    }),
+  }),
+  updateContainer: PropTypes.func,
+  updateSpecimen: PropTypes.func,
+  printLabel: PropTypes.func,
+  increaseCoordinate: PropTypes.func,
+  createSpecimens: PropTypes.func,
+  loading: PropTypes.bool,
+  history: PropTypes.object,
+  specimen: PropTypes.object,
+  container: PropTypes.shape({
+    statusId: PropTypes.number,
+    parentContainerId: PropTypes.number,
+    coordinate: PropTypes.string,
+  }),
+};
 
 export default BarcodePage;

@@ -1,14 +1,23 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {
+  TextboxElement,
+  ButtonElement,
+  SelectElement,
+  DateElement,
+  TimeElement,
+  TextareaElement,
+  StaticElement,
+} from './Form'; // Temporary CBIGR Override for 26.0 
 import {mapFormOptions, clone} from './helpers.js';
 import CustomFields from './customFields';
 
 /**
  * Biobank Specimen Process Form
  *
- * @param {object} props
- * @return {*}
- **/
+ * @param  {object} props
+ * @return {JSX}
+ */
 const SpecimenProcessForm = (props) => {
   const setProcess = (name, value) => {
     let process = clone(props.process);
@@ -37,13 +46,13 @@ const SpecimenProcessForm = (props) => {
   };
 
   const {
-      specimen,
-      process,
-      processStage,
-      typeId,
-      options,
-      errors,
-      edit,
+    specimen,
+    process,
+    processStage,
+    typeId,
+    options,
+    errors = {},
+    edit,
   } = props;
 
   const updateButton = specimen && (
@@ -54,27 +63,28 @@ const SpecimenProcessForm = (props) => {
   );
 
   let specimenProtocols = {};
-  let specimenProtocolAttributes = {};
-  Object.entries(options.specimen.protocols).forEach(([id, protocol]) => {
-    // FIXME: I really don't like 'toLowerCase()' function, but it's the
-    // only way I can get it to work at the moment.
-    if (typeId == protocol.typeId &&
-        options.specimen.processes[protocol.processId].label.toLowerCase() ==
-        processStage) {
-      specimenProtocols[id] = protocol.label;
-      specimenProtocolAttributes[id] = options.specimen.protocolAttributes[id];
+  Object.entries(options.specimen.protocols).forEach(
+    ([id, protocol]) => {
+      // FIXME: I really don't like 'toLowerCase()' function, but it's the
+      // only way I can get it to work at the moment.
+      const process = options.specimen.processes[protocol.processId].label
+        .toLowerCase();
+      if (typeId == protocol.typeId && process == processStage
+      ) {
+        specimenProtocols[id] = protocol.label;
+      }
     }
-  });
+  );
 
   const renderProtocolFields = () => {
-    if (specimenProtocolAttributes[process.protocolId]) {
+    if (options.specimen.protocolAttributes[process.protocolId]) {
       if (process.data) {
         return <CustomFields
-            options={options}
-            errors={errors.data || {}}
-            fields={specimenProtocolAttributes[process.protocolId]}
-            object={process.data}
-            setData={setData} />;
+          options={options}
+          errors={errors.data || {}}
+          attributes={options.specimen.protocolAttributes[process.protocolId]}
+          object={process.data}
+          setData={setData} />;
       } else {
         setProcess('data', {});
       }
@@ -82,10 +92,12 @@ const SpecimenProcessForm = (props) => {
   };
 
   const specimenTypeUnits = Object.keys(options.specimen.typeUnits[typeId]||{})
-  .reduce((result, id) => {
-    result[id] = options.specimen.typeUnits[typeId][id].label;
-    return result;
-  }, {});
+    .reduce(
+      (result, id) => {
+        result[id] = options.specimen.typeUnits[typeId][id].label;
+        return result;
+      }, {}
+    );
   const collectionFields = processStage === 'collection' && [
     <TextboxElement
       name="quantity"
@@ -163,27 +175,28 @@ const SpecimenProcessForm = (props) => {
       updateButton,
     ];
   } else if (edit === false) {
-    const protocolStaticFields = process.data &&
-      Object.keys(process.data).map((key) => {
-        let value = process.data[key];
-        if (process.data[key] === true) {
-          value = 'Yes';
-        } else if (process.data[key] === false) {
-          value = 'No';
-        }
-        // FIXME: The label used to be produced in the following way:
-        // label={options.specimen.protocolAttributes[process.protocolId][key].label}
-        // However, causes issues when there is data in the data
-        // object, but the protocolId is not associated with any attributes.
-        // This is a configuration/importing issue that should be fixed.
-        return (
-          <StaticElement
-            key={key}
-            label={options.specimen.attributes[key].label}
-            text={value}
-          />
-        );
-      });
+    const protocolAttributes = options.specimen.protocolAttributes[
+      process.protocolId
+    ] || [];
+    
+    const protocolStaticFields = protocolAttributes.map((attribute) => {
+      let value = process.data[attribute.id]; // Fetch the corresponding value from process.data
+
+      // Convert boolean values to "Yes" or "No"
+      if (value === true) {
+        value = 'Yes';
+      } else if (value === false) {
+        value = 'No';
+      }
+
+      return (
+        <StaticElement
+          key={attribute.id}
+          label={attribute.label} // Use the attribute label from the ordered list
+          text={value || '—'} // Use an empty string if value is undefined
+        />
+      );
+    });
 
     const collectionStaticFields = (processStage === 'collection') && (
       <StaticElement
@@ -225,18 +238,72 @@ const SpecimenProcessForm = (props) => {
   return null;
 };
 
+// ProcessForm.propTypes
 SpecimenProcessForm.propTypes = {
-  setParent: PropTypes.func.isRequired,
-  updateSpecimen: PropTypes.func,
+  edit: PropTypes.bool,
+  process: PropTypes.shape({
+    data: PropTypes.object,
+    protocolId: PropTypes.number,
+    quantity: PropTypes.number,
+    unitId: PropTypes.number,
+    examinerId: PropTypes.number,
+    date: PropTypes.string,
+    time: PropTypes.string,
+    comments: PropTypes.string,
+    centerId: PropTypes.number,
+  }).isRequired,
+  processStage: PropTypes.string.isRequired,
+  current: PropTypes.shape({
+    files: PropTypes.array,
+  }).isRequired,
+  setCurrent: PropTypes.func.isRequired,
+  typeId: PropTypes.number.isRequired,
+  options: PropTypes.shape({
+    specimen: PropTypes.shape({
+      typeUnits: PropTypes.string,
+      types: PropTypes.arrayOf(PropTypes.string),
+      attributes: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+      units: PropTypes.obj,
+      protocols: PropTypes.arrayOf(PropTypes.string),
+      processes: PropTypes.arrayOf(PropTypes.string),
+      protocolAttributes: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+    }).isRequired,
+    centers: PropTypes.arrayOf(PropTypes.string).isRequired,
+    candidates: PropTypes.arrayOf(PropTypes.string),
+    candidateSessions: PropTypes.arrayOf(PropTypes.string),
+    sessions: PropTypes.arrayOf(PropTypes.string),
+    examiners: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
   specimen: PropTypes.object.isRequired,
-  attributeDatatypes: PropTypes.object.isRequired,
-  attributeOptions: PropTypes.object.isRequired,
-  specimenTypeUnits: PropTypes.object.isRequired,
-  specimenTypeAttributes: PropTypes.object.isRequired,
-};
-
-SpecimenProcessForm.defaultProps = {
-  errors: {},
+  errors: PropTypes.shape({
+    data: PropTypes.obj,
+    quantity: PropTypes.string,
+    unitId: PropTypes.string,
+    protocolId: PropTypes.string,
+    examinerId: PropTypes.string,
+    date: PropTypes.string,
+    time: PropTypes.string,
+    comments: PropTypes.string,
+    container: PropTypes.shape({
+      typeId: PropTypes.string,
+    }),
+  }).isRequired,
+  hideProtocol: PropTypes.bool,
+  increaseCoordinate: PropTypes.func.isRequired,
+  createSpecimens: PropTypes.func.isRequired,
+  printLabel: PropTypes.func.isRequired,
+  getParentContainerBarcodes: PropTypes.func.isRequired,
+  getBarcodePathDisplay: PropTypes.func.isRequired,
+  setParent: PropTypes.func.isRequired,
+  updateSpecimen: PropTypes.func.isRequired,
 };
 
 export default SpecimenProcessForm;

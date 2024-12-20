@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * Log Class
  * This class contains an instance of a database handling that is needed to

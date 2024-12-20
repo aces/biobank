@@ -1,15 +1,18 @@
+import {Component} from 'react';
 import {BrowserRouter, Route, Switch} from 'react-router-dom';
+import PropTypes from 'prop-types';
 import Swal from 'sweetalert2';
 
 import BiobankFilter from './filter';
 import BarcodePage from './barcodePage';
+
 import {clone, isEmpty, get, getStream, post} from './helpers.js';
 
 /**
  * The main React entrypoint for the biobank module. This component
  * renders the index page.
  */
-class BiobankIndex extends React.Component {
+class BiobankIndex extends Component {
   /**
    * Constructor
    */
@@ -103,7 +106,6 @@ class BiobankIndex extends React.Component {
    *
    * @param {string} type - the type of entity
    * @param {object} entities - the entities to set
-   *
    * @return {Promise}
    */
   setData(type, entities) {
@@ -118,7 +120,6 @@ class BiobankIndex extends React.Component {
    * Send a request to a server to print a label
    *
    * @param {object} labelParams - the properties of the label to print
-   *
    * @return {Promise}
    */
   printLabel(labelParams) {
@@ -129,7 +130,6 @@ class BiobankIndex extends React.Component {
    * Find the appropriate container for a barcode.
    *
    * @param {string} barcode - the value to route
-   *
    * @return {object}
    */
   routeBarcode(barcode) {
@@ -147,7 +147,6 @@ class BiobankIndex extends React.Component {
    * validating it
    *
    * @param {object} specimen - the specimen to update
-   *
    * @return {Promise}
    */
   updateSpecimen(specimen) {
@@ -157,24 +156,18 @@ class BiobankIndex extends React.Component {
     }
 
     return post(specimen, this.props.specimenAPI, 'PUT')
-    .then((specimens) => this.setData('specimens', specimens));
+      .then((specimens) => this.setData('specimens', specimens));
   }
 
   /**
    * Update multiple specimens at once
    *
-   * TODO: This should eventually check for errors and replace 'updateSpecimen'
-   * All updates can be sent via an array. This change should be reflected in
-   * the backend too. It should also be able to be be sent with a nested
-   * container object.
-   *
    * @param {array} list - the list of specimens to update
-   *
    * @return {Promise}
    */
   updateSpecimens(list) {
     const updateList = list
-    .map((specimen) => () => this.updateSpecimen(specimen));
+      .map((specimen) => () => this.updateSpecimen(specimen));
 
     return Promise.all(updateList.map((updateSpecimen) => updateSpecimen()));
   }
@@ -183,7 +176,6 @@ class BiobankIndex extends React.Component {
    * Edit a list of specimens
    *
    * @param {array} list - a list of specimens
-   *
    * @return {Promise}
    */
   editSpecimens(list) {
@@ -194,23 +186,19 @@ class BiobankIndex extends React.Component {
       return Promise.reject(errors);
     }
 
-    // TODO: For now, specimens and their respective containers are sent
-    // separately and 1 by 1 to be updated. They should eventually be sent
-    // together and batched in an array.
     const specimenList = list
-    .map((item) => () => this.updateSpecimen(item.specimen));
+      .map((item) => () => this.updateSpecimen(item.specimen));
     const containerList = list
-    .map((item) => () => this.updateContainer(item.container));
+      .map((item) => () => this.updateContainer(item.container));
 
     return Promise.all(specimenList.map((item) => item()))
-    .then(() => Promise.all(containerList.map((item) => item())));
+      .then(() => Promise.all(containerList.map((item) => item())));
   }
 
   /**
    * Sends a request to update a container on the server
    *
    * @param {object} container - the container to update
-   *
    * @return {Promise}
    */
   updateContainer(container) {
@@ -220,7 +208,7 @@ class BiobankIndex extends React.Component {
     }
 
     return post(container, this.props.containerAPI, 'PUT')
-    .then((containers) => this.setData('containers', containers));
+      .then((containers) => this.setData('containers', containers));
   }
 
   /**
@@ -228,20 +216,19 @@ class BiobankIndex extends React.Component {
    * next available slot.
    *
    * @param {object} coordinate - the coordinate to increment
-   * @param {int} parentContainerId - the parent container
-   *
-   * @return {int}
+   * @param {number} parentContainerId - the parent container
+   * @return {number}
    */
   increaseCoordinate(coordinate, parentContainerId) {
     const containers = this.state.data.containers;
     const childCoordinates = containers[parentContainerId].childContainerIds
-    .reduce((result, id) => {
-      const container = containers[id];
-      if (container.coordinate) {
-        result[container.coordinate] = id;
-      }
-      return result;
-    }, {});
+      .reduce((result, id) => {
+        const container = containers[id];
+        if (container.coordinate) {
+          result[container.coordinate] = id;
+        }
+        return result;
+      }, {});
 
     const increment = (coord) => {
       coord++;
@@ -256,12 +243,11 @@ class BiobankIndex extends React.Component {
   }
 
   /**
-   * Create a batch of speciments
+   * Create a batch of specimens
    *
-   * @param {object} list - ?
-   * @param {object} current - ?
-   * @param {object} print - ?
-   *
+   * @param {object} list - list of specimens
+   * @param {object} current - holds current state for specific values
+   * @param {boolean} print - whether the barcodes should be printed
    * @return {Promise}
    */
   createSpecimens(list, current, print) {
@@ -305,8 +291,8 @@ class BiobankIndex extends React.Component {
         const dimensions = dims[parentContainer.dimensionId];
         const capacity = dimensions.x * dimensions.y * dimensions.z;
         coord = this.increaseCoordinate(
-           coord,
-           current.container.parentContainerId
+          coord,
+          current.container.parentContainerId
         );
         if (coord <= capacity) {
           container.coordinate = parseInt(coord);
@@ -358,30 +344,31 @@ class BiobankIndex extends React.Component {
             cancelButtonText: 'No',
             showCancelButton: true,
           })
-          .then((result) => {
-            if (result.value) {
-              const labelParams = [];
-              Object.values(entities.specimens).forEach((specimen) => {
-                labelParams.push({
-                  barcode: specimen.barcode,
-                  type: options.specimen.types[specimen.typeId].label,
-                  pscid: specimen.candidatePSCID,
-                  sampleNumber: specimen.sampleNumber,
+            .then((result) => {
+              if (result.value) {
+                const labelParams = [];
+                Object.values(entities.specimens).forEach((specimen) => {
+                  labelParams.push({
+                    barcode: specimen.barcode,
+                    type: options.specimen.types[specimen.typeId].label,
+                    pscid: specimen.candidatePSCID,
+                    sampleNumber: specimen.sampleNumber,
+                  });
                 });
-              });
-              return this.printLabel(labelParams);
-            }
-          })
-          .then(() => resolve())
-          .catch((error) => {
-            console.error('Printing error:', error);
-            resolve();
-          });
+                return this.printLabel(labelParams);
+              }
+            })
+            .then(() => resolve())
+            .catch((error) => {
+              console.error('Printing error:', error);
+              resolve();
+            });
         } else {
           resolve();
         }
       });
     };
+
 
     return post(list, this.props.specimenAPI, 'POST')
       .then((entities) => {
@@ -397,16 +384,15 @@ class BiobankIndex extends React.Component {
   /**
    * Create containers
    *
-   * @param {object} list - ?
-   * @param {object} current - ?
-   * @param {object} errors - ?
-   *
+   * @param {object} list - list of containers
+   * @param {object} current - values held in current state
+   * @param {object} errors - list of errors
    * @return {Promise}
    */
   createContainers(list, current, errors) {
     const stati = this.state.options.container.stati;
     const availableId = Object.keys(stati)
-    .find((key) => stati[key].label === 'Available');
+      .find((key) => stati[key].label === 'Available');
 
     let isError = false;
     Object.entries(list).forEach(([key, container]) => {
@@ -427,8 +413,8 @@ class BiobankIndex extends React.Component {
     }
 
     return post(list, this.props.containerAPI, 'POST')
-    .then((containers) => this.setData('containers', containers))
-    .then(() => Promise.resolve());
+      .then((containers) => this.setData('containers', containers))
+      .then(() => Promise.resolve());
   }
 
   /**
@@ -436,27 +422,27 @@ class BiobankIndex extends React.Component {
    *
    * @param {object} pool - the pool to create
    * @param {object} list - the specimens to add to the pool
-   *
    * @return {Promise}
    */
   createPool(pool, list) {
     const stati = this.state.options.container.stati;
     const dispensedId = Object.keys(stati)
-    .find(
-       (key) => stati[key].label === 'Dispensed'
-       );
+      .find(
+        (key) => stati[key].label === 'Dispensed'
+      );
     const update = Object.values(list)
-    .reduce((result, item) => {
-      item.container.statusId = dispensedId;
-      item.specimen.quantity = '0';
-      // XXX: By updating the container and specimen after, it's causing issues
-      // if they don't meet validation. The error is being thrown only after the
-      // pool has already been saved to the database! Not sure how to resolve this.
-      return [...result,
-              () => this.updateContainer(item.container, false),
-              () => this.updateSpecimen(item.specimen, false),
-            ];
-    }, []);
+      .reduce((result, item) => {
+        item.container.statusId = dispensedId;
+        item.specimen.quantity = '0';
+
+        // XXX: By updating the container and specimen after, it's causing issues
+        // if they don't meet validation. The error is being thrown only after the
+        // pool has already been saved to the database! Not sure how to resolve this.
+        return [...result,
+          () => this.updateContainer(item.container, false),
+          () => this.updateSpecimen(item.specimen, false),
+        ];
+      }, []);
 
     const errors = this.validatePool(pool);
     if (!isEmpty(errors)) {
@@ -464,20 +450,19 @@ class BiobankIndex extends React.Component {
     }
 
     return post(pool, this.props.poolAPI, 'POST')
-    .then((pools) => this.setData('pools', pools))
-    .then(() => Promise.all(update.map((update) => update())));
+      .then((pools) => this.setData('pools', pools))
+      .then(() => Promise.all(update.map((update) => update())));
   }
 
   /**
    * Save a batch of edits
    *
    * @param {object} list - a list of edits
-   *
    * @return {Promise}
    */
   saveBatchEdit(list) {
     const saveList = list
-    .map((specimen) => () => post(specimen, this.props.specimenAPI, 'PUT'));
+      .map((specimen) => () => post(specimen, this.props.specimenAPI, 'PUT'));
 
     const errors = this.validateSpecimen(list[0]);
     if (!isEmpty(errors)) {
@@ -485,22 +470,20 @@ class BiobankIndex extends React.Component {
     }
 
     return Promise.all(saveList.map((item) => item()))
-    .then(
-       (data) => Promise.all(
+      .then(
+        (data) => Promise.all(
           data.map((item) => this.setData('specimens', item))
-       )
-    ).then(() => Swal.fire('Batch Preparation Successful!', '', 'success'));
+        )
+      ).then(() => Swal.fire('Batch Preparation Successful!', '', 'success'));
   }
 
   /**
    * Validate a specimen
    *
    * @param {object} specimen - the specimen to validate
-   * @param {string} key - unused?
-   *
    * @return {object} an object of errors
    */
-  validateSpecimen(specimen, key) {
+  validateSpecimen(specimen) {
     const errors = {};
 
     const required = [
@@ -601,7 +584,6 @@ class BiobankIndex extends React.Component {
    * @param {object} attributes - the attributes of the process
    * @param {array} required - the required fields
    * @param {array} number - an array of fields that must be numbers
-   *
    * @return {object} errors
    */
   validateProcess(process, attributes, required, number) {
@@ -644,44 +626,44 @@ class BiobankIndex extends React.Component {
       const protocolAttributes = specimenopts.protocolAttributes[protocolId];
       // FIXME: This if statement was introduced because certain processes have
       // a data object even though their protocol isn't associated with attributes.
-      // This is a sign of bad importing/configuration and should be fixed in configuration
-      // rather than here.
+      // This is a sign of bad importing/configuration and should be fixed in
+      // configuration rather than here.
       if (protocolAttributes) {
         Object.keys(protocolAttributes)
           .forEach((attributeId) => {
           // validate required
-          if (protocolAttributes[attributeId].required == 1
+            if (protocolAttributes[attributeId].required == 1
               && !process.data[attributeId]) {
-            errors.data[attributeId] = 'This field is required!';
-          }
+              errors.data[attributeId] = 'This field is required!';
+            }
 
-          const dataTypeId= attributes[attributeId].datatypeId;
-          // validate number
-          if (datatypes[dataTypeId].datatype === 'number') {
-            if (isNaN(parseInt(process.data[attributeId])) ||
+            const dataTypeId= attributes[attributeId].datatypeId;
+            // validate number
+            if (datatypes[dataTypeId].datatype === 'number') {
+              if (isNaN(parseInt(process.data[attributeId])) ||
                 !isFinite(process.data[attributeId])) {
-              errors.data[attributeId] = 'This field must be a number!';
+                errors.data[attributeId] = 'This field must be a number!';
+              }
             }
-          }
 
-          // validate date
-          if (datatypes[dataTypeId].datatype === 'date') {
-            regex = /^[12]\d{3}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/;
-            if (regex.test(process.data[attributeId]) === false ) {
-              errors.data[attributeId] = 'This field must be a valid date! ';
+            // validate date
+            if (datatypes[dataTypeId].datatype === 'date') {
+              regex = /^[12]\d{3}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/;
+              if (regex.test(process.data[attributeId]) === false ) {
+                errors.data[attributeId] = 'This field must be a valid date! ';
+              }
             }
-          }
 
-          // validate time
-          if (datatypes[dataTypeId].datatype === 'time') {
-            regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-            if (regex.test(process.data[attributeId]) === false) {
-              errors.data[attributeId] = 'This field must be a valid time! ';
+            // validate time
+            if (datatypes[dataTypeId].datatype === 'time') {
+              regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+              if (regex.test(process.data[attributeId]) === false) {
+                errors.data[attributeId] = 'This field must be a valid time! ';
+              }
             }
-          }
 
           // TODO: Eventually introduce file validation.
-        });
+          });
       }
 
       if (isEmpty(errors.data)) {
@@ -689,7 +671,6 @@ class BiobankIndex extends React.Component {
       }
     }
 
-    // Return Errors
     return errors;
   }
 
@@ -697,11 +678,9 @@ class BiobankIndex extends React.Component {
    * Validate a container object
    *
    * @param {object} container - the container to validate
-   * @param {string} key - unused?
-   *
    * @return {object} - an object full of errors
    */
-  validateContainer(container, key) {
+  validateContainer(container) {
     const errors = {};
 
     const required = [
@@ -745,7 +724,6 @@ class BiobankIndex extends React.Component {
    * Validate a pool of speciments
    *
    * @param {object} pool - The pool to validate
-   *
    * @return {object} an object of any errors
    */
   validatePool(pool) {
@@ -778,7 +756,7 @@ class BiobankIndex extends React.Component {
 
     if (pool.specimenIds == null || pool.specimenIds.length < 2) {
       errors.total = 'Pooling requires at least 2 specimens';
-    };
+    }
 
     return errors;
   }
@@ -839,6 +817,15 @@ class BiobankIndex extends React.Component {
     );
   }
 }
+
+// biobankIndex.propTypes
+BiobankIndex.propTypes = {
+  specimenAPI: PropTypes.object.isRequired,
+  containerAPI: PropTypes.object.isRequired,
+  poolAPI: PropTypes.object.isRequired,
+  optionsAPI: PropTypes.object.isRequired,
+  labelAPI: PropTypes.object.isRequired,
+};
 
 window.addEventListener('load', () => {
   const biobank = `${loris.BaseURL}/biobank/`;

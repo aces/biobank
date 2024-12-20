@@ -1,21 +1,17 @@
 import {PureComponent} from 'react';
+import PropTypes from 'prop-types';
 import SpecimenProcessForm from './processForm';
 import {VerticalTabs, TabPane} from 'Tabs';
-import Modal from 'Modal';
-import Loader from 'Loader';
+import Modal from './Modal'; // Temporary CBIGR Override for 26.0
+import Loader from './Loader'; // Temporary CBIGR Override for 26.0
 import {mapFormOptions, clone, isEmpty} from './helpers.js';
+import {
+  StaticElement,
+  SearchableDropdown,
+} from './Form'; // Temporary CBIGR Override for 26.0
 
 import Swal from 'sweetalert2';
 
-/**
- * Biobank Bath Process Specimen Form
- *
- * TODO: DESCRIPTION
- *
- * @author Henri Rabalais
- * @version 1.0.0
- *
- **/
 const initialState = {
   preparation: {},
   list: {},
@@ -27,7 +23,7 @@ const initialState = {
 };
 
 /**
- * A batch process form for specimens
+ * Biobank Bath Process Specimen Form
  */
 class BatchProcessForm extends React.PureComponent {
   /**
@@ -42,14 +38,13 @@ class BatchProcessForm extends React.PureComponent {
     this.validateListItem = this.validateListItem.bind(this);
     this.addListItem = this.addListItem.bind(this);
     this.setPool = this.setPool.bind(this);
-  };
+  }
 
   /**
-   * Sets a process?
+   * Sets a process
    *
    * @param {string} name - a name
-   * @param {?} value - the value
-   *
+   * @param {any} value - the value
    * @return {Promise}
    */
   setProcess(name, value) {
@@ -59,8 +54,7 @@ class BatchProcessForm extends React.PureComponent {
   /**
    * Add a list item to a container.
    *
-   * @param {int} containerId - the container to add an item to
-   *
+   * @param {number} containerId - the container to add an item to
    */
   addListItem(containerId) {
     let {list, current, count} = clone(this.state);
@@ -85,23 +79,23 @@ class BatchProcessForm extends React.PureComponent {
   }
 
   /**
-   * Set the current pool to display(?)
+   * Set the current pool to display
    *
    * @param {string} name - the name to display
-   * @param {int} poolId - the pool to display
+   * @param {number} poolId - the pool to display
    */
   setPool(name, poolId) {
     const pool = clone(this.props.data.pools[poolId]);
 
     this.setState({loading: true});
     this.setCurrent('poolId', poolId)
-    .then(() => Promise.all(pool.specimenIds
-      .map((specimenId) => Object.values(this.state.list)
-        .find((item) => item.specimen.id === specimenId)
+      .then(() => Promise.all(pool.specimenIds
+        .map((specimenId) => Object.values(this.state.list)
+          .find((item) => item.specimen.id === specimenId)
         || this.addListItem(this.props.data.specimens[specimenId].containerId))
-      .map((p) => p instanceof Promise ? p : Promise.resolve(p))))
-    .then(() => this.setCurrent('poolId', null))
-    .then(() => this.setState({loading: false}));
+        .map((p) => p instanceof Promise ? p : Promise.resolve(p))))
+      .then(() => this.setCurrent('poolId', null))
+      .then(() => this.setState({loading: false}));
   }
 
   /**
@@ -120,8 +114,7 @@ class BatchProcessForm extends React.PureComponent {
   /**
    * Validate a container in a list
    *
-   * @param {int} containerId - the container to validate
-   *
+   * @param {number} containerId - the container to validate
    * @return {Promise}
    */
   validateListItem(containerId) {
@@ -142,7 +135,6 @@ class BatchProcessForm extends React.PureComponent {
    * Validate a list of specimens
    *
    * @param {array} list - the list of specimens to validate
-   *
    * @return {Promise}
    */
   validateList(list) {
@@ -160,7 +152,7 @@ class BatchProcessForm extends React.PureComponent {
           type: 'warning',
           showCancelButton: true,
           confirmButtonText: 'Proceed'})
-        .then((result) => result.value ? resolve(list) : reject());
+          .then((result) => result.value ? resolve(list) : reject());
       } else {
         return resolve(list);
       }
@@ -168,11 +160,11 @@ class BatchProcessForm extends React.PureComponent {
   }
 
   /**
-   * Set the current specimen(?) being processed
+   * Update the current state object, which acts as a generic state holder for this
+   * component.
    *
    * @param {string} name - the name
    * @param {string} value - the value
-   *
    * @return {Promise}
    */
   setCurrent(name, value) {
@@ -252,52 +244,50 @@ class BatchProcessForm extends React.PureComponent {
 
     const handlePoolInput = (name, value) => value && this.setPool(name, value);
     const form = (
-      <FormElement>
-        <div className='row'>
-          <div className='col-sm-10 col-sm-offset-1'>
-            <StaticElement
-              label='Processing Note'
-              text="Select or Scan the specimens to be prepared. Specimens must
-                    have a Status of 'Available', and share the same Type.
-                    Any previous value associated with a Specimen will be
-                    overwritten if one is added on this form."
-            />
-            <StaticElement
-              label='Specimen Type'
-              text={(options.specimen.types[current.typeId]||{}).label || '—'}
-            />
-            <div className='row'>
-              <div className='col-xs-6'>
-                <h4>Barcode Input</h4>
-                <div className='form-top'/>
-                <BarcodeInput
-                  data={data}
-                  options={options}
-                  list={list}
-                  containerId={containerId}
-                  validateListItem={this.validateListItem}
-                  addListItem={this.addListItem}
-                />
-                <SearchableDropdown
-                  name={'poolId'}
-                  label={'Pool'}
-                  onUserInput={handlePoolInput}
-                  options={pools}
-                  value={poolId}
-                />
-              </div>
-              <div className='col-xs-6'>
-                <h4>Barcode List</h4>
-                <div className='form-top'/>
-                <div className='preparation-list'>
-                  {barcodeList}
-                </div>
+      <div className='row'>
+        <div className='col-sm-10 col-sm-offset-1'>
+          <StaticElement
+            label='Processing Note'
+            text="Select or Scan the specimens to be prepared. Specimens must
+                  have a Status of 'Available', and share the same Type.
+                  Any previous value associated with a Specimen will be
+                  overwritten if one is added on this form."
+          />
+          <StaticElement
+            label='Specimen Type'
+            text={(options.specimen.types[current.typeId]||{}).label || '—'}
+          />
+          <div className='row'>
+            <div className='col-xs-6'>
+              <h4>Barcode Input</h4>
+              <div className='form-top'/>
+              <BarcodeInput
+                data={data}
+                options={options}
+                list={list}
+                containerId={containerId}
+                validateListItem={this.validateListItem}
+                addListItem={this.addListItem}
+              />
+              <SearchableDropdown
+                name={'poolId'}
+                label={'Pool'}
+                onUserInput={handlePoolInput}
+                options={pools}
+                value={poolId}
+              />
+            </div>
+            <div className='col-xs-6'>
+              <h4>Barcode List</h4>
+              <div className='form-top'/>
+              <div className='preparation-list'>
+                {barcodeList}
               </div>
             </div>
-            {editForms}
           </div>
+          {editForms}
         </div>
-      </FormElement>
+      </div>
     );
 
     const handleClose = () => this.setState(initialState, this.props.onClose);
@@ -308,12 +298,11 @@ class BatchProcessForm extends React.PureComponent {
         specimen.preparation.centerId = item.container.centerId;
         return specimen;
       });
-      console.log(prepList);
 
       return new Promise((resolve, reject) => {
         this.validateList(list)
-        .then(() => this.props.onSubmit(prepList), () => reject())
-        .then(() => resolve(), (errors) => this.setState({errors}, reject()));
+          .then(() => this.props.onSubmit(prepList), () => reject())
+          .then(() => resolve(), (errors) => this.setState({errors}, reject()));
       });
     };
     return (
@@ -330,7 +319,34 @@ class BatchProcessForm extends React.PureComponent {
   }
 }
 
+// BatchProcessForm.propTypes
 BatchProcessForm.propTypes = {
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        containerId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    pools: PropTypes.array.isRequired,
+  }).isRequired,
+  options: PropTypes.shape({
+    specimen: PropTypes.shape({
+      typeUnits: PropTypes.string,
+      types: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+    container: PropTypes.shape({
+      stati: PropTypes.object,
+      types: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  show: PropTypes.bool.isRequired,
 };
 
 /**
@@ -346,35 +362,35 @@ class BarcodeInput extends PureComponent {
     const {data, options, list, containerId, addListItem} = this.props;
     // Create options for barcodes based on match typeId
     const barcodesPrimary = Object.values(data.containers)
-    .reduce((result, container) => {
-
+      .reduce((result, container) => {
       // Check if container is of type primary
-      if (options.container.types[container.typeId].primary == 1) {
-        const specimen = data.specimens[container.specimenId];
+        if (options.container.types[container.typeId].primary == 1) {
+          const specimen = data.specimens[container.specimenId];
 
-        // Check if specimen is accessible before proceeding
-        if (specimen) {
-          const availableId = Object.keys(options.container.stati).find(
-            (key) => options.container.stati[key].label == 'Available'
-          );
-          const protocolExists = Object.values(options.specimen.protocols).find(
-            (protocol) => protocol.typeId == specimen.typeId
-          );
-          const inList = Object.values(list)
-          .find((i) => i.container.id == container.id);
+          // Check if specimen is accessible before proceeding
+          if (specimen) {
+            const availableId = Object.keys(options.container.stati).find(
+              (key) => options.container.stati[key].label == 'Available'
+            );
+            const protocolExists = Object.values(options.specimen.protocols)
+              .find((protocol) => protocol.typeId == specimen.typeId);
+            const inList = Object.values(list)
+              .find((i) => i.container.id == container.id);
 
-          if (container.statusId == availableId && protocolExists && !inList) {
-            result[container.id] = container.barcode;
+            if (
+              container.statusId == availableId && protocolExists && !inList
+            ) {
+              result[container.id] = container.barcode;
+            }
           }
         }
-      }
 
-      return result;
-    }, {});
+        return result;
+      }, {});
 
     const handleInput = (name, containerId) => {
       containerId && this.props.validateListItem(containerId)
-      .then(() => addListItem(containerId));
+        .then(() => addListItem(containerId));
     };
     return (
       <SearchableDropdown
@@ -387,5 +403,40 @@ class BarcodeInput extends PureComponent {
     );
   }
 }
+
+// BarcodeInput.propTypes
+BarcodeInput.propTypes = {
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        containerId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    pools: PropTypes.array.isRequired,
+  }).isRequired,
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      types: PropTypes.arrayOf(PropTypes.string).isRequired,
+      stati: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+    }).isRequired,
+    specimen: PropTypes.shape({
+      types: PropTypes.arrayOf(PropTypes.string),
+      protocols: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+  }).isRequired,
+  list: PropTypes.array.isRequired,
+  containerId: PropTypes.number.isRequired,
+  addListItem: PropTypes.func.isRequired,
+  validateListItem: PropTypes.func.isRequired,
+};
 
 export default BatchProcessForm;

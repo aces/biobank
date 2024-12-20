@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * Specimen Object Class
  * This class contains an instance of a database handling that is needed to
@@ -74,7 +75,7 @@ class Specimen implements
     private $parentSpecimenIds;
     private $parentSpecimenBarcodes;
     private $candidateId;
-    private $candidatePCSID;
+    private $candidatePSCID;
     private $candidateAge;
     private $sessionId;
     private $sessionCenterId;
@@ -134,7 +135,7 @@ class Specimen implements
     /**
      * Sets the specimen's barcode
      *
-     * @param string $barcode
+     * @param string $barcode the Specimen barcorcode.
      *
      * @return void
      */
@@ -156,7 +157,7 @@ class Specimen implements
     /**
      * Sets the specimen's sample number
      *
-     * @param string $sampleNumber
+     * @param string $sampleNumber The specimen's sample number.
      *
      * @return void
      */
@@ -294,7 +295,7 @@ class Specimen implements
     /**
      * Sets the parent specimen's barcodes.
      *
-     * @param array $parentSpecimenBarocdes the parent specimen's Barcodes
+     * @param array $parentSpecimenBarcodes the parent specimen's Barcodes
      *
      * @return void
      */
@@ -340,7 +341,7 @@ class Specimen implements
     /**
      * Sets the PSCID of the candidate to which the specimen belongs
      *
-     * @param string $pscid of the specimen's donor
+     * @param string $candidatePSCID of the specimen's donor
      *
      * @return void
      */
@@ -413,7 +414,8 @@ class Specimen implements
      * Sets the Centeer of the candidate's session/timepoint in which the specimen
      * was collected.
      *
-     * @param \CenterID $sessionsCenterId the Center of the specimen's session of collection
+     * @param \CenterID $sessionCenterId the Center of the specimen's session of
+     *                                   collection
      *
      * @return void
      */
@@ -524,6 +526,13 @@ class Specimen implements
         return $this->analysis;
     }
 
+    /**
+     * Sets a Center ID for the Specimen.
+     *
+     * @param \CenterID $centerId The Specimen's Center
+     *
+     * @return void
+     */
     public function setCenterId(\CenterID $centerId)
     {
         $this->centerId = $centerId;
@@ -539,6 +548,13 @@ class Specimen implements
         return $this->centerId;
     }
 
+    /**
+     * Sets ProjectIDs for the Specimen.
+     *
+     * @param \ProjectID[] $projectIds The Specimen's Projects
+     *
+     * @return void
+     */
     public function setProjectIds(array $projectIds)
     {
         $this->projectIds = $projectIds;
@@ -551,7 +567,7 @@ class Specimen implements
      */
     public function getProjectIds() : array
     {
-        return $this->projectIds;
+        return $this->projectIds ?? [];
     }
 
     /**
@@ -612,7 +628,9 @@ class Specimen implements
             $this->setSessionId((int) $data['sessionId']);
         }
         if (isset($data['sessionCenterId'])) {
-            $this->setSessionCenterId(new \CenterId(strval($data['sessionCenterId'])));
+            $this->setSessionCenterId(
+                new \CenterId(strval($data['sessionCenterId']))
+            );
         }
         if (isset($data['poolId'])) {
             $this->setPoolId((int) $data['poolId']);

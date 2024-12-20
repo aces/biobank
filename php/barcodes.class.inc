@@ -1,121 +1,94 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace LORIS\biobank;
 
-use \LORIS\Http\Endpoint;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\ResponseInterface;
+define('MAX_BARCODES_PER_REQUEST', 1000); // Adjust this value as needed
 
+/**
+ * {@inheritDoc}
+ *
+ * @license https://www.gnu.org/licenses/gpl-3.0.html GNU General Public License
+ */
 class Barcodes extends Endpoint
 {
-    protected $db;
-    protected $user;
-
-    /**                                                                         
-     * Returns true if user has access to this Endpoint.                        
-     *                                                                          
-     * @param \User $user The user whose access is being checked                
-     *                                                                          
-     * @return bool                                                             
-     */                                                                         
-    function _hasAccess(\User $user) : bool                                     
-    {                                                                           
-        return true;                                                            
-    } 
-
-    /**                                                                         
-     * Return which methods are supported by this endpoint.                     
-     *                                                                          
-     * @return array supported HTTP methods                                     
-     */                                                                         
-    protected function allowedMethods() : array                                 
-    {                                                                           
-        return ['GET', 'OPTIONS'];                                          
+    /**
+     * Returns true if user has access to this endpoint.
+     *
+     * @param \User $user The user whose access is being checked
+     *
+     * @return bool
+     */
+    function _hasAccess(\User $user) : bool
+    {
+        return true;
     }
 
-    /**                                                                         
-     * This function can be overridden in a module's page to load the necessary 
-     * resources to check the permissions of a user.                            
-     *                                                                          
-     * @param User                   $user    The user to load the resources for
-     * @param ServerRequestInterface $request The PSR15 Request being handled   
-     *                                                                          
-     * @return void                                                             
-     */                                                                         
-    public function loadResources(                                              
-        \User $user, ServerRequestInterface $request                            
-    ) : void {                                                                  
-    }   
+    /**
+     * {@inheritDoc}
+     *
+     * @return array
+     */
+    protected function allowedMethods(): array
+    {
+        return ['GET', 'OPTIONS'];
+    }
 
-    /**                                                                         
-     * Handles Endpoint requests                                                
-     *                                                                          
-     * @param ServerRequestInterface $request The incoming PSR7 request         
-     *                                                                          
-     * @return ResponseInterface The outgoing PSR7 response                     
-     */                                                                         
-    public function handle(
-        ServerRequestInterface $request
-    ) : ResponseInterface {
-        $this->db = \NDB_Factory::singleton()->database();
-        $this->user = $request->getAttribute('user');
+    /**
+     * {@inheritDoc}
+     *
+     * @param Permission $permission The permission object.
+     *
+     * @return string
+     */
+    protected static function getPermission(Permission $permission) : string
+    {
+        return match ($permission) {
+            Permission::GET => 'biobank_specimen_create',
+        };
+    }
 
-        try {
-            switch ($request->getMethod()) {
-                case 'GET':
-                    return $this->_handleGET($request);
-                case 'OPTIONS':
-                    return (new \LORIS\Http\Response())
-                        ->withHeader('Allow', $this->allowedMethods());
-            }
-        } catch (\Exception $e) {
-            $this->db->rollBack();
-            return new \LORIS\Http\Response\JSON\InternalServerError(
-                $e->getMessage()
+    /**
+     * Handles getting multiple resources
+     *
+     * @param QueryParams $params The number of requested barcodes
+     *
+     * @return array The data to be returned as JSON
+     */
+    protected function get(QueryParams $params): array
+    {
+        if ($params->limit > MAX_BARCODES_PER_REQUEST) {
+            throw new \InvalidArgumentException(
+                "The 'limit' parameter cannot exceed " . MAX_BARCODES_PER_REQUEST .
+                "."
             );
         }
-    }
 
-    // NOTE: the algorithm can stay here but should 
-    /**                                                                         
-     * Handle the logic of an incoming HTTP GET request                         
-     *                                                                          
-     * @param ServerRequestInterface $request The incoming PSR7 request
-     * @return ResponseInterface                                                 
-     */                                                                         
-    private function _handleGET(
-        ServerRequestInterface $request
-    ) : ResponseInterface {
         $currentYear = date('y');
 
-        $queryParams = $request->getQueryParams();
-        $count = isset($queryParams['count'])
-            ? intval($queryParams['count'])
-            : 1;
-
         // Query to get the largest barcode for the current year
-        $query = "SELECT MAX(CAST(SUBSTRING(Barcode, 3, 6) AS UNSIGNED)) AS max_number
+        $query           = "SELECT
+                    MAX(CAST(SUBSTRING(Barcode, 3, 6) AS UNSIGNED)) AS max_number
                   FROM biobank_container
-                  WHERE SUBSTRING(Barcode, 1, 2) = :year";
-        $params = [':year' => $currentYear];
-        $maxNumber = $this->db->pselectOne($query, $params);
+                    WHERE SUBSTRING(Barcode, 1, 2) = :year";
+        $qparams         = [':year' => $currentYear];
+        $maxNumberResult = (array) $this->loris->getDatabaseConnection()
+            ->pselectOne($query, $qparams);
 
-        $newNumber = $maxNumber
-            ? $maxNumber + 1
-            : 1;
+        $maxNumber = $maxNumberResult['max_number'] ?? 0;
+        $newNumber = $maxNumber + 1;
 
         $barcodes = [];
-        for ($i = 0; $i < $count; $i++) {
+        for ($i = 0; $i < $params->limit; $i++) {
             $newNumberFormatted = str_pad(
-                $newNumber + $i,
+                (string) ($newNumber + $i),
                 6,
                 '0',
                 STR_PAD_LEFT
             );
-            $newBarcode = $currentYear . $newNumberFormatted;
-            $barcodes[] = $newBarcode;
+            $newBarcode         = $currentYear . $newNumberFormatted;
+            $barcodes[]         = $newBarcode;
         }
 
-        return new \LORIS\Http\Response\JSON\OK(['barcodes' => $barcodes]);
+        return ['barcodes' => $barcodes];
     }
 }

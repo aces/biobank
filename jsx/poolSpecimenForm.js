@@ -1,16 +1,18 @@
 import Modal from 'Modal';
 import React, {PureComponent} from 'react';
+import PropTypes from 'prop-types';
 import {mapFormOptions, clone, isEmpty} from './helpers.js';
+import {
+  SelectElement,
+  StaticElement,
+  TextboxElement,
+  DateElement,
+  TimeElement,
+  SearchableDropdown,
+} from './Form'; // Temporary CBIGR Override for 26.0
 
 import Swal from 'sweetalert2';
 
-/**
- * Biobank Pool Specimen Form
- *
- * @author Henri Rabalais
- * @version 1.0.0
- *
- **/
 const initialState = {
   pool: {},
   list: {},
@@ -18,7 +20,7 @@ const initialState = {
     candidateId: null,
     sessionid: null,
     typeId: null,
-    centerId: null
+    centerId: null,
   },
   poolId: null,
   count: 0,
@@ -54,8 +56,13 @@ class PoolSpecimenForm extends React.Component {
     this.setState({pool});
   }
 
+  /**
+   * Set the current filter on specimens to be selected.
+   *
+   * @param {string} name  - the filter name
+   * @param {string} value - the filter values
+   */
   setFilter(name, value) {
-    console.log(name+': '+value);
     const {filter} = clone(this.state);
 
     if (name == 'candidateId') {
@@ -67,12 +74,12 @@ class PoolSpecimenForm extends React.Component {
   }
 
   /**
-   * Sets the current pool list being displayed?
+   * Sets the current pool list
    *
-   * @param {int} containerId - container with pool?
+   * @param {number} containerId - specimen to be added to pool via containerId
    */
   setPoolList(containerId) {
-    let {centerId, list, pool, filter, count} = clone(this.state);
+    let {filter, list, pool, count} = clone(this.state);
 
     // Increase count
     count++;
@@ -112,12 +119,12 @@ class PoolSpecimenForm extends React.Component {
     let {pool, list, filter} = clone(this.state);
     // remove specimenId from pool.
     pool.specimenIds = pool.specimenIds
-    .filter((id) => id != this.state.list[key].specimen.id);
+      .filter((id) => id != this.state.list[key].specimen.id);
 
     // delete list at key.
     delete list[key];
 
-    // remove center if list is empty
+    // remove center if list is empty.
     filter = isEmpty(list) ? {} : filter;
 
     // empty barcode input.
@@ -129,28 +136,29 @@ class PoolSpecimenForm extends React.Component {
   /**
    * Validate a list item for a container
    *
-   * @param {int} containerId - the container being validated
-   *
+   * @param {number} containerId - the container being validated
    * @return {Promise} - a resolved or rejected promise
    */
   validateListItem(containerId) {
-    const {list, filter } = clone(this.state);
+    const {list, filter} = clone(this.state);
     const container = this.props.data.containers[containerId];
     const specimen = this.props.data.specimens[container.specimenId];
 
     // Throw error if new list item does not meet requirements.
-    if (!isEmpty(list) &&
-      (specimen.candidateId != filter.candidateId || // loose check b/c candidateId is string
-      specimen.sessionId != filter.sessionId ||
-      specimen.typeId != filter.typeId ||
-      container.centerId !== filter.centerId)
+    if (!isEmpty(list)
+      && (specimen.candidateId != filter.candidateId
+      || specimen.sessionId != filter.sessionId
+      || specimen.typeId != filter.typeId
+      || container.centerId !== filter.centerId)
     ) {
-      Swal.fire({
-        title: 'Oops!',
-        text: 'Specimens must be of the same PSCID, ' +
-              'Visit Label, Type and Center',
-        type: 'warning',
-      });
+      Swal.fire(
+        {
+          title: 'Oops!',
+          text: 'Specimens must be of the same PSCID, ' +
+                    'Visit Label, Type and Center',
+          type: 'warning',
+        }
+      );
       return Promise.reject();
     }
     return Promise.resolve();
@@ -159,149 +167,156 @@ class PoolSpecimenForm extends React.Component {
   /**
    * {@inheritDoc}
    *
-   * @return {DOMObject}
+   * @return {JSX}
    */
   render() {
     const {data, options} = this.props;
-    const { pool, list, filter, containerId, errors} = this.state;
+    const {pool, list, filter, containerId, errors} = this.state;
 
     // generate barcode list from list object.
     const barcodeList = Object.entries(list)
-    .map(([key, item]) => {
-      const removeItem = () => this.removeListItem(key);
-      // I cannot get this to work in the css file.
-      const style = {
-        color: '#DDDDDD',
-        marginLeft: 10,
-        cursor: 'pointer',
-      };
-      return (
-        <div key={key} className='preparation-item'>
-          <div>{item.container.barcode}</div>
-          <div
-            className='glyphicon glyphicon-remove'
-            onClick={removeItem}
-            style={style}
-          />
-        </div>
+      .map(
+        ([key, item]) => {
+          const removeItem = () => this.removeListItem(key);
+          // I cannot get this to work in the css file.
+          const style = {
+            color: '#DDDDDD',
+            marginLeft: 10,
+            cursor: 'pointer',
+          };
+          return (
+            <div key={key} className='preparation-item'>
+              <div>{item.container.barcode}</div>
+              <div
+                className='glyphicon glyphicon-remove'
+                onClick={removeItem}
+                style={style}
+              />
+            </div>
+          );
+        }
       );
-    });
 
     // Generate Pool form.
     const specimenUnits = mapFormOptions(options.specimen.units, 'label');
     const form = (
-      <FormElement name="poolSpecimenForm">
-        <div className='row'>
-          <div className='col-sm-10 col-sm-offset-1'>
-            <StaticElement
-              label='Pooling Note'
-              text="Select or Scan the specimens to be pooled. Specimens must
-                    have a Status of 'Available', have a Quantity of greater
-                    than 0, and share the same Type, PSCID, Visit Label
-                    and Current Site. Pooled specimens cannot already belong to
-                    a pool. Once pooled, the Status of specimen will be changed
-                    to 'Dispensed' and there Quantity set to '0'"
-            />
-            <SearchableDropdown
-              name='typeId'
-              label='Specimen Type'
-              onUserInput={this.setFilter}
-              disabled={!isEmpty(list)}
-              value={filter.typeId}
-              options={mapFormOptions(options.specimen.types, 'label')}
-            />
-            <SearchableDropdown
-              name='candidateId'
-              label='PSCID'
-              onUserInput={this.setFilter}
-              disabled={!isEmpty(list)}
-              value={filter.candidateId}
-              options={mapFormOptions(options.candidates, 'pscid')}
-            />
-            <SearchableDropdown
-              name='sessionId'
-              label='Visit Label'
-              onUserInput={this.setFilter}
-              disabled={!isEmpty(list) || !filter.candidateId}
-              value={filter.sessionId}
-              options={mapFormOptions((options?.candidateSessions?.[filter.candidateId] || {}), 'label')}
-            />
-            <div className='row'>
-              <div className='col-xs-6'>
-                <h4>Barcode Input</h4>
-                <div className='form-top'/>
-                <BarcodeInput
-                  list={list}
-                  data={data}
-                  filter={filter}
-                  options={options}
-                  errors={errors}
-                  containerId={containerId}
-                  validateListItem={this.validateListItem}
-                  setPoolList={this.setPoolList}
-                />
-              </div>
-              <div className='col-xs-6'>
-                <h4>Barcode List</h4>
-                <div className='form-top'/>
-                <div className='preparation-list'>
-                  {barcodeList}
-                </div>
+      <div className='row'>
+        <div className='col-sm-10 col-sm-offset-1'>
+          <StaticElement
+            label='Pooling Note'
+            text="Select or Scan the specimens to be pooled. Specimens must
+                  have a Status of 'Available', have a Quantity of greater
+                  than 0, and share the same Type, PSCID, Visit Label
+                  and Current Site. Pooled specimens cannot already belong to
+                  a pool. Once pooled, the Status of specimen will be changed
+                  to 'Dispensed' and there Quantity set to '0'"
+          />
+          <SearchableDropdown
+            name='typeId'
+            label='Specimen Type'
+            onUserInput={this.setFilter}
+            disabled={!isEmpty(list)}
+            value={filter.typeId}
+            options={mapFormOptions(options.specimen.types, 'label')}
+          />
+          <SearchableDropdown
+            name='candidateId'
+            label='PSCID'
+            onUserInput={this.setFilter}
+            disabled={!isEmpty(list)}
+            value={filter.candidateId}
+            options={mapFormOptions(options.candidates, 'pscid')}
+          />
+          <SearchableDropdown
+            name='sessionId'
+            label='Visit Label'
+            onUserInput={this.setFilter}
+            disabled={!isEmpty(list) || !filter.candidateId}
+            value={filter.sessionId}
+            options={mapFormOptions(
+              (options?.candidateSessions?.[filter.candidateId] || {}),
+              'label'
+            )}
+          />
+          <div className='row'>
+            <div className='col-xs-6'>
+              <h4>Barcode Input</h4>
+              <div className='form-top'/>
+              <BarcodeInput
+                list={list}
+                data={data}
+                filter={filter}
+                options={options}
+                errors={errors}
+                containerId={containerId}
+                validateListItem={this.validateListItem}
+                setPoolList={this.setPoolList}
+              />
+            </div>
+            <div className='col-xs-6'>
+              <h4>Barcode List</h4>
+              <div className='form-top'/>
+              <div className='preparation-list'>
+                {barcodeList}
               </div>
             </div>
-            <div className='form-top'/>
-            <TextboxElement
-              name='label'
-              label='Label'
-              onUserInput={this.setPool}
-              required={true}
-              value={pool.label}
-              errorMessage={errors.label}
-            />
-            <TextboxElement
-              name='quantity'
-              label='Quantity'
-              onUserInput={this.setPool}
-              required={true}
-              value={pool.quantity}
-              errorMessage={errors.quantity}
-            />
-            <SelectElement
-              name='unitId'
-              label='Unit'
-              options={specimenUnits}
-              onUserInput={this.setPool}
-              required={true}
-              value={pool.unitId}
-              errorMessage={errors.unitId}
-            />
-            <DateElement
-              name='date'
-              label='Date'
-              onUserInput={this.setPool}
-              required={true}
-              value={pool.date}
-              errorMessage={errors.date}
-            />
-            <TimeElement
-              name='time'
-              label='Time'
-              onUserInput={this.setPool}
-              required={true}
-              value={pool.time}
-              errorMessage={errors.time}
-            />
           </div>
+          <div className='form-top'/>
+          <TextboxElement
+            name='label'
+            label='Label'
+            onUserInput={this.setPool}
+            required={true}
+            value={pool.label}
+            errorMessage={errors.label}
+          />
+          <TextboxElement
+            name='quantity'
+            label='Quantity'
+            onUserInput={this.setPool}
+            required={true}
+            value={pool.quantity}
+            errorMessage={errors.quantity}
+          />
+          <SelectElement
+            name='unitId'
+            label='Unit'
+            options={specimenUnits}
+            onUserInput={this.setPool}
+            required={true}
+            value={pool.unitId}
+            errorMessage={errors.unitId}
+          />
+          <DateElement
+            name='date'
+            label='Date'
+            onUserInput={this.setPool}
+            required={true}
+            value={pool.date}
+            errorMessage={errors.date}
+          />
+          <TimeElement
+            name='time'
+            label='Time'
+            onUserInput={this.setPool}
+            required={true}
+            value={pool.time}
+            errorMessage={errors.time}
+          />
         </div>
-      </FormElement>
+      </div>
     );
 
     const handleClose = () => this.setState(initialState, this.props.onClose);
     const handleSubmit = () => {
-      return new Promise((resolve, reject) => {
-        this.props.onSubmit(pool, list)
-        .then(() => resolve(), (errors) => this.setState({errors}, reject()));
-      });
+      return new Promise(
+        (resolve, reject) => {
+          this.props.onSubmit(pool, list)
+            .then(() => resolve(), (errors) => this.setState(
+              {errors}, reject())
+            );
+        }
+      );
     };
     return (
       <Modal
@@ -317,7 +332,33 @@ class PoolSpecimenForm extends React.Component {
   }
 }
 
+// PoolSpecimenForm.propTypes
 PoolSpecimenForm.propTypes = {
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+        centerId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+  }).isRequired,
+  options: PropTypes.shape({
+    candidateSessions: PropTypes.obj,
+    specimen: PropTypes.shape({
+      units: PropTypes.string,
+      types: PropTypes.arrayOf(PropTypes.string),
+    }).isRequired,
+    candidates: PropTypes.arrayOf(PropTypes.string),
+    sessions: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  show: PropTypes.bool.isRequired,
 };
 
 /**
@@ -334,36 +375,41 @@ class BarcodeInput extends PureComponent {
 
     // Restrict list of barcodes to only those that would be valid.
     const barcodesPrimary = Object.values(data.containers)
-    .reduce((result, container) => {
-      if (options.container.types[container.typeId].primary == 1) {
-        const specimen = data.specimens[container.specimenId] || {};
-        const availableId = Object.keys(options.container.stati).find(
-          (key) => options.container.stati[key].label === 'Available'
-        );
-        const inList = Object.values(list)
-        .find((i) => i.container.id == container.id);
+      .reduce(
+        (result, container) => {
+          if (options.container.types[container.typeId].primary == 1) {
+            const specimen = data.specimens[container.specimenId] || {};
+            const availableId = Object.keys(options.container.stati).find(
+              (key) => options.container.stati[key].label === 'Available'
+            );
+            const inList = Object.values(list)
+              .find((i) => i.container.id == container.id);
 
-        const candidateMatch = !filter.candidateId || specimen.candidateId == filter.candidateId;
-        const sessionMatch = !filter.sessionId || specimen.sessionId == filter.sessionId;
-        const typeMatch = !filter.typeId || specimen.typeId == filter.typeId;
+            const candidateMatch = !filter.candidateId
+              || specimen.candidateId == filter.candidateId;
+            const sessionMatch = !filter.sessionId
+              || specimen.sessionId == filter.sessionId;
+            const typeMatch = !filter.typeId
+              || specimen.typeId == filter.typeId;
 
-        if (specimen.quantity > 0 &&
-            container.statusId == availableId &&
-            specimen.poolId == null &&
-            !inList &&
-            candidateMatch &&
-            sessionMatch &&
-            typeMatch
-        ) {
-          result[container.id] = container.barcode;
-        }
-      }
-      return result;
-    }, {});
+            if (specimen.quantity > 0
+                && container.statusId == availableId
+                && specimen.poolId == null
+                && !inList
+                && candidateMatch
+                && sessionMatch
+                && typeMatch
+            ) {
+              result[container.id] = container.barcode;
+            }
+          }
+          return result;
+        }, {}
+      );
 
     const handleInput = (name, containerId) => {
       containerId && this.props.validateListItem(containerId)
-      .then(() => this.props.setPoolList(containerId));
+        .then(() => this.props.setPoolList(containerId));
     };
     return (
       <SearchableDropdown
@@ -377,5 +423,47 @@ class BarcodeInput extends PureComponent {
     );
   }
 }
+
+// BarcodeInput.propTypes
+BarcodeInput.propTypes = {
+  list: PropTypes.array.isRequired,
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        // Define specimen-specific properties if necessary
+      })
+    ).isRequired,
+  }).isRequired,
+  filter: PropTypes.shape({
+    candidateId: PropTypes.string,
+    sessionId: PropTypes.string,
+    typeId: PropTypes.string,
+  }).isRequired,
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      types: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      stati: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+    }).isRequired,
+  }).isRequired,
+  errors: PropTypes.shape({
+    total: PropTypes.string,
+  }).isRequired,
+  containerId: PropTypes.number.isRequired,
+  validateListItem: PropTypes.func.isRequired,
+  setPoolList: PropTypes.func.isRequired,
+};
 
 export default PoolSpecimenForm;

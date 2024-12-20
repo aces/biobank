@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * This class features the code that enables access to the Shipments of the LORIS
  * Biobank Module.
@@ -76,11 +77,9 @@ class ShipmentHandler
      * instantiates it and then sends it to the DAO to be saved to the
      * database.
      *
-     * @param array $shipmentArray shipment array to be created
-     *
      * @return array a list of shipments objects that were created
      */
-    public function updateInstance(array $shipmentArray) : array
+    public function updateInstance() : array
     {
         $this->_validatePermission('update');
         return $this->dao->saveInstance($this->shipment);

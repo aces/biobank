@@ -1,7 +1,9 @@
 import React, {Component} from 'react';
 import {Link} from 'react-router-dom';
+import PropTypes from 'prop-types';
 
-import FilterableDataTable from 'FilterableDataTable';
+import FilterableDataTable from './FilterableDataTable'; // Temporary CBIGR Override for 26.0 
+import {CTA} from './Form.js'; // Temporary CBIGR Override for 26.0 
 import SpecimenForm from './specimenForm';
 
 import {mapFormOptions, clone} from './helpers.js';
@@ -27,8 +29,7 @@ class PoolTab extends Component {
   /**
    * Make the form editable
    *
-   * @param {string} stateKey - ?
-   *
+   * @param {string} stateKey - name of form that will be editable
    * @return {Promise}
    */
   edit(stateKey) {
@@ -47,7 +48,7 @@ class PoolTab extends Component {
   /**
    * Open the aliquot form for a pool
    *
-   * @param {int} poolId - the pool id
+   * @param {number} poolId - the pool id
    */
   openAliquotForm(poolId) {
     this.setState({poolId}, () => this.edit('aliquotForm'));
@@ -58,18 +59,17 @@ class PoolTab extends Component {
    *
    * @param {string} column - the column name being mapped
    * @param {string} value - the column value being mapped
-   *
    * @return {string}
    */
   mapPoolColumns(column, value) {
-    const {data, options} = this.props;
+    const {options} = this.props;
     switch (column) {
-      case 'Type':
-        return options.specimen.types[value].label;
-      case 'Site':
-        return options.centers[value];
-      default:
-        return value;
+    case 'Type':
+      return options.specimen.types[value].label;
+    case 'Site':
+      return options.centers[value];
+    default:
+      return value;
     }
   }
 
@@ -79,7 +79,6 @@ class PoolTab extends Component {
    * @param {string} column - the column name
    * @param {string} value - the column value
    * @param {object} row - all the values from the row
-   *
    * @return {JSX}
    */
   formatPoolColumns(column, value, row) {
@@ -92,36 +91,36 @@ class PoolTab extends Component {
     // hyperlink can be established.
     const candidatePermission = candId !== undefined;
     switch (column) {
-      case 'Pooled Specimens':
-        const barcodes = value
-          .map((barcode, i) => {
-            return <Link key={i} to={`/barcode=${barcode}`}>{barcode}</Link>;
-          })
-          .reduce((prev, curr) => [prev, ', ', curr]);
-        return <td>{barcodes}</td>;
-      case 'PSCID':
-        if (candidatePermission) {
-          return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+    case 'Pooled Specimens':
+      const barcodes = value
+        .map((barcode, i) => {
+          return <Link key={i} to={`/barcode=${barcode}`}>{barcode}</Link>;
+        })
+        .reduce((prev, curr) => [prev, ', ', curr]);
+      return <td>{barcodes}</td>;
+    case 'PSCID':
+      if (candidatePermission) {
+        return <td><a href={loris.BaseURL + '/' + candId}>{value}</a></td>;
+      }
+      return <td>{value}</td>;
+    case 'Visit Label':
+      if (candidatePermission) {
+        const sessId = Object.values(options.candidateSessions[candId]).find(
+          (sess) => sess.label == value
+        )?.id;
+        const sessionPermission = sessId !== undefined;
+        if (sessionPermission) {
+          const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+
+            candId+'&sessionID='+sessId;
+          return <td><a href={visitLabelURL}>{value}</a></td>;
         }
-        return <td>{value}</td>;
-      case 'Visit Label':
-        if (candidatePermission) {
-          const sessId = Object.values(options.candidateSessions[candId]).find(
-            (sess) => sess.label == value
-          )?.id;
-          const sessionPermission = sessId !== undefined;
-          if (sessionPermission) {
-            const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+candId+
-              '&sessionID='+sessId;
-            return <td><a href={visitLabelURL}>{value}</a></td>;
-          }
-        }
-        return <td>{value}</td>; 
-      case 'Aliquot':
-        const onClick = () => this.openAliquotForm(row['ID']);
-        return <td><CTA label='Aliquot' onUserInput={onClick}/></td>;
-      default:
-        return <td>{value}</td>;
+      }
+      return <td>{value}</td>;
+    case 'Aliquot':
+      const onClick = () => this.openAliquotForm(row['ID']);
+      return <td><CTA label='Aliquot' onUserInput={onClick}/></td>;
+    default:
+      return <td>{value}</td>;
     }
   }
 
@@ -145,11 +144,11 @@ class PoolTab extends Component {
     const parents = specimens
       .map((specimen) => {
         return {
-            specimen: specimen,
-            container: data.containers[specimen.containerId],
-            };
+          specimen: specimen,
+          container: data.containers[specimen.containerId],
+        };
       }
-    );
+      );
 
     return (
       <SpecimenForm
@@ -238,5 +237,39 @@ class PoolTab extends Component {
     );
   }
 }
+
+// PoolTab.propTypes
+PoolTab.propTypes = {
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    pools: PropTypes.array.isRequired,
+  }).isRequired,
+  options: PropTypes.shape({
+    specimen: PropTypes.shape({
+      units: PropTypes.array,
+      types: PropTypes.array,
+    }).isRequired,
+    centers: PropTypes.arrayOf(PropTypes.string).isRequired,
+    candidates: PropTypes.arrayOf(PropTypes.string),
+    candidateSessions: PropTypes.arrayOf(PropTypes.string),
+    projects: PropTypes.arrayOf(PropTypes.string).isRequired,
+    sessions: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  increaseCoordinate: PropTypes.func.isRequired,
+  createSpecimens: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmit: PropTypes.func.isRequired,
+  show: PropTypes.bool.isRequired,
+  loading: PropTypes.bool.isRequired,
+};
 
 export default PoolTab;

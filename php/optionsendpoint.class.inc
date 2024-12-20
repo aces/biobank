@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 /**
  * This implements the Options endpoint class for the Biobank Module.
  *
@@ -59,7 +60,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
      * This function can be overridden in a module's page to load the necessary
      * resources to check the permissions of a user.
      *
-     * @param User                   $user    The user to load the resources for
+     * @param \User                  $user    The user to load the resources for
      * @param ServerRequestInterface $request The PSR15 Request being handled
      *
      * @return void
@@ -112,9 +113,9 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         } catch (Forbidden $e) {
             return new \LORIS\Http\Response\JSON\Forbidden($e->getMessage());
         } catch (\Exception $e) {
-           return new \LORIS\Http\Response\JSON\InternalServerError(
-               $e->getMessage()
-           );
+            return new \LORIS\Http\Response\JSON\InternalServerError(
+                $e->getMessage()
+            );
         }
     }
 
@@ -132,7 +133,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         $specCont = new SpecimenController($this->loris, $user);
         $shipDAO  = new ShipmentDAO($db);
 
-        $userCenters = implode(',',$user->getCenterIDs());
+        $userCenters  = implode(',', $user->getCenterIDs());
         $userProjects = implode(',', $user->getProjectIDs());
         // TODO: This should eventually be replaced by a call directly to a
         // Candidate endpoint or Candidate controller that will be able to
@@ -144,10 +145,11 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                        FROM candidate c
                             LEFT JOIN session s USING (CandID)
                             LEFT JOIN candidate_diagnosis_rel USING (CandID)
-                       WHERE s.CenterID IN ($userCenters) AND s.ProjectID IN ($userProjects)
+                       WHERE s.CenterID IN ($userCenters)
+                            AND s.ProjectID IN ($userProjects)
                        GROUP BY
                           CandID";
-        $candidates = $db->pselectWithIndexKey($query, array(), 'id');
+        $candidates = $db->pselectWithIndexKey($query, [], 'id');
         foreach ($candidates as $id => $candidate) {
             $candidate['diagnosisIds'] = $candidate['diagnosisIds']
                 ? explode(',', $candidate['diagnosisIds'])
@@ -156,8 +158,8 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         }
 
         // XXX: This should eventually be replaced by a call directly to a
-        // Candidate endpoint or Candidate controller that will be able to provide
-        // Diagnosis Options.
+        // Candidate endpoint or Candidate controller that will be able to
+        // provide Diagnosis Options.
         $query     = 'SELECT DiagnosisID as id, Name as label FROM diagnosis';
         $diagnoses = $db->pselectWithIndexKey($query, [], 'id');
 
@@ -205,18 +207,20 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                   WHERE
                       s.CenterID IN ($userCenters)
                       AND s.ProjectID IN ($userProjects)";
-        $result = $db->pselect($query, array());
+        $result = $db->pselect($query, []);
         $candidateSessions = [];
         $sessionCenters    = [];
         foreach ($result as $row) {
-            if (!isset($candidateSessions[$row['candidateId']][$row['sessionId']])) {
-                    $candidateSessions[$row['candidateId']][$row['sessionId']] = [];
+            $candidate = $row['candidateId'];
+            $session   = $row['sessionId'];
+            if (!isset($candidateSessions[$candidate][$session])) {
+                $candidateSessions[$candidate][$session] = [];
             };
-            $ses =& $candidateSessions[$row['candidateId']][$row['sessionId']];
-            $ses['id'] = $row['sessionId'];
+            $ses          =& $candidateSessions[$candidate][$session];
+            $ses['id']    = $session;
             $ses['label'] = $row['label'];
 
-            $sessionCenters[$row['sessionId']]['centerId'] = $row['centerId'];
+            $sessionCenters[$session]['centerId'] = $row['centerId'];
         }
 
         $shipment = [

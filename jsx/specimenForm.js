@@ -1,8 +1,18 @@
+import PropTypes from 'prop-types';
 import SpecimenProcessForm from './processForm';
 import ContainerParentForm from './containerParentForm';
 import {ListForm, ListItem} from './listForm';
-import Modal from 'Modal';
+import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
 import {mapFormOptions, clone, padBarcode} from './helpers.js';
+import {
+  SearchableDropdown,
+  StaticElement,
+  SelectElement,
+  TextboxElement,
+  CheckboxElement,
+  DateElement,
+  ButtonElement,
+} from './Form'; // Temporary CBIGR Override for 26.0 
 
 const initialState = {
   list: {},
@@ -16,11 +26,7 @@ const initialState = {
  *
  * Fetches data from Loris backend and displays a form allowing
  * to specimen a biobank file attached to a specific instrument
- *
- * @author Henri Rabalais
- * @version 1.0.0
- *
- * */
+ */
 class SpecimenForm extends React.Component {
   /**
    * Constructor
@@ -69,7 +75,6 @@ class SpecimenForm extends React.Component {
    *
    * @param {string} name - the name
    * @param {string} value - the value
-   *
    * @return {Promise}
    */
   setCurrent(name, value) {
@@ -83,14 +88,13 @@ class SpecimenForm extends React.Component {
    *
    * @param {string} name - container name
    * @param {string} value - container value
-   *
    * @return {Promise}
    */
   setContainer(name, value) {
     const {current} = clone(this.state);
     current.container[name] = value;
     return new Promise((res) => this.setState({current}, res()));
-  };
+  }
 
   /**
    * Set a list in the object state?
@@ -106,7 +110,6 @@ class SpecimenForm extends React.Component {
    *
    * @param {string} name - project name
    * @param {string} value - project value
-   *
    * @return {Promise}
    */
   setProject(name, value) {
@@ -119,7 +122,7 @@ class SpecimenForm extends React.Component {
    * When a session is selected, set the sessionId, centerId and originId.
    *
    * @param {object} session
-   * @param {in} sessionId
+   * @param {number} sessionId
    */
   setSession(session, sessionId) {
     const {current} = clone(this.state);
@@ -133,27 +136,36 @@ class SpecimenForm extends React.Component {
    * Increment the current barcode
    *
    * @param {string} pscid - the PSCID
-   * @param {int} increment - the amount to increment
-   *
-   * @return {int}
+   * @param {number} increment - the amount to increment
+   * @return {number}
    */
   incrementBarcode(pscid, increment = 0) {
     increment++;
     const barcode = padBarcode(pscid, increment);
     if (Object.values(this.props.data.containers)
-         .some((container) => container.barcode === barcode)) {
+      .some((container) => container.barcode === barcode)
+    ) {
       increment = this.incrementBarcode(pscid, increment);
     }
     if (Object.values(this.state.list)
-         .some((specimen) => specimen.container.barcode === barcode)) {
+      .some((specimen) => specimen.container.barcode === barcode)
+    ) {
       increment = this.incrementBarcode(pscid, increment);
     }
     return increment;
-  };
+  }
 
-  async fetchBarcodes(count) {
+  /**
+   * Fetch Barcodes from the backend.
+   *
+   * @param {number} limit - the number of barcodes to be generated
+   * @return {array} an array of barcodes
+   */
+  async fetchBarcodes(limit) {
     try {
-      const response = await fetch(`${loris.BaseURL}/biobank/barcodes?count=${count}`);
+      const response = await fetch(
+        `${loris.BaseURL}/biobank/barcodes?limit=${limit}`
+      );
       const data = await response.json();
       return data.barcodes;
     } catch (error) {
@@ -166,39 +178,40 @@ class SpecimenForm extends React.Component {
    * Generate barcodes and store in the component state.
    */
   async generateBarcodes() {
-    const { options } = this.props;
-    let { list, current } = this.state;
-    const count = Object.keys(list).length;
+    let {list} = this.state;
+    const limit = Object.keys(list).length;
 
-    const barcodes = await this.fetchBarcodes(count);
+    const barcodes = await this.fetchBarcodes(limit);
 
     list = Object.keys(list).reduce((result, key, index) => {
-        const specimen = list[key];
-        specimen.container.barcode = barcodes[index];
-        result[key] = specimen;
-        return result;
+      const specimen = list[key];
+      specimen.container.barcode = barcodes[index];
+      result[key] = specimen;
+      return result;
     }, {});
 
-    this.setState({ list });
-  };
+    this.setState({list});
+  }
 
   /**
-  * Handle the submission of a form
-  *
-  * @return {Promise}
-  */
+   * Handle the submission of a form
+   *
+   * @return {Promise}
+   */
   handleSubmit() {
     const {list, current, printBarcodes} = this.state;
-    return new Promise((resolve, reject) => {
-      this.props.onSubmit(list, current, printBarcodes)
-      .then(() => resolve(), (errors) => this.setState({errors}, reject()));
-    });
+    return new Promise(
+      (resolve, reject) => {
+        this.props.onSubmit(list, current, printBarcodes)
+          .then(() => resolve(), (errors) => this.setState({errors}, reject()));
+      }
+    );
   }
 
   /**
    * Render the React component
    *
-   * @return {ReactDOM}
+   * @return {JSX}
    */
   render() {
     const {errors, current, list} = this.state;
@@ -210,8 +223,8 @@ class SpecimenForm extends React.Component {
           <StaticElement
             label='Note'
             text='To create new aliquots, enter a Barcode, fill out the
-            coresponding sub-form and press Submit. Press "New Entry" button
-            to add another barcode field, or press for the "Copy" button to
+                coresponding sub-form and press Submit. Press "New Entry" button
+                to add another barcode field, or press for the "Copy" button to
                   duplicate the previous entry.'
           />
         );
@@ -252,10 +265,13 @@ class SpecimenForm extends React.Component {
           </div>
         );
       } else {
-      const sessions = current.candidateId ?
-        mapFormOptions(options.candidateSessions[current.candidateId], 'label')
-        : {};
-      const candidates = mapFormOptions(this.props.options.candidates, 'pscid');
+        const sessions = current.candidateId ?
+          mapFormOptions(
+            options.candidateSessions[current.candidateId], 'label'
+          ) : {};
+        const candidates = mapFormOptions(
+          this.props.options.candidates, 'pscid'
+        );
         return (
           <div>
             <SearchableDropdown
@@ -286,8 +302,9 @@ class SpecimenForm extends React.Component {
 
     const renderRemainingQuantityFields = () => {
       if (parent) {
-        if (loris.userHasPermission('biobank_specimen_update')
-             && parent.length === 1) {
+        if (loris.userHasPermission('biobank_specimen_edit')
+                    && parent.length === 1
+        ) {
           const specimenUnits = mapFormOptions(
             this.props.options.specimen.units,
             'label'
@@ -321,15 +338,17 @@ class SpecimenForm extends React.Component {
     const container = clone(current.container);
     if (container.parentContainerId) {
       container.coordinate = [];
-      Object.keys(list).reduce((coord, key) => {
-        coord = this.props.increaseCoordinate(
-          coord,
-          container.parentContainerId,
-        );
-        const coordinates = [...container.coordinate, parseInt(coord)];
-        container.coordinate = coordinates;
-        return coord;
-      }, 0);
+      Object.keys(list).reduce(
+        (coord, key) => {
+          coord = this.props.increaseCoordinate(
+            coord,
+            container.parentContainerId,
+          );
+          const coordinates = [...container.coordinate, parseInt(coord)];
+          container.coordinate = coordinates;
+          return coord;
+        }, 0
+      );
     }
     const placeHolder = {container};
 
@@ -342,80 +361,183 @@ class SpecimenForm extends React.Component {
         onSubmit={this.handleSubmit}
         throwWarning={true}
       >
-        <FormElement>
-          <div className='row'>
-            <div className="col-xs-11">
-              {renderNote()}
-              {renderGlobalFields()}
-              <SelectElement
-                name='projectIds'
-                label='Project'
-                options={this.props.options.projects}
-                onUserInput={this.setProject}
-                required={true}
-                value={current.projectIds}
-                disabled={current.candidateId ? false : true}
-                errorMessage={errors.specimen.projectIds}
-              />
-              {renderRemainingQuantityFields()}
-            </div>
-          </div>
-          <ListForm
-            list={list}
-            errors={errors.list}
-            setList={this.setList}
-            listItem={{container: {}, collection: {}}}
-          >
-            <SpecimenBarcodeForm
-              typeId={current.typeId}
-              options={options}
+        <div className='row'>
+          <div className="col-xs-11">
+            {renderNote()}
+            {renderGlobalFields()}
+            <SelectElement
+              name='projectIds'
+              label='Project'
+              options={this.props.options.projects}
+              onUserInput={this.setProject}
+              required={true}
+              value={current.projectIds}
+              disabled={current.candidateId ? false : true}
+              errorMessage={errors.specimen.projectIds}
             />
-          </ListForm>
-          <br/>
-          <div className='form-top'/>
-          <ContainerParentForm
-            display={true}
-            data={data}
-            setContainer={this.setContainer}
-            setCurrent={this.setCurrent}
-            current={placeHolder}
+            {renderRemainingQuantityFields()}
+          </div>
+        </div>
+        <ListForm
+          list={list}
+          errors={errors.list}
+          setList={this.setList}
+          listItem={{container: {}, collection: {}}}
+        >
+          <SpecimenBarcodeForm
+            typeId={current.typeId}
             options={options}
           />
-          <div className='form-top'/>
-          <ButtonElement
-            name='generate'
-            label='Generate Barcodes'
-            type='button'
-            onUserInput={this.generateBarcodes}
-          />
-          <CheckboxElement
-            name='printBarcodes'
-            label='Print Barcodes'
-            onUserInput={(name, value) => this.setState({[name]: value})}
-            value={this.state.printBarcodes}
-          />
-        </FormElement>
+        </ListForm>
+        <br/>
+        <div className='form-top'/>
+        <ContainerParentForm
+          display={true}
+          data={data}
+          setContainer={this.setContainer}
+          setCurrent={this.setCurrent}
+          current={placeHolder}
+          options={options}
+        />
+        <div className='form-top'/>
+        <ButtonElement
+          name='generate'
+          label='Generate Barcodes'
+          type='button'
+          onUserInput={this.generateBarcodes}
+          disabled={current.candidateId ? false : true}
+        />
+        <CheckboxElement
+          name='printBarcodes'
+          label='Print Barcodes'
+          onUserInput={(name, value) => this.setState({[name]: value})}
+          value={this.state.printBarcodes}
+        />
       </Modal>
     );
   }
 }
 
+// SpecimenForm.propTypes
 SpecimenForm.propTypes = {
-};
+  // Parent prop: Array of parent objects containing specimen and container
+  parent: PropTypes.arrayOf(
+    PropTypes.shape({
+      specimen: PropTypes.shape({
+        candidateId: PropTypes.number,
+        sessionId: PropTypes.number,
+        typeId: PropTypes.number.isRequired,
+      }).isRequired,
+      container: PropTypes.shape({
+        originId: PropTypes.number,
+        centerId: PropTypes.number,
+      }).isRequired,
+    })
+  ).isRequired,
 
-SpecimenForm.defaultProps = {
-  specimenList: {},
+  // Options prop: Configuration options for specimen, containers, etc.
+  options: PropTypes.shape({
+    sessionCenters: PropTypes.arrayOf(
+      PropTypes.shape({
+        centerId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    candidates: PropTypes.arrayOf(PropTypes.string).isRequired,
+    sessions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    candidateSessions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    projects: PropTypes.arrayOf(PropTypes.string).isRequired,
+    specimen: PropTypes.shape({
+      typeUnits: PropTypes.string,
+      units: PropTypes.string.isRequired,
+      types: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+      typeContainerTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
+      protocols: PropTypes.arrayOf(PropTypes.string),
+      protocolAttributes: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+      attributes: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ),
+    }).isRequired,
+  }).isRequired,
+
+  // Data prop: Contains containers and specimens data
+  data: PropTypes.shape({
+    containers: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    specimens: PropTypes.arrayOf(
+      PropTypes.shape({
+        specimenId: PropTypes.number.isRequired,
+      })
+    ).isRequired,
+    pools: PropTypes.array.isRequired,
+  }).isRequired,
+
+  // Functional props
+  onSubmit: PropTypes.func.isRequired,
+  increaseCoordinate: PropTypes.func.isRequired,
+  createSpecimens: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+
+  // UI Control props
+  title: PropTypes.string.isRequired,
+  show: PropTypes.bool.isRequired,
+
+  // Current state props
+  current: PropTypes.shape({
+    container: PropTypes.shape({
+      temperature: PropTypes.number,
+      statusId: PropTypes.number.isRequired,
+      comments: PropTypes.string,
+    }).isRequired,
+    specimen: PropTypes.shape({
+      quantity: PropTypes.number,
+      unitId: PropTypes.number,
+    }).isRequired,
+  }).isRequired,
+
+  // Setter and updater functions
+  setSpecimen: PropTypes.func.isRequired,
+  setCurrent: PropTypes.func.isRequired,
+  clearAll: PropTypes.func.isRequired,
+  updateSpecimen: PropTypes.func.isRequired,
+
+  // Editable actions
+  edit: PropTypes.func.isRequired,
+  editSpecimen: PropTypes.func.isRequired,
+
+  // Error handling props
+  errors: PropTypes.shape({
+    container: PropTypes.shape({
+      typeId: PropTypes.string,
+      temperature: PropTypes.string,
+      statusId: PropTypes.string,
+      comments: PropTypes.string,
+    }),
+    specimen: PropTypes.shape({
+      quantity: PropTypes.string,
+      unitId: PropTypes.string,
+      // Add other specimen-specific error properties if necessary
+    }),
+  }).isRequired,
 };
 
 /**
  * Biobank Barcode Form
  *
  * Acts a subform for BiobankSpecimenForm
- *
- * @author Henri Rabalais
- * @version 1.0.0
- *
- **/
+ */
 class SpecimenBarcodeForm extends React.Component {
   /**
    * Constructor
@@ -424,6 +546,13 @@ class SpecimenBarcodeForm extends React.Component {
     super();
     this.setContainer = this.setContainer.bind(this);
     this.setSpecimen = this.setSpecimen.bind(this);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    // Check if typeId has changed
+    if (prevProps.item.typeId !== this.props.item.typeId) {
+      this.props.setListItem('collection', {}, this.props.itemKey);
+    }
   }
 
   /**
@@ -451,7 +580,7 @@ class SpecimenBarcodeForm extends React.Component {
   /**
    * Render the React component
    *
-   * @return {ReactDOM}
+   * @return {JSX}
    */
   render() {
     const {options, errors, item} = this.props;
@@ -465,15 +594,15 @@ class SpecimenBarcodeForm extends React.Component {
             if (id == this.props.typeId) {
               result[id] = type;
             }
-
             if (type.parentTypeIds) {
-              type.parentTypeIds.forEach((i) => {
-                if (i == this.props.typeId) {
-                  result[id] = type;
+              type.parentTypeIds.forEach(
+                (i) => {
+                  if (i == this.props.typeId) {
+                    result[id] = type;
+                  }
                 }
-              });
+              );
             }
-
             return result;
           }, {}
         );
@@ -490,13 +619,17 @@ class SpecimenBarcodeForm extends React.Component {
 
     const validContainers = {};
     if (item.typeId && options.specimen.typeContainerTypes[item.typeId]) {
-      Object.keys(containerTypesPrimary).forEach((id) => {
-        options.specimen.typeContainerTypes[item.typeId].forEach((i) => {
-          if (id == i) {
-            validContainers[id] = containerTypesPrimary[id];
-          }
-        });
-      });
+      Object.keys(containerTypesPrimary).forEach(
+        (id) => {
+          options.specimen.typeContainerTypes[item.typeId].forEach(
+            (i) => {
+              if (id == i) {
+                validContainers[id] = containerTypesPrimary[id];
+              }
+            }
+          );
+        }
+      );
     }
     return (
       <ListItem {...this.props}>
@@ -555,11 +688,50 @@ class SpecimenBarcodeForm extends React.Component {
   }
 }
 
+// SpecimenBarcodeForm.propTypes
 SpecimenBarcodeForm.propTypes = {
-};
+  typeId: PropTypes.number,
+  // Item prop: Contains container and specimen information
+  item: PropTypes.shape({
+    container: PropTypes.shape({
+      barcode: PropTypes.string.isRequired,
+      typeId: PropTypes.number.isRequired,
+      lotNumber: PropTypes.string,
+      expirationDate: PropTypes.string,
+    }).isRequired,
+    typeId: PropTypes.number.isRequired,
+    collection: PropTypes.string,
+  }).isRequired,
 
-SpecimenBarcodeForm.defaultProps = {
-  specimen: {},
+  // Functional props
+  setListItem: PropTypes.func.isRequired,
+  validateListItem: PropTypes.func.isRequired,
+
+  // Key prop for list items
+  itemKey: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+
+  // Options prop: Configuration options for container and specimen
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      typesPrimary: PropTypes.arrayOf(PropTypes.string).isRequired,
+    }).isRequired,
+    specimen: PropTypes.shape({
+      typeContainerTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
+      types: PropTypes.arrayOf(
+        PropTypes.shape({
+          label: PropTypes.string.isRequired,
+        })
+      ).isRequired,
+    }).isRequired,
+  }).isRequired,
+
+  // Errors prop: Handles validation errors for container and specimen
+  errors: PropTypes.shape({
+    container: PropTypes.shape({
+    }),
+    specimen: PropTypes.shape({
+    }),
+  }).isRequired,
 };
 
 export default SpecimenForm;

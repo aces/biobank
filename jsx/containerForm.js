@@ -1,13 +1,15 @@
 import React, {Component} from 'react';
+import PropTypes from 'prop-types';
 
-import Modal from 'Modal';
+import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
 import {ListForm, ListItem} from './listForm.js';
+import {
+  SelectElement,
+  TextboxElement,
+  DateElement,
+} from './Form'; // Temporary CBIGR Override for 26.0 
 import {clone, mapFormOptions} from './helpers.js';
 
-/**
- * Container Form
- *
- **/
 
 const initialState = {
   current: {},
@@ -16,7 +18,7 @@ const initialState = {
 };
 
 /**
- * A form for editing Containers in the Biobank
+ * A Form for adding Containers
  */
 class ContainerForm extends Component {
   /**
@@ -60,7 +62,7 @@ class ContainerForm extends Component {
     const {list, current, errors} = this.state;
     return new Promise((resolve, reject) => {
       this.props.onSubmit(list, current, errors)
-      .then(() => resolve(), (errors) => this.setState({errors}, reject()));
+        .then(() => resolve(), (errors) => this.setState({errors}, reject()));
     });
   }
 
@@ -81,42 +83,50 @@ class ContainerForm extends Component {
         onSubmit={this.handleSubmit}
         throwWarning={true}
       >
-        <FormElement>
-          <div className="row">
-            <div className="col-xs-11">
-              <SelectElement
-                name="centerId"
-                label="Site"
-                options={options.centers}
-                onUserInput={this.setCurrent}
-                required={true}
-                value={current.centerId}
-                errorMessage={(errors.container||{}).centerId}
-              />
-            </div>
+        <div className="row">
+          <div className="col-xs-11">
+            <SelectElement
+              name="centerId"
+              label="Site"
+              options={options.centers}
+              onUserInput={this.setCurrent}
+              required={true}
+              value={current.centerId}
+              errorMessage={(errors.container||{}).centerId}
+            />
           </div>
-          <ListForm
-            list={list}
-            errors={errors.list}
-            setList={this.setList}
-            listItem={{}}
-          >
-            <ContainerSubForm options={options}/>
-          </ListForm>
-        </FormElement>
+        </div>
+        <ListForm
+          list={list}
+          errors={errors.list}
+          setList={this.setList}
+          listItem={{}}
+        >
+          <ContainerSubForm options={options}/>
+        </ListForm>
       </Modal>
     );
   }
 }
 
+// ContainerForm.propTypes
 ContainerForm.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+  options: PropTypes.shape({
+    centers: PropTypes.arrayOf(PropTypes.string).isRequired,
+    container: PropTypes.shape({
+      typesNonPrimary: PropTypes.arrayOf(PropTypes.string).isRequired,
+    }).isRequired,
+  }).isRequired,
+  show: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 /**
  * Container Barcode Form
  *
  * Acts a subform for ContainerForm
- **/
+ */
 class ContainerSubForm extends Component {
   /**
    * Constructor
@@ -186,10 +196,27 @@ class ContainerSubForm extends Component {
   }
 }
 
+// ContainerSubForm.propTypes
 ContainerSubForm.propTypes = {
-};
-
-ContainerSubForm.defaultProps = {
+  setListItem: PropTypes.func.isRequired,
+  itemKey: PropTypes.string.isRequired,
+  item: PropTypes.shape({
+    barcode: PropTypes.string.isRequired,
+    typeId: PropTypes.number.isRequired,
+    lotNumber: PropTypes.string.isRequired,
+    expirationDate: PropTypes.string,
+  }).isRequired,
+  errors: PropTypes.shape({
+    barcode: PropTypes.string,
+    typeId: PropTypes.string,
+    lotNumber: PropTypes.string,
+    expirationDate: PropTypes.string,
+  }).isRequired,
+  options: PropTypes.shape({
+    container: PropTypes.shape({
+      typesNonPrimary: PropTypes.arrayOf(PropTypes.string).isRequired,
+    }).isRequired,
+  }).isRequired,
 };
 
 export default ContainerForm;

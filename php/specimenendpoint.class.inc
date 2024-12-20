@@ -1,16 +1,5 @@
 <?php declare(strict_types=1);
-/**
- * This implement the Specimen endpoint class for the Biobank Module.
- *
- * PHP Version 7.2
- *
- * @category   API
- * @package    Loris
- * @subpackage Biobank
- * @author     Henri Rabalais <henri.rabalais@mcin.ca>
- * @license    http://www.gnu.org/licenses/gpl-3.0.text GPLv3
- * @link       http://www.github.com/aces/Loris/
- */
+
 namespace LORIS\biobank;
 use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Server\RequestHandlerInterface;
@@ -61,7 +50,7 @@ class SpecimenEndpoint extends \NDB_Page implements RequestHandlerInterface
      * This function can be overridden in a module's page to load the necessary
      * resources to check the permissions of a user.
      *
-     * @param User                   $user    The user to load the resources for
+     * @param \User                  $user    The user to load the resources for
      * @param ServerRequestInterface $request The PSR15 Request being handled
      *
      * @return void
