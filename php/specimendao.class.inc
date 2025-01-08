@@ -604,8 +604,6 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
      */
     private function _getSQLFromInstance(Specimen $specimen) : array
     {
-        $sampleNumber = $this->getSampleNumber($specimen->getCandidateId());
-
         $specimenData = [
             'SpecimenID'     => $specimen->getId(),
             'ContainerID'    => $specimen->getContainerId(),
@@ -613,8 +611,15 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
             'Quantity'       => $specimen->getQuantity(),
             'UnitID'         => $specimen->getUnitId(),
             'SessionID'      => $specimen->getSessionId(),
-            'SampleNumber'   => $sampleNumber,
+            'SampleNumber'   => $specimen->getSampleNumber(),
         ];
+
+        // I'd prefer a better way of doing this, but for now this is the simplest   
+        // way to ensure that the Sample Number does NOT get updated.                   
+        if ($specimen->getId() == null) {                                               
+            $sampleNumber = $this->_getSampleNumber($specimen->getCandidateId());       
+            $specimenData['SampleNumber'] = $sampleNumber;                              
+        }         
 
         $freezeThawData = [
             'SpecimenID'      => $specimen->getId(),
