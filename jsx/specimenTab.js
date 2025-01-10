@@ -3,7 +3,7 @@ import {Link} from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 import {clone, mapFormOptions} from './helpers.js';
-import FilterableDataTable from './FilterableDataTable'; // Temporary CBIGR Override for 26.0 
+import FilterableDataTable from '../../../jsx/FilterableDataTable'; // Temporary CBIGR Override for 26.0 
 import SpecimenForm from './specimenForm';
 import PoolSpecimenForm from './poolSpecimenForm';
 import BatchProcessForm from './batchProcessForm';

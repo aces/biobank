@@ -3,15 +3,15 @@ import PropTypes from 'prop-types';
 import {Link} from 'react-router-dom';
 import {mapFormOptions} from './helpers.js';
 
-import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
-import Loader from './Loader'; // Temporary CBIGR Override for 26.0 
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
+import Loader from '../../../jsx/Loader'; // Temporary CBIGR Override for 26.0 
 import {
   SelectElement,
   TextboxElement,
   NumericElement,
   TextareaElement,
   CTA,
-} from './Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 import ContainerParentForm from './containerParentForm';
 
 /**

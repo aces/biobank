@@ -2,10 +2,10 @@ import React, {useState, useEffect, useRef} from 'react';
 import PropTypes from 'prop-types';
 import {Link} from 'react-router-dom';
 
-import FilterableDataTable from './FilterableDataTable'; // Temporary CBIGR Override for 26.0 
+import FilterableDataTable from '../../../jsx/FilterableDataTable'; // Temporary CBIGR Override for 26.0 
 import {UseShipment} from './Shipment';
 // import Container from './Container';
-import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
 
 import {
   StaticElement,
@@ -15,7 +15,7 @@ import {
   TimeElement,
   TextareaElement,
   TagsElement,
-} from './Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 
 import {get} from './helpers.js';
 

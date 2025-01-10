@@ -1,11 +1,10 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import {
-  FormElement,
   TextboxElement,
   DateElement,
-} from './Form'; // Temporary CBIGR Override for 26.0 
-import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
 import LifeCycle from './lifeCycle.js';
 import SpecimenForm from './specimenForm.js';
 
@@ -108,14 +107,12 @@ class Header extends Component {
         show={editable.lotForm}
         onSubmit={updateContainer}
       >
-        <FormElement>
-          <TextboxElement
-            name='lotNumber'
-            label='Lot Number'
-            onUserInput={this.props.setContainer}
-            value={current.container.lotNumber}
-          />
-        </FormElement>
+        <TextboxElement
+          name='lotNumber'
+          label='Lot Number'
+          onUserInput={this.props.setContainer}
+          value={current.container.lotNumber}
+        />
       </Modal>
     );
 
@@ -126,14 +123,12 @@ class Header extends Component {
         show={editable.expirationForm}
         onSubmit={updateContainer}
       >
-        <FormElement>
-          <DateElement
-            name='expirationDate'
-            label='Expiration Date'
-            onUserInput={this.props.setContainer}
-            value={current.container.expirationDate}
-          />
-        </FormElement>
+        <DateElement
+          name='expirationDate'
+          label='Expiration Date'
+          onUserInput={this.props.setContainer}
+          value={current.container.expirationDate}
+        />
       </Modal>
     );
 

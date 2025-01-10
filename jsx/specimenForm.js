@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import SpecimenProcessForm from './processForm';
 import ContainerParentForm from './containerParentForm';
 import {ListForm, ListItem} from './listForm';
-import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
 import {mapFormOptions, clone, padBarcode} from './helpers.js';
 import {
   SearchableDropdown,
@@ -12,7 +12,7 @@ import {
   CheckboxElement,
   DateElement,
   ButtonElement,
-} from './Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 
 const initialState = {
   list: {},

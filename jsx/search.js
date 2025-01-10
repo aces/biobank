@@ -1,7 +1,7 @@
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
-import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
-import {FormElement, TextboxElement} from './Form'; // Temporary CBIGR Override for 26.0 
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
+import {FormElement, TextboxElement} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 
 /**
  * Provides a modal window that can be used to search barcodes

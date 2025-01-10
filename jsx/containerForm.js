@@ -1,13 +1,13 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 
-import Modal from './Modal'; // Temporary CBIGR Override for 26.0 
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
 import {ListForm, ListItem} from './listForm.js';
 import {
   SelectElement,
   TextboxElement,
   DateElement,
-} from './Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 import {clone, mapFormOptions} from './helpers.js';
 
 

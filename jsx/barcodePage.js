@@ -8,7 +8,7 @@ import Globals from './globals';
 import Header from './header';
 import BiobankSpecimen from './specimen';
 import BiobankContainer from './container';
-import ProgressBar from 'jsx/ProgressBar';
+import ProgressBar from 'jsx/ProgressBar'; // Temporary CBIGR Override for 26.0
 
 const initialState = {
   loading: false,

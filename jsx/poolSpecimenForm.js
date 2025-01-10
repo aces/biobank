@@ -1,4 +1,4 @@
-import Modal from 'Modal';
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0
 import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import {mapFormOptions, clone, isEmpty} from './helpers.js';
@@ -9,7 +9,7 @@ import {
   DateElement,
   TimeElement,
   SearchableDropdown,
-} from './Form'; // Temporary CBIGR Override for 26.0
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0
 
 import Swal from 'sweetalert2';
 

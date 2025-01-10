@@ -2,13 +2,13 @@ import {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import SpecimenProcessForm from './processForm';
 import {VerticalTabs, TabPane} from 'Tabs';
-import Modal from './Modal'; // Temporary CBIGR Override for 26.0
-import Loader from './Loader'; // Temporary CBIGR Override for 26.0
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0
+import Loader from '../../../jsx/Loader'; // Temporary CBIGR Override for 26.0
 import {mapFormOptions, clone, isEmpty} from './helpers.js';
 import {
   StaticElement,
   SearchableDropdown,
-} from './Form'; // Temporary CBIGR Override for 26.0
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0
 
 import Swal from 'sweetalert2';
 

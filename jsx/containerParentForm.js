@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import {
   SearchableDropdown,
-} from './Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 
 import ContainerDisplay from './containerDisplay';
 

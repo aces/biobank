@@ -8,7 +8,7 @@ import {
   TimeElement,
   TextareaElement,
   StaticElement,
-} from './Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 import {mapFormOptions, clone} from './helpers.js';
 import CustomFields from './customFields';
 

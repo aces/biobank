@@ -4,7 +4,7 @@ import SpecimenProcessForm from './processForm';
 
 import {
   FormElement,
-} from './Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 
 import {clone} from './helpers.js';
 

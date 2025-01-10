@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {Link} from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-import FilterableDataTable from './FilterableDataTable'; // Temporary CBIGR Override for 26.0 
+import FilterableDataTable from '../../../jsx/FilterableDataTable'; // Temporary CBIGR Override for 26.0 
 import Search from './search';
 import ContainerForm from './containerForm';
 import {mapFormOptions, clone} from './helpers.js';

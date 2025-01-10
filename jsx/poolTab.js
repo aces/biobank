@@ -2,8 +2,8 @@ import React, {Component} from 'react';
 import {Link} from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-import FilterableDataTable from './FilterableDataTable'; // Temporary CBIGR Override for 26.0 
-import {CTA} from './Form.js'; // Temporary CBIGR Override for 26.0 
+import FilterableDataTable from '../../../jsx/FilterableDataTable'; // Temporary CBIGR Override for 26.0 
+import {CTA} from '../../../jsx/Form.js'; // Temporary CBIGR Override for 26.0 
 import SpecimenForm from './specimenForm';
 
 import {mapFormOptions, clone} from './helpers.js';
