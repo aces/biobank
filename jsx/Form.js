@@ -7,7 +7,7 @@
 
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import InputLabel from 'jsx/form/InputLabel';
+import InputLabel from '../../../jsx/InputLabel';
 
 /**
  * Form Component.
