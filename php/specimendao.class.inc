@@ -611,14 +611,15 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
             'Quantity'       => $specimen->getQuantity(),
             'UnitID'         => $specimen->getUnitId(),
             'SessionID'      => $specimen->getSessionId(),
-            'SampleNumber'   => $specimen->getSampleNumber(),
         ];
 
         // I'd prefer a better way of doing this, but for now this is the simplest   
         // way to ensure that the Sample Number does NOT get updated.                   
         if ($specimen->getId() == null) {                                               
-            $sampleNumber = $this->_getSampleNumber($specimen->getCandidateId());       
+            $sampleNumber = $this->getSampleNumber($specimen->getCandidateId());       
             $specimenData['SampleNumber'] = $sampleNumber;                              
+        } else {
+            $specimenData['SampleNumber'] = $specimen->getSampleNumber();                              
         }         
 
         $freezeThawData = [
