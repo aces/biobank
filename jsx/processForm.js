@@ -180,7 +180,7 @@ const SpecimenProcessForm = (props) => {
     ] || [];
     
     const protocolStaticFields = protocolAttributes.map((attribute) => {
-      let value = process.data[attribute.id]; // Fetch the corresponding value from process.data
+      let value = process.data?.[attribute.id]; // Fetch the corresponding value from process.data
 
       // Convert boolean values to "Yes" or "No"
       if (value === true) {
