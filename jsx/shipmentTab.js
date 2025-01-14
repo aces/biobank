@@ -17,7 +17,7 @@ import {
   TagsElement,
 } from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
 
-import {get} from './helpers.js';
+import {get, mapFormOptions} from './helpers.js';
 
 
 /**
@@ -395,6 +395,7 @@ function CreateShipment({
   updateShipments,
   setData,
 }) {
+  const [containerId, setContainerId] = useState(null);
   const logIndex = 0;
   const handler = new UseShipment();
   const shipment = handler.getShipment();
@@ -427,10 +428,13 @@ function CreateShipment({
   // If the associated shipments containers change, update the site of the log.
   useEffect(() => {
     if (shipment.containerIds.length === 1) {
+      console.log(shipment);
       const container = data.containers[shipment.containerIds[0]];
       handler.setLog('centerId', container.centerId, logIndex);
     }
   }, [shipment.containerIds]);
+
+  const containers = mapFormOptions(data.containers, 'barcode');
 
   return (
     <Modal
@@ -463,12 +467,17 @@ function CreateShipment({
         required={true}
       />
       <TagsElement
-        name='barcode'
+        name='containerIds'
         label="Container"
         items={shipment.containerIds}
-        handleAdd={handler.setContainerIds}
-        options={data.containers}
+        onUserAdd={handler.addContainerId}
+        onUserRemove={handler.removeContainerId}
+        onUserInput={(pend, val) => setContainerId(val)}
+        value={containerId}
+        options={containers}
         useSearch={true}
+        strictSearch={true}
+        btnLabel=' Add Container'
         errorMessage={errors.containerIds}
       />
       <SelectElement
@@ -614,7 +623,7 @@ ReceiveShipment.propTypes = {
  * @return {JSX}
  */
 function ShipmentLogForm({
-  log,
+  log = {},
   setLog,
   errors = {},
   users,

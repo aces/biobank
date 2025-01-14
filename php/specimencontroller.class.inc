@@ -557,68 +557,61 @@ class SpecimenController
      */
     private function _validateData(Process $process) : void
     {
-        $protocolAttributes = $this->dao->getProtocolAttributes();
-        $attributeDatatypes = $this->dao->getAttributeDatatypes();
-        $protocolId         = $process->getProtocolId();
-        $attributes         = $protocolAttributes[$protocolId] ?? [];
-        $data = $process->getData() ?? [];
+        $protocolAttributes = $this->dao->getProtocolAttributes();                   
+        $attributeDatatypes = $this->dao->getAttributeDatatypes();                   
+        $protocolId         = $process->getProtocolId();                             
+        $attributes         = $protocolAttributes[$protocolId] ?? [];                
+        $data               = $process->getData() ?? [];                                           
 
-        foreach ($attributes as $id => $attribute) {
-            if ($attribute['required'] == true && !isset($data[$id])) {
-                throw new BadRequest(
-                    "The attribute "
-                    . $attribute['label']
-                    . " is required. Protocol "
-                    . $protocolId
-                );
-            }
-        }
+        foreach ($attributes as $attribute) {                                        
+            $attributeId = $attribute['id'];
+            $value = $data[$attributeId] ?? null;
 
-        foreach ($data as $attributeId => $value) {
-            $attribute = $attributes[$attributeId];
-
-            if (!isset($attribute)) {
-                $wrongAttribute = $this->dao->getAttributes()[$attributeId];
-                throw new BadRequest(
-                    "The attribute '"
-                    . $wrongAttribute['label']
-                    . "' does not belong to this protocol"
-                );
+            // Check if the attribute is required and missing
+            if ($attribute['required'] && $value === null) { 
+                throw new BadRequest(                                                
+                    "The attribute '"                                                
+                    . $attribute['label']                                            
+                    . "' is required. Protocol "                                      
+                    . $protocolId                                                    
+                );                                                                   
             }
 
+            // Skip validation if the attribute is not present in the data
+            if ($value === null) {
+                continue;
+            }
+
+            // Validate the attribute's data type
             $datatype = $attributeDatatypes[$attribute['datatypeId']]['datatype'];
-            if ($datatype === 'boolean' && !is_bool($value)) {
-                throw new BadRequest(
-                    "The attribute '"
-                    . $attribute['label']
-                    . "' must be a boolean"
-                );
+            if ($datatype === 'boolean' && !is_bool($value)) {                   
+                throw new BadRequest(                                            
+                    "The attribute '"                                            
+                    . $attribute['label']                                        
+                    . "' must be a boolean"                                      
+                );                                                               
             }
 
-            if ($datatype === 'number' && !is_numeric($value)) {
-                throw new BadRequest(
-                    "The attribute '"
-                    . $attribute['label']
-                    . "' must be a number"
-                );
+            if ($datatype === 'number' && !is_numeric($value)) {                 
+                throw new BadRequest(                                            
+                    "The attribute '"                                            
+                    . $attribute['label']                                        
+                    . "' must be a number"                                       
+                );                                                               
             }
 
-            // TODO: This validation may not be necessary, but it may be good to
-            // leave this if statement here just as a reminder that it exists.
-            if ($datatype === 'text') {
+            // TODO: Add further validations for text, date, time, file, etc., as needed
+            if ($datatype === 'text') {                                          
             }
 
-            // TODO: This can likely be validated through the DateTime Object.
-            if ($datatype === 'date') {
+            if ($datatype === 'date') {                                          
             }
 
-            // TODO: This can likely be validated through the DateTime Object.
-            if ($datatype === 'time') {
+            if ($datatype === 'time') {                                          
             }
 
-            // TODO: Set this validate when files start to get uploaded.
-            if ($datatype === 'file') {
+            if ($datatype === 'file') {                                          
             }
-        }
+        }        
     }
 }

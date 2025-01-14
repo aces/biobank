@@ -14,6 +14,8 @@ export function UseShipment(initShipment = {}) {
   const [errors, setErrors] = useState(new Shipment({}));
 
   this.set = (name, value) => setShipment(shipment.set(name, value));
+  this.addContainerId = (name, id) => this.setContainerIds(shipment.addContainer(id));
+  this.removeContainerId = (name, id) => this.setContainerIds(shipment.removeContainer(id));
   this.setContainerIds = (value) => this.set('containerIds', value);
   this.addLog = (log) => this.setLogs(shipment.addLog(log));
   this.setLogs = (value) => this.set('logs', value);
@@ -108,6 +110,26 @@ class Shipment {
   async load(id) {
     const shipment = await get(`${loris.BaseURL}/biobank/shipments/${id}`);
     return new Shipment(shipment);
+  }
+
+  /**
+   * Adds a new container to this shipment
+   *
+   * @param {object} container - the container values
+   * @return {array}
+   */
+  addContainer(id) {
+    return [...this.containerIds, id];
+  }
+
+  /**
+   * Adds a new container to this shipment
+   *
+   * @param {object} container - the container values
+   * @return {array}
+   */
+  removeContainer(id) {
+    return this.containerIds.filter(containerId => containerId !== id);
   }
 
   /**
