@@ -7,6 +7,7 @@ import {
 import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
 import LifeCycle from './lifeCycle.js';
 import SpecimenForm from './specimenForm.js';
+import {clone} from './helpers.js';
 
 import Swal from 'sweetalert2';
 
@@ -172,7 +173,7 @@ class Header extends Component {
             current={current}
             editContainer={this.props.editContainer}
             setContainer={this.props.setContainer}
-            updateContainer={updateContainer}
+            updateContainer={this.props.updateContainer}
           />
         </div>
         <LifeCycle
@@ -260,10 +261,10 @@ Header.propTypes = {
  */
 function ContainerCheckout(props) {
   const checkoutContainer = () => {
-    props.editContainer(props.container)
-      .then(() => props.setContainer('parentContainerId', null))
-      .then(() => props.setContainer('coordinate', null))
-      .then(() => props.updateContainer());
+    const container = clone(props.container);
+    container.parentContainerId = null;
+    container.coordinate = null;
+    props.updateContainer(container);
   };
 
   return (loris.userHasPermission('biobank_container_edit') &&

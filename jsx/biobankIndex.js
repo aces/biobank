@@ -330,9 +330,7 @@ class BiobankIndex extends Component {
       return coord;
     }, 0);
 
-    console.log('CREATE SPECIMENS');
     if (isError) {
-      console.log('ERROR?');
       console.log(errors);
       return Promise.reject(errors);
     }
@@ -635,7 +633,6 @@ class BiobankIndex extends Component {
           // validate required
             if (attribute.required == 1
               && !process.data[attribute.id]) {
-              console.log('required!');
               errors.data[attribute.id] = 'This field is required!';
             }
 

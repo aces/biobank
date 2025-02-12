@@ -53,6 +53,7 @@ const SpecimenProcessForm = (props) => {
     options,
     errors = {},
     edit,
+    render,
   } = props;
 
   const updateButton = specimen && (
@@ -134,7 +135,7 @@ const SpecimenProcessForm = (props) => {
 
   const examiners = mapFormOptions(options.examiners, 'label');
   if (typeId && edit === true) {
-    return [
+    const elements = [
       protocolField,
       <SelectElement
         name="examinerId"
@@ -174,6 +175,11 @@ const SpecimenProcessForm = (props) => {
       />,
       updateButton,
     ];
+
+    const flatElements = React.Children.toArray(elements);
+
+    // If `render` is provided, pass the elements through it
+    return render ? render(flatElements) : <>{flatElements}</>;
   } else if (edit === false) {
     const protocolAttributes = options.specimen.protocolAttributes[
       process.protocolId

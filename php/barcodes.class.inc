@@ -56,6 +56,7 @@ class Barcodes extends Endpoint
      */
     protected function get(QueryParams $params): array
     {
+        error_log((string) $params->limit);
         if ($params->limit > MAX_BARCODES_PER_REQUEST) {
             throw new \InvalidArgumentException(
                 "The 'limit' parameter cannot exceed " . MAX_BARCODES_PER_REQUEST .
@@ -63,32 +64,24 @@ class Barcodes extends Endpoint
             );
         }
 
-        $currentYear = date('y');
+        $year = date('y');
 
-        // Query to get the largest barcode for the current year
-        $query           = "SELECT
-                    MAX(CAST(SUBSTRING(Barcode, 3, 6) AS UNSIGNED)) AS max_number
+        // Get the highest number from existing barcodes for the current year
+        $query = "SELECT MAX(CAST(SUBSTRING(Barcode, 3) AS UNSIGNED)) AS max_number
                   FROM biobank_container
-                    WHERE SUBSTRING(Barcode, 1, 2) = :year";
-        $qparams         = [':year' => $currentYear];
-        $maxNumberResult = (array) $this->loris->getDatabaseConnection()
+                  WHERE LEFT(Barcode, 2) = :year";
+        $qparams = [':year' => $year];
+        $maxNumber = $this->loris->getDatabaseConnection()
             ->pselectOne($query, $qparams);
 
-        $maxNumber = $maxNumberResult['max_number'] ?? 0;
-        $newNumber = $maxNumber + 1;
+        $maxNumber = $maxNumber ?? 0;
+        $number = $maxNumber + 1;
 
         $barcodes = [];
         for ($i = 0; $i < $params->limit; $i++) {
-            $newNumberFormatted = str_pad(
-                (string) ($newNumber + $i),
-                6,
-                '0',
-                STR_PAD_LEFT
-            );
-            $newBarcode         = $currentYear . $newNumberFormatted;
-            $barcodes[]         = $newBarcode;
+            $barcodes[] = $year . str_pad((string) ($number + $i), 6, '0', STR_PAD_LEFT);
         }
 
-        return ['barcodes' => $barcodes];
+        return $barcodes;
     }
 }

@@ -166,8 +166,8 @@ class SpecimenForm extends React.Component {
       const response = await fetch(
         `${loris.BaseURL}/biobank/barcodes?limit=${limit}`
       );
-      const data = await response.json();
-      return data.barcodes;
+      const barcodes = await response.json();
+      return barcodes;
     } catch (error) {
       console.error('Error fetching barcodes:', error);
       return [];
