@@ -197,7 +197,8 @@ class SpecimenController
             }
             break;
         case 'update':
-            if (!$this->user->hasPermission('biobank_specimen_edit')) {
+            if (!$this->user->hasPermission('biobank_specimen_update')
+                && !$this->user->hasPermission('biobank_specimen_alter')) {
                 throw new Forbidden('Specimen: Update Permission Denied');
             }
             break;

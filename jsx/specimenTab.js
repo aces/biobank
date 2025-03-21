@@ -385,7 +385,7 @@ class SpecimenTab extends Component {
             onClose={this.clearEditable}
             onSubmit={this.props.createPool}
           /> : null}
-        {loris.userHasPermission('biobank_specimen_edit') ?
+        {loris.userHasPermission('biobank_specimen_update') ?
           <BatchProcessForm
             show={editable.batchProcessForm}
             onClose={this.clearEditable}
@@ -393,7 +393,7 @@ class SpecimenTab extends Component {
             options={this.props.options}
             data={this.props.data}
           /> : null}
-        {loris.userHasPermission('biobank_specimen_edit') ?
+        {loris.userHasPermission('biobank_specimen_alter') ?
           <BatchEditForm
             show={editable.batchEditForm}
             onClose={this.clearEditable}

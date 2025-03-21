@@ -68,7 +68,7 @@ class Header extends Component {
     };
 
     const alterLotNumber = () => {
-      if (loris.userHasPermission('biobank_specimen_edit')) {
+      if (loris.userHasPermission('biobank_specimen_alter')) {
         return (
           <div className='action' title='Alter Lot Number'>
             <span
@@ -85,7 +85,7 @@ class Header extends Component {
     };
 
     const alterExpirationDate = () => {
-      if (loris.userHasPermission('biobank_specimen_edit')) {
+      if (loris.userHasPermission('biobank_specimen_alter')) {
         return (
           <div className='action' title='Alter Expiration Date'>
             <span
