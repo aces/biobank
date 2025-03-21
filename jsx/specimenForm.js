@@ -132,6 +132,7 @@ class SpecimenForm extends React.Component {
     this.setState({current});
   }
 
+  //XXX Deprecated function since the introduction of a barcode endpoint for barcode generation
   /**
    * Increment the current barcode
    *
@@ -139,21 +140,21 @@ class SpecimenForm extends React.Component {
    * @param {number} increment - the amount to increment
    * @return {number}
    */
-  incrementBarcode(pscid, increment = 0) {
-    increment++;
-    const barcode = padBarcode(pscid, increment);
-    if (Object.values(this.props.data.containers)
-      .some((container) => container.barcode === barcode)
-    ) {
-      increment = this.incrementBarcode(pscid, increment);
-    }
-    if (Object.values(this.state.list)
-      .some((specimen) => specimen.container.barcode === barcode)
-    ) {
-      increment = this.incrementBarcode(pscid, increment);
-    }
-    return increment;
-  }
+  // incrementBarcode(pscid, increment = 0) {
+  //   increment++;
+  //   const barcode = padBarcode(pscid, increment);
+  //   if (Object.values(this.props.data.containers)
+  //     .some((container) => container.barcode === barcode)
+  //   ) {
+  //     increment = this.incrementBarcode(pscid, increment);
+  //   }
+  //   if (Object.values(this.state.list)
+  //     .some((specimen) => specimen.container.barcode === barcode)
+  //   ) {
+  //     increment = this.incrementBarcode(pscid, increment);
+  //   }
+  //   return increment;
+  // }
 
   /**
    * Fetch Barcodes from the backend.
@@ -302,7 +303,7 @@ class SpecimenForm extends React.Component {
 
     const renderRemainingQuantityFields = () => {
       if (parent) {
-        if (loris.userHasPermission('biobank_specimen_edit')
+        if (loris.userHasPermission('biobank_specimen_update')
                     && parent.length === 1
         ) {
           const specimenUnits = mapFormOptions(

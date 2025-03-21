@@ -56,7 +56,6 @@ class Barcodes extends Endpoint
      */
     protected function get(QueryParams $params): array
     {
-        error_log((string) $params->limit);
         if ($params->limit > MAX_BARCODES_PER_REQUEST) {
             throw new \InvalidArgumentException(
                 "The 'limit' parameter cannot exceed " . MAX_BARCODES_PER_REQUEST .

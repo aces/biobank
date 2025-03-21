@@ -31,7 +31,7 @@ function Globals(props) {
     />
   );
 
-  const edit = loris.userHasPermission('biobank_specimen_edit')
+  const edit = loris.userHasPermission('biobank_specimen_alter')
     && specimen && (
     () => {
       props.edit('containerType');

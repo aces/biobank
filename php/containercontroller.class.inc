@@ -181,11 +181,11 @@ class ContainerController
                 throw new Forbidden('Container: View Permission Denied');
             }
             break;
-        case 'update':
-            if (!$this->user->hasPermission('biobank_container_edit')) {
-                throw new Forbidden('Container: Update Permission Denied');
-            }
-            break;
+        case 'update':                                                                  
+            if (!$this->user->hasPermission('biobank_container_update')) {
+                throw new Forbidden('Container: Update Permission Denied');             
+            }                                                                           
+            break; 
         case 'create':
             if (!$this->user->hasPermission('biobank_container_create')) {
                 throw new Forbidden('Container: Create Permission Denied');
