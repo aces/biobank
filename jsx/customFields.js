@@ -18,7 +18,6 @@ function CustomFields(props) {
 
   return attributes.map(
     (attribute, key) => {
-      console.log(attribute.label);
       const datatype = options.specimen.attributeDatatypes[attribute.datatypeId]
         .datatype;
       if (datatype === 'text' || datatype === 'number') {
