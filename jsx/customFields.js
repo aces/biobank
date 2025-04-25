@@ -18,6 +18,7 @@ function CustomFields(props) {
 
   return attributes.map(
     (attribute, key) => {
+      console.log(attribute.label);
       const datatype = options.specimen.attributeDatatypes[attribute.datatypeId]
         .datatype;
       if (datatype === 'text' || datatype === 'number') {
@@ -27,7 +28,7 @@ function CustomFields(props) {
             name={attribute.id}
             label={attribute.label}
             onUserInput={props.setData}
-            required={attribute.required}
+            required={Boolean(attribute.required)}
             value={object[attribute.id]}
             errorMessage={errors[attribute.id]}
           />
@@ -40,7 +41,7 @@ function CustomFields(props) {
             name={attribute.id}
             label={attribute.label}
             onUserInput={props.setData}
-            required={attribute.required}
+            required={Boolean(attribute.required)}
             value={object[attribute.id]}
             errorMessage={errors[attribute.id]}
           />
@@ -53,7 +54,7 @@ function CustomFields(props) {
             name={attribute.id}
             label={attribute.label}
             onUserInput={props.setData}
-            required={attribute.required}
+            required={Boolean(attribute.required)}
             value={object[attribute.id]}
             errorMessage={errors[attribute.id]}
           />
@@ -66,7 +67,7 @@ function CustomFields(props) {
             name={attribute.id}
             label={attribute.label}
             onUserInput={props.setData}
-            required={attribute.required}
+            required={Boolean(attribute.required)}
             value={object[attribute.id]}
             errorMessage={errors[attribute.id]}
           />
@@ -81,7 +82,7 @@ function CustomFields(props) {
             name={attribute.id}
             label={attribute.label}
             onUserInput={props.setData}
-            required={attribute.required}
+            required={Boolean(attribute.required)}
             value={props.current.files[object[attribute.id]]}
             errorMessage={errors[attribute.id]}
           />
