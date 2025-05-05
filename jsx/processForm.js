@@ -284,7 +284,6 @@ SpecimenProcessForm.propTypes = {
     }).isRequired,
     centers: PropTypes.arrayOf(PropTypes.string).isRequired,
     candidates: PropTypes.arrayOf(PropTypes.string),
-    candidateSessions: PropTypes.arrayOf(PropTypes.string),
     sessions: PropTypes.arrayOf(PropTypes.string),
     examiners: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
