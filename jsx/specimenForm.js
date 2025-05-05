@@ -16,7 +16,7 @@ import {
 
 const initialState = {
   list: {},
-  current: {container: {}, projectId: null, sessionId: null, candidateId: null},
+  current: {container: {}, projectIds: [], sessionId: null, candidateId: null},
   printBarcodes: false,
   errors: {specimen: {}, container: {}, list: {}},
 };
@@ -113,7 +113,7 @@ class SpecimenForm extends React.Component {
   setSession(session, sessionId) {
     const {current} = clone(this.state);
     current.centerId = this.props.options.sessions[sessionId].centerId;
-    current.projectId = this.props.options.sessions[sessionId].projectId;
+    current.projectIds = [this.props.options.sessions[sessionId].projectId];
     current.originId = current.centerId;
     current.sessionId = sessionId;
     this.setState({current});
@@ -207,7 +207,7 @@ class SpecimenForm extends React.Component {
     };
 
     const renderGlobalFields = () => {
-      const { sessionId, candidateId, projectId } = current
+      const { sessionId, candidateId, projectIds } = current
       if (parent && candidateId && sessionId) {
         const parentBarcodes = Object.values(parent).map(
           (item) => item.container.barcode
@@ -229,7 +229,7 @@ class SpecimenForm extends React.Component {
             />
             <StaticElement
               label="Project"
-              text={options.projects[projectId]}
+              text={options.projects[projectIds[0]]}
             />
           </>
         );
@@ -271,7 +271,7 @@ class SpecimenForm extends React.Component {
             />
             <StaticElement
               label="Project"
-              text={options.projects[projectId]}
+              text={options.projects[projectIds[0]]}
             />
           </>
         );
