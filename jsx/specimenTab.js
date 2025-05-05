@@ -61,7 +61,7 @@ class SpecimenTab extends Component {
     case 'Container Type':
       return options.container.typesPrimary[value].label;
     case 'Diagnosis':
-      if (Array.isArray(value) && value.length > 0) {
+      if (value) {
         return value.map((id) => options.diagnoses[id].label);
       }
       break;
@@ -88,40 +88,40 @@ class SpecimenTab extends Component {
    */
   formatSpecimenColumns(column, value, row) {
     const {data, options} = this.props;
-    const display = this.mapSpecimenColumns(column, value);
+    value = this.mapSpecimenColumns(column, value);
     const candidate = Object.values(options.candidates)
       .find((cand) => cand?.pscid == row['PSCID']);
     const candidatePermission = candidate !== undefined;
     switch (column) {
     case 'Barcode':
-      return <td><Link to={`/barcode=${display}`}>{display}</Link></td>;
+      return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
     case 'Parent Specimens':
       // TODO: if the user doesn't have access then these shouldn't be hyperlinked
-      const barcodes = display && display.map((id, key) => {
-        return <Link key={key} to={`/barcode=${display}`}>{display}</Link>;
+      const barcodes = value && value.map((id, key) => {
+        return <Link key={key} to={`/barcode=${value}`}>{value}</Link>;
       }).reduce((prev, curr) => [prev, ', ', curr]);
       return <td>{barcodes}</td>;
     case 'PSCID':
       if (candidatePermission) {
         return (
           <td>
-            <a href={loris.BaseURL + '/' + candidate.id}>{display}</a>
+            <a href={loris.BaseURL + '/' + candidate.id}>{value}</a>
           </td>
         );
       }
-      return <td>{display}</td>;
+      return <td>{value}</td>;
     case 'Visit Label':
       if (candidatePermission) {
-        const sessionId = candidate.sessionIds
-          .find(sessionId => options.sessions[sessionId].label === value);
+        const ses = Object.values(options.candidateSessions[candidate.id])
+          .find((sess) => sess.label == value).id;
         const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+
-          candidate.id+'&sessionID='+sessionId;
-        return <td><a href={visitLabelURL}>{display}</a></td>;
+          candidate.id+'&sessionID='+ses;
+        return <td><a href={visitLabelURL}>{value}</a></td>;
       }
-      return <td>{display}</td>;
+      return <td>{value}</td>;
     case 'Status':
       const style = {};
-      switch (display) {
+      switch (value) {
       case 'Available':
         style.color = 'green';
         break;
@@ -135,20 +135,20 @@ class SpecimenTab extends Component {
         style.color = 'red';
         break;
       }
-      return <td style={style}>{display}</td>;
+      return <td style={style}>{value}</td>;
     case 'Projects':
-      return <td>{display.join(', ')}</td>;
+      return <td>{value.join(', ')}</td>;
     case 'Container Barcode':
       // check if container has be queried
       if (
         Object.values(data.containers)
-          .find((container) => container.barcode == display)
+          .find((container) => container.barcode == value)
       ) {
-        return <td><Link to={`/barcode=${display}`}>{display}</Link></td>;
+        return <td><Link to={`/barcode=${value}`}>{value}</Link></td>;
       }
-      return <td>{display}</td>;
+      return <td>{value}</td>;
     default:
-      return <td>{display}</td>;
+      return <td>{value}</td>;
     }
   }
 
@@ -212,7 +212,7 @@ class SpecimenTab extends Component {
         container.statusId,
         specimen.projectIds,
         specimen.centerId,
-        options.sessions[specimen.sessionId]?.centerId,
+        options.sessionCenters[specimen.sessionId]?.centerId,
         specimen.collection.date,
         specimen.collection.time,
         (specimen.preparation||{}).time,
@@ -456,6 +456,12 @@ SpecimenTab.propTypes = {
     projects: PropTypes.arrayOf(PropTypes.string).isRequired,
     candidates: PropTypes.arrayOf(PropTypes.string).isRequired,
     sessions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    sessionCenters: PropTypes.arrayOf(
+      PropTypes.shape({
+        centerId: PropTypes.number.isRequired,
+      })
+    ),
+    candidateSessions: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
 
   // Data prop: Contains containers, specimens, and pools data

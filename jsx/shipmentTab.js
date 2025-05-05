@@ -242,6 +242,7 @@ ShipmentTab.propTypes = {
     candidates: PropTypes.arrayOf(PropTypes.string).isRequired,
     users: PropTypes.object,
     sessions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    candidateSessions: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
 
   // Functional props
