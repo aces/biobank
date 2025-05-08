@@ -141,7 +141,8 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         $query      = "SELECT c.CandID as id,
                             PSCID as pscid,
                             Sex as sex,
-                            GROUP_CONCAT(DISTINCT DiagnosisID) as diagnosisIds
+                            GROUP_CONCAT(DISTINCT DiagnosisID) as diagnosisIds,
+                            GROUP_CONCAT(DISTINCT s.ID) as sessionIds
                        FROM candidate c
                             LEFT JOIN session s USING (CandID)
                             LEFT JOIN candidate_diagnosis_rel USING (CandID)
@@ -151,10 +152,12 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
                           CandID";
         $candidates = $db->pselectWithIndexKey($query, [], 'id');
         foreach ($candidates as $id => $candidate) {
-            $candidate['diagnosisIds'] = $candidate['diagnosisIds']
+            $candidates[$id]['diagnosisIds'] = $candidate['diagnosisIds']
                 ? explode(',', $candidate['diagnosisIds'])
                 : [];
-            $candidates[$id]           = $candidate;
+            $candidates[$id]['sessionIds']  = $candidate['sessionIds']
+                ? explode(',', $candidate['sessionIds'])
+                : [];
         }
 
         // XXX: This should eventually be replaced by a call directly to a
@@ -163,11 +166,15 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         $query     = 'SELECT DiagnosisID as id, Name as label FROM diagnosis';
         $diagnoses = $db->pselectWithIndexKey($query, [], 'id');
 
-        // XXX: This should eventually be replaced by a call directly to a
-        // Session endpoint or Session controller that will be able to provide
-        // Session Objects.
-        $query    = 'SELECT ID as id, Visit_label as label FROM session';
-        $sessions = $db->pselectWithIndexKey($query, [], 'id');
+        $sessionQuery = "SELECT
+            s.ID as id,
+            s.Visit_label as label,
+            s.CenterID as centerId,
+            s.ProjectID as projectId
+        FROM session s
+        WHERE s.CenterID IN ($userCenters)
+          AND s.ProjectID IN ($userProjects)";
+        $sessions = $db->pselectWithIndexKey($sessionQuery, [], 'id');
 
         // XXX: This should eventually be replaced by a call directly to a
         // Examiner endpoint or Examiner controller that will be able to provide
@@ -191,38 +198,6 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         //     }
         // }
 
-        // XXX: This should eventually be replaced by a call directly to a
-        // Session Controller or Session Options endpoint that will be able to
-        // provide these options.
-        $query  = "SELECT
-                      c.CandID as candidateId,
-                      s.ID sessionId,
-                      s.Visit_label as label,
-                      s.CenterID as centerId
-                  FROM
-                      candidate c
-                  LEFT JOIN session s USING (CandID)
-                  LEFT JOIN biobank_specimen bs ON (s.Id = bs.SessionID)
-                  LEFT JOIN biobank_container bc USING (ContainerID)
-                  WHERE
-                      s.CenterID IN ($userCenters)
-                      AND s.ProjectID IN ($userProjects)";
-        $result = $db->pselect($query, []);
-        $candidateSessions = [];
-        $sessionCenters    = [];
-        foreach ($result as $row) {
-            $candidate = $row['candidateId'];
-            $session   = $row['sessionId'];
-            if (!isset($candidateSessions[$candidate][$session])) {
-                $candidateSessions[$candidate][$session] = [];
-            };
-            $ses          =& $candidateSessions[$candidate][$session];
-            $ses['id']    = $session;
-            $ses['label'] = $row['label'];
-
-            $sessionCenters[$session]['centerId'] = $row['centerId'];
-        }
-
         $shipment = [
             'statuses' => $shipDAO->getStatuses(),
             'types'    => $shipDAO->getTypes(),
@@ -236,8 +211,6 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
             'centers'           => $centers,
             'examiners'         => $examiners,
             'users'             => $users,
-            'candidateSessions' => $candidateSessions,
-            'sessionCenters'    => $sessionCenters,
             'container'         => $contCont->getOptions(),
             'specimen'          => $specCont->getOptions(),
             'shipment'          => $shipment,

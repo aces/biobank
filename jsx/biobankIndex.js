@@ -41,7 +41,6 @@ class BiobankIndex extends Component {
         examiners: {},
         users: {},
         projects: {},
-        sessionCenters: {},
         sessions: {},
         specimen: {
           types: {},
