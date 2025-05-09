@@ -71,8 +71,8 @@ class SpecimenTab extends Component {
       return options.centers[value];
     case 'Draw Site':
       return options.centers[value];
-    case 'Projects':
-      return value.map((id) => options.projects[id]);
+    case 'Project':
+      return options.projects[value];
     default:
       return value;
     }
@@ -136,8 +136,8 @@ class SpecimenTab extends Component {
         break;
       }
       return <td style={style}>{display}</td>;
-    case 'Projects':
-      return <td>{display.join(', ')}</td>;
+    case 'Project':
+      return <td>{display}</td>;
     case 'Container Barcode':
       // check if container has be queried
       if (
@@ -210,7 +210,7 @@ class SpecimenTab extends Component {
         options.sessions[specimen.sessionId].label,
         specimen.poolId ? (data.pools[specimen.poolId]||{}).label : null,
         container.statusId,
-        specimen.projectIds,
+        specimen.projectId,
         specimen.centerId,
         options.sessions[specimen.sessionId]?.centerId,
         specimen.collection.date,
@@ -293,8 +293,8 @@ class SpecimenTab extends Component {
         type: 'select',
         options: stati,
       }},
-      {label: 'Projects', show: true, filter: {
-        name: 'projects',
+      {label: 'Project', show: true, filter: {
+        name: 'project',
         type: 'multiselect',
         options: options.projects,
       }},
