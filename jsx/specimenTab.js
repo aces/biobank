@@ -65,6 +65,8 @@ class SpecimenTab extends Component {
         return value.map((id) => options.diagnoses[id].label);
       }
       break;
+    case 'Visit Label':
+      return options.sessions[value].label;
     case 'Status':
       return options.container.stati[value].label;
     case 'Current Site':
@@ -112,10 +114,8 @@ class SpecimenTab extends Component {
       return <td>{display}</td>;
     case 'Visit Label':
       if (candidatePermission) {
-        const sessionId = candidate.sessionIds
-          .find(sessionId => options.sessions[sessionId].label === value);
         const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+
-          candidate.id+'&sessionID='+sessionId;
+          candidate.id+'&sessionID='+value;
         return <td><a href={visitLabelURL}>{display}</a></td>;
       }
       return <td>{display}</td>;
@@ -207,7 +207,7 @@ class SpecimenTab extends Component {
         candidate?.sex || null,
         specimen.candidateAge,
         candidate?.diagnosisIds || null,
-        options.sessions[specimen.sessionId].label,
+        specimen.sessionId,
         specimen.poolId ? (data.pools[specimen.poolId]||{}).label : null,
         container.statusId,
         specimen.projectId,
