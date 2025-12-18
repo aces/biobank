@@ -1,0 +1,4 @@
+-- SQL Patch: Drop biobank relation tables
+
+DROP TABLE IF EXISTS biobank_specimen_project_rel;
+DROP TABLE IF EXISTS biobank_container_project_rel;
