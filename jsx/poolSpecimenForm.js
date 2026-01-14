@@ -88,7 +88,7 @@ class PoolSpecimenForm extends React.Component {
     // Set current global values
     if (isEmpty(list)) {
       filter.candidateId = specimen.candidateId;
-      filter.visitLabel = options.sesssions[specimen.sessionId]?.label;
+      filter.visitLabel = options.sessions[specimen.sessionId]?.label;
       filter.typeId = specimen.typeId;
       filter.centerId = container.centerId;
     }
