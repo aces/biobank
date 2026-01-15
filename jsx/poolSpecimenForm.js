@@ -65,10 +65,6 @@ class PoolSpecimenForm extends React.Component {
   setFilter(name, value) {
     const {filter} = clone(this.state);
 
-    if (name == 'candidateId') {
-      filter.sessionId = null;
-    }
-
     filter[name] = value;
     this.setState({filter});
   }
@@ -80,6 +76,7 @@ class PoolSpecimenForm extends React.Component {
    */
   setPoolList(containerId) {
     let {filter, list, pool, count} = clone(this.state);
+    const { options } = this.props;
 
     // Increase count
     count++;
@@ -91,7 +88,7 @@ class PoolSpecimenForm extends React.Component {
     // Set current global values
     if (isEmpty(list)) {
       filter.candidateId = specimen.candidateId;
-      filter.sessionId = specimen.sessionId;
+      filter.visitLabel = options.sessions[specimen.sessionId]?.label;
       filter.typeId = specimen.typeId;
       filter.centerId = container.centerId;
     }
@@ -141,13 +138,14 @@ class PoolSpecimenForm extends React.Component {
    */
   validateListItem(containerId) {
     const {list, filter} = clone(this.state);
+    const { options } = this.props;
     const container = this.props.data.containers[containerId];
     const specimen = this.props.data.specimens[container.specimenId];
 
     // Throw error if new list item does not meet requirements.
     if (!isEmpty(list)
       && (specimen.candidateId != filter.candidateId
-      || specimen.sessionId != filter.sessionId
+      || options.sessions[specimen.sessionId]?.label != filter.visitLabel
       || specimen.typeId != filter.typeId
       || container.centerId !== filter.centerId)
     ) {
@@ -228,15 +226,12 @@ class PoolSpecimenForm extends React.Component {
             options={mapFormOptions(options.candidates, 'pscid')}
           />
           <SearchableDropdown
-            name='sessionId'
+            name='visitLabel'
             label='Visit Label'
             onUserInput={this.setFilter}
-            disabled={!isEmpty(list) || !filter.candidateId}
-            value={filter.sessionId}
-            options={mapFormOptions(
-              (options?.candidates?.[filter.candidateId] || {}),
-              'label'
-            )}
+            disabled={!isEmpty(list)}
+            value={filter.visitLabel}
+            options={options.visitLabels}
           />
           <div className='row'>
             <div className='col-xs-6'>
@@ -386,8 +381,8 @@ class BarcodeInput extends PureComponent {
 
             const candidateMatch = !filter.candidateId
               || specimen.candidateId == filter.candidateId;
-            const sessionMatch = !filter.sessionId
-              || specimen.sessionId == filter.sessionId;
+            const sessionMatch = !filter.visitLabel
+              || options.sessions[specimen.sessionId]?.label == filter.visitLabel;
             const typeMatch = !filter.typeId
               || specimen.typeId == filter.typeId;
 
@@ -440,7 +435,7 @@ BarcodeInput.propTypes = {
   }).isRequired,
   filter: PropTypes.shape({
     candidateId: PropTypes.string,
-    sessionId: PropTypes.string,
+    visitLabel: PropTypes.string,
     typeId: PropTypes.string,
   }).isRequired,
   options: PropTypes.shape({

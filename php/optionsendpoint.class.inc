@@ -197,6 +197,15 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
         //         unset($centers[$id]);
         //     }
         // }
+        //
+        $query = "
+            SELECT
+                DISTINCT s.Visit_label as label
+            FROM biobank_specimen bs
+            JOIN session s ON (bs.sessionID = s.ID)
+        ";
+        $results = $db->pselectcol($query, []);
+        $visitlabels = array_combine($results, $results);
 
         $shipment = [
             'statuses' => $shipDAO->getStatuses(),
@@ -207,6 +216,7 @@ class OptionsEndpoint extends \NDB_Page implements RequestHandlerInterface
             'candidates'        => $candidates,
             'diagnoses'         => $diagnoses,
             'sessions'          => $sessions,
+            'visitLabels'       => $visitlabels,
             'projects'          => \Utility::getProjectList(),
             'centers'           => $centers,
             'examiners'         => $examiners,

@@ -207,7 +207,7 @@ class SpecimenTab extends Component {
         candidate?.sex || null,
         specimen.candidateAge,
         candidate?.diagnosisIds || null,
-        options.sessions[specimen.sessionId].label,
+        options.sessions[specimen.sessionId]?.label,
         specimen.poolId ? (data.pools[specimen.poolId]||{}).label : null,
         container.statusId,
         specimen.projectId,
@@ -280,8 +280,9 @@ class SpecimenTab extends Component {
         options: diagnoses,
       }},
       {label: 'Visit Label', show: true, filter: {
-        name: 'session',
-        type: 'text',
+        name: 'visitLabel',
+        type: 'select',
+        options: options.visitLabels,
       }},
       {label: 'Pool', show: false, filter: {
         name: 'pool',
