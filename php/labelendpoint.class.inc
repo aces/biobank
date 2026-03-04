@@ -126,20 +126,12 @@ class LabelEndpoint implements RequestHandlerInterface
             $sampleNum = $param['sampleNumber'];
 
             // Construct ZPL string
-            $zpl = "^XA"
-                 . "^FO330,80"
-                 . "^BY1"
-                 . "^BCN,100,Y,Y,N"
-                 . "^CFA,20"
-                 . "^A0N,30,29"
-                 . "^BCN,100,Y,Y,N^FD$barcode^FS"
-                 . "^FO323,190"
-                 . "^CFA,20"
-                 . "^A0N,30,29^FD$type^FS"
-                 . "^FO323,250"
-                 . "^CFA,20"
-                 . "^A0N,30,29^FD$pscid $sampleNum^FS"
-                 . "^XZ";
+            $zpl = "^XA^PW300^LL300^LH0,10^LS0"
+                 . "^FO20,25^A0N,35,35^FD{$barcode}^FS"
+                 . "^FO18,80^BY1^BCN,95,N,N,N^FD{$barcode}^FS"
+                 . "^FO20,195^A0N,30,30^FD{$type}^FS"
+                 . "^FO20,235^A0N,30,30^FD{$pscid} {$sampleNum}^FS"
+                 . "^XZ"; 
 
             $config = \NDB_Config::singleton();
             $path   = $config->getSetting('labelPrintingPath') . 'barcode.zpl';
