@@ -8,7 +8,7 @@ import {
   TimeElement,
   TextareaElement,
   StaticElement,
-} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0
 import {mapFormOptions, clone} from './helpers.js';
 import CustomFields from './customFields';
 
@@ -134,9 +134,12 @@ const SpecimenProcessForm = (props) => {
   );
 
   const labTechExaminers = mapFormOptions(
-    options.examiners.filter(e => e.labTechnician === '1'),
+    options.examiners.filter(e =>
+      e.labTechnician === '1' || e.id === process.examinerId
+    ),
     'label'
   );
+
   if (typeId && edit === true) {
     const elements = [
       protocolField,
@@ -187,7 +190,7 @@ const SpecimenProcessForm = (props) => {
     const protocolAttributes = options.specimen.protocolAttributes[
       process.protocolId
     ] || [];
-    
+
     const protocolStaticFields = protocolAttributes.map((attribute) => {
       let value = process.data?.[attribute.id]; // Fetch the corresponding value from process.data
 
