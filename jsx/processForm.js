@@ -133,12 +133,17 @@ const SpecimenProcessForm = (props) => {
     />
   );
 
-  const labTechExaminers = mapFormOptions(
-    options.examiners.filter(e =>
-      e.labTechnician === '1' || e.id === process.examinerId
-    ),
-    'label'
+  const filteredExaminers = Object.keys(options.examiners).reduce(
+    (result, id) => {
+      const examiner = options.examiners[id];
+      if (examiner.labTechnician === '1' || id == process.examinerId) {
+        result[id] = examiner;
+      }
+      return result;
+    },
+    {}
   );
+  const labTechExaminers = mapFormOptions(filteredExaminers, 'label');
 
   if (typeId && edit === true) {
     const elements = [
@@ -152,6 +157,7 @@ const SpecimenProcessForm = (props) => {
         value={process.examinerId}
         errorMessage={errors.examinerId}
         autoSelect={true}
+        sortByValue={true}
       />,
       <DateElement
         name="date"
