@@ -3,15 +3,15 @@ import PropTypes from 'prop-types';
 import {Link} from 'react-router-dom';
 import {mapFormOptions} from './helpers.js';
 
-import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
-import Loader from '../../../jsx/Loader'; // Temporary CBIGR Override for 26.0 
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0
+import Loader from '../../../jsx/Loader'; // Temporary CBIGR Override for 26.0
 import {
   SelectElement,
   TextboxElement,
   NumericElement,
   TextareaElement,
   CTA,
-} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0
 import ContainerParentForm from './containerParentForm';
 
 /**
@@ -356,11 +356,13 @@ function Globals(props) {
       />
       <InlineField
         label='Visit Label'
-        value={options.sessions[specimen.sessionId].label}
+        value={specimen.sessionLabel}
         link={
-          loris.BaseURL+'/instrument_list/?candID='+
-            specimen.candidateId+'&sessionID='+
-            specimen.sessionId
+          options.sessions[specimen.sessionId]
+            ? loris.BaseURL+'/instrument_list/?candID='+
+                specimen.candidateId+'&sessionID='+
+                specimen.sessionId
+            : null
         }
       />
     </div>
@@ -673,7 +675,7 @@ InlineField.propTypes = {
   pencil: PropTypes.node.isRequired,
   editValue: PropTypes.func.isRequired,
   loading: PropTypes.bool.isRequired,
-  link: PropTypes.string.isRequired,
+  link: PropTypes.string,
   value: PropTypes.string.isRequired,
 };
 
