@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import SpecimenProcessForm from './processForm';
 import ContainerParentForm from './containerParentForm';
 import {ListForm, ListItem} from './listForm';
-import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0 
+import Modal from '../../../jsx/Modal'; // Temporary CBIGR Override for 26.0
 import {mapFormOptions, clone} from './helpers.js';
 import {
   SearchableDropdown,
@@ -12,7 +12,7 @@ import {
   CheckboxElement,
   DateElement,
   ButtonElement,
-} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0
 
 const initialState = {
   list: {},
@@ -58,6 +58,7 @@ class SpecimenForm extends React.Component {
         .map((item) => item.specimen.id);
       current.candidateId = specimen.candidateId;
       current.sessionId = specimen.sessionId;
+      current.sessionLabel = specimen.sessionLabel;
       current.typeId = specimen.typeId;
       current.originId = container.originId;
       current.centerId = container.centerId;
@@ -224,7 +225,7 @@ class SpecimenForm extends React.Component {
             />
             <StaticElement
               label="Visit Label"
-              text={options.sessions[sessionId].label}
+              text={current.sessionLabel}
             />
           </>
         );
@@ -237,7 +238,7 @@ class SpecimenForm extends React.Component {
               }
               return acc;
             }, {})
-          : {};        
+          : {};
         const mappedSessions = mapFormOptions(sessionsObject, 'label');
         const candidates = mapFormOptions(
           this.props.options.candidates, 'pscid'
