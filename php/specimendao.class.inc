@@ -100,7 +100,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         ?array $conditions = [],
         string $operator = 'AND'
     ) : array {
-        $query = "SELECT
+        $query  = "SELECT
                       bs.SpecimenID,
                       bs.ContainerID,
                       bc.Barcode,
@@ -170,19 +170,20 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                  ON bspa.ParentSpecimenID=bs2.SpecimenID
                LEFT JOIN biobank_container bc2
                 ON bs2.ContainerID=bc2.ContainerID";
+        $params = [];
         if (!empty($conditions)) {
             $whereClause = [];
+            $i           = 0;
             foreach ($conditions as $condition) {
-                $whereClause[] = $condition['column']
-                    . '='
-                    . '"'
-                    . $condition['value']
-                    . '"';
+                $key           = 'param'.$i++;
+                $whereClause[] = $condition['column'].'=:'.$key;
+                $params[$key]  = $condition['value'];
             }
             $query .= ' WHERE '.implode(" $operator ", $whereClause);
         }
         $query       .= " GROUP BY bs.SpecimenID";
-        $specimenRows = $this->db->pselectWithIndexKey($query, [], 'SpecimenID');
+        $specimenRows = $this->db
+            ->pselectWithIndexKey($query, $params, 'SpecimenID');
         $specimens    = [];
         foreach ($specimenRows as $id => $specimenRow) {
             $specimens[$id] = $this->_getInstanceFromSQL($specimenRow);
