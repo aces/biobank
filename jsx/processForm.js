@@ -8,7 +8,7 @@ import {
   TimeElement,
   TextareaElement,
   StaticElement,
-} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0 
+} from '../../../jsx/Form'; // Temporary CBIGR Override for 26.0
 import {mapFormOptions, clone} from './helpers.js';
 import CustomFields from './customFields';
 
@@ -133,19 +133,31 @@ const SpecimenProcessForm = (props) => {
     />
   );
 
-  const examiners = mapFormOptions(options.examiners, 'label');
+  const filteredExaminers = Object.keys(options.examiners).reduce(
+    (result, id) => {
+      const examiner = options.examiners[id];
+      if (examiner.labTechnician === '1' || id == process.examinerId) {
+        result[id] = examiner;
+      }
+      return result;
+    },
+    {}
+  );
+  const labTechExaminers = mapFormOptions(filteredExaminers, 'label');
+
   if (typeId && edit === true) {
     const elements = [
       protocolField,
       <SelectElement
         name="examinerId"
         label="Done By"
-        options={examiners}
+        options={labTechExaminers}
         onUserInput={setProcess}
         required={true}
         value={process.examinerId}
         errorMessage={errors.examinerId}
         autoSelect={true}
+        sortByValue={true}
       />,
       <DateElement
         name="date"
@@ -184,7 +196,7 @@ const SpecimenProcessForm = (props) => {
     const protocolAttributes = options.specimen.protocolAttributes[
       process.protocolId
     ] || [];
-    
+
     const protocolStaticFields = protocolAttributes.map((attribute) => {
       let value = process.data?.[attribute.id]; // Fetch the corresponding value from process.data
 
