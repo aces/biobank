@@ -119,6 +119,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                       c.PSCID as CandidatePSCID,
                       bs.SessionID,
                       s.CenterID as SessionCenterID,
+                      s.Visit_Label as SessionLabel,
                       (
                         SELECT FLOOR(DATEDIFF(s.Date_visit, c.DoB)/365.25)
                       ) as CandidateAge,
@@ -374,7 +375,7 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
     public function getProtocolAttributes() : array
     {
         $query = "
-            SELECT 
+            SELECT
                 bsp.SpecimenProtocolID as protocolId,
                 bsa.SpecimenAttributeID as attributeId,
                 bsa.Label as label,
@@ -389,17 +390,17 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                 USING (SpecimenAttributeID)
             ORDER BY bsp.SpecimenProtocolID, bspa.OrderIndex
         ";
-    
+
         $result = $this->db->pselect($query, []);
         $protocolAttributes = [];
-    
+
         foreach ($result as $row) {
             $protocolId = $row['protocolId'];
             // Ensure the protocol exists in the array
             if (!isset($protocolAttributes[$protocolId])) {
                 $protocolAttributes[$protocolId] = [];
             }
-    
+
             // Add the attribute data, keeping the order intact
             $protocolAttributes[$protocolId][] = [
                 'id'               => $row['attributeId'],
@@ -410,9 +411,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
                 'orderIndex'       => (int) $row['orderIndex'],
             ];
         }
-    
+
         return $protocolAttributes;
-    }    
+    }
 
     /**
      * Queries all rows from the biobank_specimen_protocol_attribute_rel table
@@ -732,6 +733,9 @@ class SpecimenDAO extends \LORIS\Data\ProvisionerInstance
         }
         if (isset($data['SessionID'])) {
             $specimen->setSessionId((int) $data['SessionID']);
+        }
+        if (isset($data['SessionLabel'])) {
+            $specimen->setSessionLabel((string) $data['SessionLabel']);
         }
         if (isset($data['SessionID'])) {
             $specimen->setSessionCenterId(
