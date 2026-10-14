@@ -3,7 +3,7 @@ import {Link} from 'react-router-dom';
 import PropTypes from 'prop-types';
 
 import {clone, mapFormOptions} from './helpers.js';
-import FilterableDataTable from '../../../jsx/FilterableDataTable'; // Temporary CBIGR Override for 26.0 
+import FilterableDataTable from '../../../jsx/FilterableDataTable'; // Temporary CBIGR Override for 26.0
 import SpecimenForm from './specimenForm';
 import PoolSpecimenForm from './poolSpecimenForm';
 import BatchProcessForm from './batchProcessForm';
@@ -84,13 +84,13 @@ class SpecimenTab extends Component {
    * @param {string} column - the column name being mapped
    * @param {string} value - the value being mapped
    * @param {array} row - an array of the row values
+   * @param {object} lookups - candidates by PSCID and container barcodes
    * @return {JSX}
    */
-  formatSpecimenColumns(column, value, row) {
-    const {data, options} = this.props;
+  formatSpecimenColumns(column, value, row, lookups) {
+    const {options} = this.props;
     const display = this.mapSpecimenColumns(column, value);
-    const candidate = Object.values(options.candidates)
-      .find((cand) => cand?.pscid == row['PSCID']);
+    const candidate = lookups.candidatesByPSCID.get(row['PSCID']);
     const candidatePermission = candidate !== undefined;
     switch (column) {
     case 'Barcode':
@@ -113,9 +113,9 @@ class SpecimenTab extends Component {
     case 'Visit Label':
       if (candidatePermission) {
         const sessionId = candidate.sessionIds
-          .find(sessionId => options.sessions[sessionId].label === value);
+          .find((sessionId) => options.sessions[sessionId].label === value);
         const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+
-          candidate.id+'&sessionID='+sessionId;        
+          candidate.id+'&sessionID='+sessionId;
         return <td><a href={visitLabelURL}>{display}</a></td>;
       }
       return <td>{display}</td>;
@@ -140,10 +140,7 @@ class SpecimenTab extends Component {
       return <td>{display}</td>;
     case 'Container Barcode':
       // check if container has be queried
-      if (
-        Object.values(data.containers)
-          .find((container) => container.barcode == display)
-      ) {
+      if (lookups.containerBarcodes.has(display)) {
         return <td><Link to={`/barcode=${display}`}>{display}</Link></td>;
       }
       return <td>{display}</td>;
@@ -167,6 +164,14 @@ class SpecimenTab extends Component {
         }
         return result;
       }, {});
+    const lookups = {
+      candidatesByPSCID: new Map(Object.values(options.candidates)
+        .map((cand) => [cand?.pscid, cand])),
+      containerBarcodes: new Set(Object.values(data.containers)
+        .map((container) => container.barcode)),
+    };
+    const formatSpecimenColumns = (column, value, row) =>
+      this.formatSpecimenColumns(column, value, row, lookups);
     const specimenTypes = mapFormOptions(options.specimen.types, 'label');
     const containerTypesPrimary = mapFormOptions(
       options.container.typesPrimary, 'label'
@@ -357,7 +362,7 @@ class SpecimenTab extends Component {
           data={specimenData}
           fields={fields}
           actions={actions}
-          getFormattedCell={this.formatSpecimenColumns}
+          getFormattedCell={formatSpecimenColumns}
           getMappedCell={this.mapSpecimenColumns}
           progress={this.props.loading}
         />
@@ -457,6 +462,7 @@ SpecimenTab.propTypes = {
     projects: PropTypes.arrayOf(PropTypes.string).isRequired,
     candidates: PropTypes.arrayOf(PropTypes.string).isRequired,
     sessions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    visitLabels: PropTypes.object,
   }).isRequired,
 
   // Data prop: Contains containers, specimens, and pools data
