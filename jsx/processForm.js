@@ -70,8 +70,8 @@ const SpecimenProcessForm = (props) => {
       // only way I can get it to work at the moment.
       const process = options.specimen.processes[protocol.processId].label
         .toLowerCase();
-      if (typeId == protocol.typeId && process == processStage
-      ) {
+      if (protocol.typeIds.includes(String(typeId))
+        && process == processStage) {
         specimenProtocols[id] = protocol.label;
       }
     }
