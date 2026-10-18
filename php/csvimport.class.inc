@@ -370,12 +370,6 @@ class CSVImport extends \LORIS\cbigr_api\Endpoint
             if (isset($candidateList[$candidateKey])) {
                 $row['PSCID'] = $candidateList[$candidateKey]['PSCID'];
             }
-            $BIOBANK_PROJECT_NAME = trim($row['PROJECTS']);
-            error_log("PROJECTS: ".$BIOBANK_PROJECT_NAME);
-            $project = \Project::singleton($BIOBANK_PROJECT_NAME);
-            $biobankProjectID = (int) (string) $project->getId();
-            error_log("PROJECTSID: ".$biobankProjectID);
-
             $ukey = $row['BARCODE'] ?? ('MISSING_BARCODE_'.uniqid());
             fwrite($logActive, $ukey."\n");
             error_log(
@@ -384,7 +378,7 @@ class CSVImport extends \LORIS\cbigr_api\Endpoint
             );
 
             // 1. Required fields present
-            foreach (['BARCODE','SPECIMEN_TYPE','CONTAINER_TYPE','UNIT','QUANTITY','PROTOCOL', 'CURRENT_SITE', 'DRAW_SITE', 'VISIT_LABEL', 'SPECIMEN_STATUS'] as $required) {
+            foreach (['BARCODE','PROJECTS','SPECIMEN_TYPE','CONTAINER_TYPE','UNIT','QUANTITY','PROTOCOL', 'CURRENT_SITE', 'DRAW_SITE', 'VISIT_LABEL', 'SPECIMEN_STATUS'] as $required) {
                 if (!isset($row[$required])) {
                     $errors[$ukey]['missing_field'][] = $required;
                     $failed = true;
@@ -395,6 +389,27 @@ class CSVImport extends \LORIS\cbigr_api\Endpoint
                 error_log(
                     '[CSVImport] Rejected row '.$ukey.' missing fields: '.
                     implode(',', $errors[$ukey]['missing_field'])
+                );
+                continue;
+            }
+
+            $projectName = trim($row['PROJECTS']);
+            if (!in_array($projectName, $projectList, true)) {
+                $errors[$ukey]['PROJECTS'] = "Unknown project '{$projectName}'";
+                fwrite($logActive, $ukey." --> PROJECTS --> not found: ".$projectName."\n");
+                error_log(
+                    '[CSVImport] Rejected row '.$ukey.' with unknown project '.$projectName
+                );
+                continue;
+            }
+            try {
+                $project = \Project::singleton($projectName);
+                $biobankProjectID = (int) (string) $project->getId();
+            } catch (\Throwable $e) {
+                $errors[$ukey]['PROJECTS'] = "Could not resolve project '{$projectName}'";
+                fwrite($logActive, $ukey." --> PROJECTS --> ".$errors[$ukey]['PROJECTS']."\n");
+                error_log(
+                    '[CSVImport] Could not resolve project for row '.$ukey.': '.$e->getMessage()
                 );
                 continue;
             }
@@ -440,7 +455,6 @@ class CSVImport extends \LORIS\cbigr_api\Endpoint
                 );
                 continue;
             }
-
             // 4. Resolve lookup fields
             $specimenTypeID = $specimenTypeList[$row['SPECIMEN_TYPE']] ?? null;
             if ($specimenTypeID === null) {
@@ -535,97 +549,182 @@ class CSVImport extends \LORIS\cbigr_api\Endpoint
                 continue;
             }
 
-            // 5. Resolve or create candidate
-            $pscid = $row['PSCID'] ?? null;
-            $DOB = $row['DOB'] ?? null;
-            $candidateKey = $this->normalizeCsvKey($pscid ?? '');
-            $candidateInfo = $candidateKey === ''
-                ? null
-                : ($candidateList[$candidateKey] ?? null);
-            if ($candidateInfo === null) {
-                if (!isset($row['SEX'])) {
-                    $errors[$ukey]['SEX'] = "SEX is required to create new candidate for PSCID '{$pscid}'";
-                    fwrite($logActive, $ukey." --> SEX --> required for new candidate\n");
-                    continue;
-                }
+            // // 5. Resolve or create candidate
+            // $pscid = $row['PSCID'] ?? null;
+            // $DOB = $row['DOB'] ?? null;
+            // $candidateKey = $this->normalizeCsvKey($pscid ?? '');
+            // $candidateInfo = $candidateKey === ''
+            //     ? null
+            //     : ($candidateList[$candidateKey] ?? null);
+            // if ($candidateInfo === null) {
+            //     if (!isset($row['SEX'])) {
+            //         $errors[$ukey]['SEX'] = "SEX is required to create new candidate for PSCID '{$pscid}'";
+            //         fwrite($logActive, $ukey." --> SEX --> required for new candidate\n");
+            //         continue;
+            //     }
 
-                $newCandCenter = $currentSiteID !== null
-                    ? new \CenterID((string) $currentSiteID)
-                    : $fallbackCenterID;
+            //     $newCandCenter = $currentSiteID !== null
+            //         ? new \CenterID((string) $currentSiteID)
+            //         : $fallbackCenterID;
 
-                try {
-                    error_log(
-                        '[CSVImport] CREATE candidate for row '.$ukey.': '.
-                        json_encode(
-                            [
-                                'PSCID' => $pscid,
-                                'CenterID' => (string) $newCandCenter,
-                                'ProjectID' => $biobankProjectID,
-                                'Sex' => $row['SEX'],
-                            ],
-                            JSON_UNESCAPED_SLASHES
-                        )
-                    );
-                //TODO FIX CANDIDATE CREATION. replace Default DOB logic. Sex logic?
-                    $cid = (string) \Candidate::createNew(
-                        $newCandCenter,
-                        $DOB,
-                        null,
-                        new Sex($row['SEX']),
-                        //$pscid,
-                        null,
-                        new \ProjectID((string) $biobankProjectID),
-                    );
-                } catch (\Exception $e) {
-                    $errors[$ukey]['CANDIDATE'] = $e->getMessage();
-                    fwrite($logActive, $ukey." --> CANDIDATE --> ".$e->getMessage()."\n");
-                    continue;
-                }
-                fwrite($logActive, $ukey." --> New Candidate --> ".$cid."\n");
+            //     try {
+            //         error_log(
+            //             '[CSVImport] CREATE candidate for row '.$ukey.': '.
+            //             json_encode(
+            //                 [
+            //                     'PSCID' => $pscid,
+            //                     'CenterID' => (string) $newCandCenter,
+            //                     'ProjectID' => $biobankProjectID,
+            //                     'Sex' => $row['SEX'],
+            //                 ],
+            //                 JSON_UNESCAPED_SLASHES
+            //             )
+            //         );
+            //     //TODO FIX CANDIDATE CREATION. replace Default DOB logic. Sex logic?
+            //         $cid = (string) \Candidate::createNew(
+            //             $newCandCenter,
+            //             $DOB,
+            //             null,
+            //             new Sex($row['SEX']),
+            //             //$pscid,
+            //             null,
+            //             new \ProjectID((string) $biobankProjectID),
+            //         );
+            //     } catch (\Exception $e) {
+            //         $errors[$ukey]['CANDIDATE'] = $e->getMessage();
+            //         fwrite($logActive, $ukey." --> CANDIDATE --> ".$e->getMessage()."\n");
+            //         continue;
+            //     }
+            //     fwrite($logActive, $ukey." --> New Candidate --> ".$cid."\n");
 
-                $candidateInfo = [
-                    'CandID'                => $cid,
-                    'PSCID'                 => $pscid,
-                    'RegistrationCenterID'  => (int) (string) $newCandCenter,
-                    'RegistrationProjectID' => $biobankProjectID,
-                ];
-                if ($candidateKey !== '') {
-                    $candidateList[$candidateKey] = $candidateInfo;
-                }
-            }
-            $cid = $candidateInfo['CandID'];
+            //     $candidateInfo = [
+            //         'CandID'                => $cid,
+            //         'PSCID'                 => $pscid,
+            //         'RegistrationCenterID'  => (int) (string) $newCandCenter,
+            //         'RegistrationProjectID' => $biobankProjectID,
+            //     ];
+            //     if ($candidateKey !== '') {
+            //         $candidateList[$candidateKey] = $candidateInfo;
+            //     }
+            // }
+            // $cid = $candidateInfo['CandID'];
 
-            // 6. Resolve or create the session for the CSV-provided visit
-            $sessionKey = $cid.'|'.$this->normalizeCsvKey($row['VISIT_LABEL']);
-            $sessionID = $sessionList[$sessionKey] ?? null;
-            if ($sessionID === null) {
-                try {
-                    $sessionID = $this->createBiospecimenSession(
-                        $DB,
-                        (int) $cid,
-                        (int) $candidateInfo['RegistrationCenterID'],
-                        $biobankProjectID,
-                        $row['VISIT_LABEL'],
-                        $row['COLLECTION_DATE'] ?? date('Y-m-d')
-                    );
-                } catch (\DatabaseException | \PDOException $e) {
-                    $errors[$ukey]['SESSION'] = $e->getMessage();
-                    fwrite($logActive, $ukey." --> SESSION --> ".$e->getMessage()."\n");
-                    continue;
-                }
-                $sessionList[$sessionKey] = $sessionID;
-                fwrite($logActive, $ukey." --> New Session --> ".$sessionID."\n");
-            }
+            // // 6. Resolve or create the session for the CSV-provided visit
+            // $sessionKey = $cid.'|'.$this->normalizeCsvKey($row['VISIT_LABEL']);
+            // $sessionID = $sessionList[$sessionKey] ?? null;
+            // if ($sessionID === null) {
+            //     try {
+            //         $sessionID = $this->createBiospecimenSession(
+            //             $DB,
+            //             (int) $cid,
+            //             (int) $candidateInfo['RegistrationCenterID'],
+            //             $biobankProjectID,
+            //             $row['VISIT_LABEL'],
+            //             $row['COLLECTION_DATE'] ?? date('Y-m-d')
+            //         );
+            //     } catch (\DatabaseException | \PDOException $e) {
+            //         $errors[$ukey]['SESSION'] = $e->getMessage();
+            //         fwrite($logActive, $ukey." --> SESSION --> ".$e->getMessage()."\n");
+            //         continue;
+            //     }
+            //     $sessionList[$sessionKey] = $sessionID;
+            //     fwrite($logActive, $ukey." --> New Session --> ".$sessionID."\n");
+            // }
 
-            // 7. Next SampleNumber for this session
-            $sampleNumberCounts[$sessionID] = ($sampleNumberCounts[$sessionID] ?? 0) + 1;
-            $sampleNumber = $sampleNumberCounts[$sessionID];
+            // // 7. Next SampleNumber for this session
+            // $sampleNumberCounts[$sessionID] = ($sampleNumberCounts[$sessionID] ?? 0) + 1;
+            // $sampleNumber = $sampleNumberCounts[$sessionID];
 
             /**
              * 8/9/10. Insert data in respective tables
              */
             $DB->beginTransaction();
             try {
+                // 5. Resolve or create candidate
+                $pscid = $row['PSCID'] ?? null;
+                $DOB = $row['DOB'] ?? null;
+                $candidateKey = $this->normalizeCsvKey($pscid ?? '');
+                $candidateInfo = $candidateKey === ''
+                    ? null
+                    : ($candidateList[$candidateKey] ?? null);
+                if ($candidateInfo === null) {
+                    if (!isset($row['SEX'])) {
+                        $errors[$ukey]['SEX'] = "SEX is required to create new candidate for PSCID '{$pscid}'";
+                        fwrite($logActive, $ukey." --> SEX --> required for new candidate\n");
+                        continue;
+                    }
+
+                    $newCandCenter = $currentSiteID !== null
+                        ? new \CenterID((string) $currentSiteID)
+                        : $fallbackCenterID;
+
+                    try {
+                        error_log(
+                            '[CSVImport] CREATE candidate for row '.$ukey.': '.
+                            json_encode(
+                                [
+                                    'PSCID' => $pscid,
+                                    'CenterID' => (string) $newCandCenter,
+                                    'ProjectID' => $biobankProjectID,
+                                    'Sex' => $row['SEX'],
+                                ],
+                                JSON_UNESCAPED_SLASHES
+                            )
+                        );
+                    //TODO FIX CANDIDATE CREATION. replace Default DOB logic. Sex logic?
+                        $cid = (string) \Candidate::createNew(
+                            $newCandCenter,
+                            $DOB,
+                            null,
+                            new Sex($row['SEX']),
+                            //$pscid,
+                            null,
+                            new \ProjectID((string) $biobankProjectID),
+                        );
+                    } catch (\Exception $e) {
+                        $errors[$ukey]['CANDIDATE'] = $e->getMessage();
+                        fwrite($logActive, $ukey." --> CANDIDATE --> ".$e->getMessage()."\n");
+                        continue;
+                    }
+                    fwrite($logActive, $ukey." --> New Candidate --> ".$cid."\n");
+
+                    $candidateInfo = [
+                        'CandID'                => $cid,
+                        'PSCID'                 => $pscid,
+                        'RegistrationCenterID'  => (int) (string) $newCandCenter,
+                        'RegistrationProjectID' => $biobankProjectID,
+                    ];
+                    if ($candidateKey !== '') {
+                        $candidateList[$candidateKey] = $candidateInfo;
+                    }
+                }
+                $cid = $candidateInfo['CandID'];
+
+                // 6. Resolve or create the session for the CSV-provided visit
+                $sessionKey = $cid.'|'.$this->normalizeCsvKey($row['VISIT_LABEL']);
+                $sessionID = $sessionList[$sessionKey] ?? null;
+                if ($sessionID === null) {
+                    try {
+                        $sessionID = $this->createBiospecimenSession(
+                            $DB,
+                            (int) $cid,
+                            (int) $candidateInfo['RegistrationCenterID'],
+                            $biobankProjectID,
+                            $row['VISIT_LABEL'],
+                            $row['COLLECTION_DATE'] ?? date('Y-m-d')
+                        );
+                    } catch (\DatabaseException | \PDOException $e) {
+                        $errors[$ukey]['SESSION'] = $e->getMessage();
+                        fwrite($logActive, $ukey." --> SESSION --> ".$e->getMessage()."\n");
+                        continue;
+                    }
+                    $sessionList[$sessionKey] = $sessionID;
+                    fwrite($logActive, $ukey." --> New Session --> ".$sessionID."\n");
+                }
+
+                // 7. Next SampleNumber for this session
+                $sampleNumberCounts[$sessionID] = ($sampleNumberCounts[$sessionID] ?? 0) + 1;
+                $sampleNumber = $sampleNumberCounts[$sessionID];
                 $containerData = [
                     'Barcode'           => $row['BARCODE'],
                     'ContainerTypeID'   => $containerTypeID,
