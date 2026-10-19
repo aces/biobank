@@ -97,7 +97,7 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         ?array $conditions = [],
         string $operator = 'AND'
     ) : array {
-        $query = 'SELECT bc.ContainerID,
+        $query  = 'SELECT bc.ContainerID,
                      bc.Barcode,
                      bc.ContainerTypeID,
                      bs.SpecimenID,
@@ -132,18 +132,20 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
                     ON bcsr.ShipmentID=s.ShipmentID
                   LEFT JOIN biobank_specimen bs
                     ON bc.ContainerID=bs.ContainerID';
+        $params = [];
         if (!empty($conditions)) {
             $whereClause = [];
+            $i           = 0;
             foreach ($conditions as $condition) {
-                $whereClause[] = $condition['column']
-                    . '="'
-                    . $condition['value']
-                    . '"';
+                $key           = 'param'.$i++;
+                $whereClause[] = $condition['column'].'=:'.$key;
+                $params[$key]  = $condition['value'];
             }
             $query .= ' WHERE '.implode(" $operator ", $whereClause);
         }
         $query        .= ' GROUP BY bc.ContainerID';
-        $containerRows = $this->db->pselectWithIndexKey($query, [], 'ContainerID');
+        $containerRows = $this->db
+            ->pselectWithIndexKey($query, $params, 'ContainerID');
 
         $containers = [];
         foreach ($containerRows as $id => $containerRow) {
@@ -477,10 +479,14 @@ class ContainerDAO extends \LORIS\Data\ProvisionerInstance
         if (empty($childContainerIds)) {
             return [];
         }
-        $query = "UPDATE biobank_container                                      
-                  SET $field=$value                                             
-                  WHERE ContainerID IN (".implode(',', $childContainerIds).");";
-        $this->db->run($query);
+        $query = "UPDATE biobank_container
+                  SET $field=:value
+                  WHERE ContainerID IN (".implode(',', $childContainerIds).")";
+        $this->db->execute(
+            $this->db->prepare($query),
+            ['value' => $value],
+            ['nofetch' => 'true']
+        );
         $conditions = [];
         foreach ($childContainerIds as $id) {
             $conditions[] = ['column' => 'bc.ContainerID', 'value' => $id];
