@@ -353,6 +353,7 @@ class SpecimenTab extends Component {
         action: openBatchProcessForm,
       },
       {name: 'batchEdit', label: 'Edit Specimens', action: openBatchEditForm},
+      ...this.props.actions,
     ];
 
     return (
@@ -492,6 +493,7 @@ SpecimenTab.propTypes = {
   createPool: PropTypes.func.isRequired,
   updateSpecimens: PropTypes.func.isRequired,
   editSpecimens: PropTypes.func.isRequired,
+  actions: PropTypes.array,
 
   // UI Control props
   title: PropTypes.string.isRequired,

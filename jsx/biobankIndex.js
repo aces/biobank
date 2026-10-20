@@ -6,8 +6,11 @@ import Swal from 'sweetalert2';
 import BiobankFilter from './filter';
 import BarcodePage from './barcodePage';
 
+import Modal from '../../../jsx/Modal.tsx';
+import {
+  FileElement,
+} from 'jsx/Form';
 import {clone, isEmpty, get, getStream, post} from './helpers.js';
-
 /**
  * The main React entrypoint for the biobank module. This component
  * renders the index page.
@@ -61,6 +64,10 @@ class BiobankIndex extends Component {
           types: {},
         },
       },
+      formData: {},
+      errors: {},
+      showCSVModal: false,
+      mode: 'csv',
     };
 
     this.printLabel = this.printLabel.bind(this);
@@ -78,6 +85,11 @@ class BiobankIndex extends Component {
     this.validateSpecimen = this.validateSpecimen.bind(this);
     this.validateProcess = this.validateProcess.bind(this);
     this.validateContainer = this.validateContainer.bind(this);
+    this.openCSVModal = this.openCSVModal.bind(this);
+    this.closeModal = this.closeModal.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.setFormData = this.setFormData.bind(this);
+    this.postData = this.postData.bind(this);
   }
 
   /**
@@ -574,6 +586,137 @@ class BiobankIndex extends Component {
     return errors;
   }
 
+  handleSubmit(method, url) {
+  return new Promise((resolve, reject) => {
+    const formData = this.state.formData;
+    const formObject = new FormData();
+    const alt = {};
+
+    for (const key in formData) {
+      if (formData[key] !== '') {
+        formObject.append(key, formData[key]);
+        alt[key] = formData[key];
+      }
+    }
+
+    this.postData(formObject, alt, method, url)
+      .then(() => resolve())
+      .catch((e) => reject(e));
+  });
+}
+postData(data, alt, method, url) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+
+    if (this.state.mode === 'csv') {
+      body = data;
+    } else {
+      body = JSON.stringify(alt);
+    }
+
+    fetch(url, {
+      method: method,
+      cache: 'no-cache',
+      credentials: 'same-origin',
+      body: body,
+    })
+      .then((response) => response.text()
+        .then((body) => {
+          body = JSON.parse(body);
+
+          if (response.ok) {
+            if (body.log) {
+              Swal.fire({
+                title: 'Partial submission success',
+                type: 'warning',
+                html: body.message +
+                  `<br><br><a href="${url}/${body.log}">` +
+                  'Rejected entries log</a>',
+              }).then((result) => {
+                if (result.value) {
+                  this.closeModal();
+                  resolve(body.message);
+                }
+              });
+            } else {
+              Swal.fire(
+                'Submission successful',
+                body.message,
+                'success'
+              ).then((result) => {
+                if (result.value) {
+                  this.closeModal();
+                  resolve(body.message);
+                }
+              });
+            }
+          } else {
+            Swal.fire(body.error, '', 'error');
+            reject(body.error);
+          }
+        })
+        .catch((e) => reject(e))
+      );
+  });
+}
+  /**
+   * Executed when modal is opened.
+   */
+  openCSVModal() {
+    this.setState({showCSVModal: true});
+    this.setState({mode: "csv"});
+  }
+////-------------------------------
+  /**
+   * Executed when modal is closed.
+   */
+  closeModal() {
+    this.setState({
+      formData: {},
+      showCSVModal: false,
+      errors: {},
+    });
+  }
+  setFormData(formElement, value) {
+  const formData = this.state.formData;
+  formData[formElement] = value;
+
+  this.setState({
+    formData: formData,
+  });
+}
+  /**
+   * Render the CSV form.
+   *
+   * @return {JSX} - React markup for the component
+   */
+  renderCSVForm() {
+    let modalTitle = 'Import Specimen Data From CSV';
+
+    // This code depends on CBIGR's modifications of the
+    // modal code to include a form element
+    return (
+      <Modal
+        title={modalTitle}
+        onClose={this.closeModal}
+        show={this.state.showCSVModal}
+        onSubmit={() => this.handleSubmit('POST', this.props.csvURL)}
+      >
+        <div>
+          <h4>File uploaded must contain all required fields for specimen upload as specified in the data dictionary. File will be parsed and each row inserted independently. Reported errors should be fixed before re-upload. The entire file can be reuploaded to insert new data (already uploaded rows will be skipped)</h4><br/>
+        </div>
+        <FileElement
+          name="csvFile"
+          label="CSV File"
+          value={this.state.formData.csvFile}
+          required={true}
+          onUserInput={this.setFormData}
+        />
+      </Modal>
+    );
+  }
+  ////-------------------------------
+
   /**
    * Validate a process
    *
@@ -795,10 +938,18 @@ class BiobankIndex extends Component {
           createSpecimens={this.createSpecimens}
           editSpecimens={this.editSpecimens}
           updateSpecimens={this.updateSpecimens}
+          actions={actions}
           loading={this.state.loading}
         />
       </div>
     );
+    const actions = [
+      {
+        label: 'Import Data CSV',
+        action: this.openCSVModal,
+        show: this.props.hasPermission('biobank_specimen_create'),
+      },
+    ];
 
     return (
       <BrowserRouter basename='/biobank'>
@@ -808,7 +959,11 @@ class BiobankIndex extends Component {
             <Route exact path='/barcode=:barcode' render={barcode}/>
           </Switch>
         </div>
+        <div>
+          {this.renderCSVForm()}
+        </div>
       </BrowserRouter>
+
     );
   }
 }
@@ -820,6 +975,7 @@ BiobankIndex.propTypes = {
   poolAPI: PropTypes.object.isRequired,
   optionsAPI: PropTypes.object.isRequired,
   labelAPI: PropTypes.object.isRequired,
+  csvURL: PropTypes.string.isRequired,
 };
 
 window.addEventListener('load', () => {
@@ -831,6 +987,8 @@ window.addEventListener('load', () => {
       poolAPI={`${biobank}poolendpoint/`}
       optionsAPI={`${biobank}optionsendpoint/`}
       labelAPI={`${biobank}labelendpoint/`}
+      csvURL={`${loris.BaseURL}/biobank/CSVImport`}
+      hasPermission={loris.userHasPermission}
     />,
     document.getElementById('lorisworkspace'));
 });
