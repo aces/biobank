@@ -105,9 +105,8 @@ class PoolTab extends Component {
       return <td>{value}</td>;
     case 'Visit Label':
       if (candidatePermission) {
-        const sessId = Object.values(options.candidates[candId]).find(
-          (sess) => sess.label == value
-        )?.id;
+        const sessId = options.candidates[candId].sessionIds
+          .find((id) => options.sessions[id]?.label === value);
         const sessionPermission = sessId !== undefined;
         if (sessionPermission) {
           const visitLabelURL = loris.BaseURL+'/instrument_list/?candID='+
