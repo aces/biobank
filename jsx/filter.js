@@ -30,6 +30,7 @@ class BiobankFilter extends Component {
         history={this.props.history}
         increaseCoordinate={this.props.increaseCoordinate}
         loading={this.props.loading}
+        actions={this.props.actions}
       />
     );
 
@@ -109,6 +110,7 @@ BiobankFilter.propTypes = {
   loading: PropTypes.bool,
   createContainers: PropTypes.func,
   setData: PropTypes.func,
+  actions: PropTypes.array,
 };
 
 export default BiobankFilter;
